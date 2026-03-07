@@ -29,6 +29,12 @@ import AIAssistant from "./pages/AIAssistant";
 import Documents from "./pages/Documents";
 import Billing from "./pages/Billing";
 
+// ─── Missing pages (from skill spec) ────────────────────────────────────────
+import FollowUps from "./pages/FollowUps";
+import Conversations from "./pages/Conversations";
+import Notifications from "./pages/Notifications";
+import SEOPortal from "./pages/SEOPortal";
+
 // ─── Legacy pages (still accessible) ──────────────────────────────────────
 import Pipeline from "./pages/Pipeline";
 import Borrowers from "./pages/Borrowers";
@@ -78,6 +84,12 @@ function Router() {
       <Route path="/appointments" component={Appointments} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/content" component={ContentStudio} />
+
+      {/* ── Missing routes from skill spec ── */}
+      <Route path="/follow-ups" component={FollowUps} />
+      <Route path="/conversations" component={Conversations} />
+      <Route path="/notifications" component={Notifications} />
+      <Route path="/seo-portal" component={SEOPortal} />
 
       {/* Settings */}
       <Route path="/settings" component={Settings} />

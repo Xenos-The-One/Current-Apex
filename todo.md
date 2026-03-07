@@ -93,3 +93,20 @@
 
 ## Bug Fixes
 - [x] Settings page (fix /settings 404 error) — API key config, agency profile, notifications
+
+## System Scan Fixes (Round 2)
+- [x] FollowUps page (/follow-ups) — missing from client nav
+- [x] Conversations page (/conversations) — unified inbox (SMS, email, Facebook)
+- [x] Notifications page (/notifications) — system alerts and reminders
+- [x] SEO Portal page (/seo-portal) — AI SEO tools and content optimization
+- [x] Pipeline page: add 8 lead-type tabs (All/Borrowers/RE Agents/Attorneys/Insurance/Title Co./Builders/Lenders)
+- [ ] ContactsHub: Pipeline tab should be full Kanban board (not redirect)
+- [x] AgencyContext: auto-detect agencyId from user.agencyId instead of hardcoding 1
+- [ ] LOA role: restrict to assigned leads/borrowers only
+- [ ] Dashboard: fix empty state with real data queries
+- [x] Add sendEmail/sendSms procedures to campaigns router (with SendGrid + Twilio + demo mode fallback)
+- [ ] Add leads.getDetail procedure
+- [ ] Add webinar registrations router/page
+- [ ] Fix all "Feature coming soon" placeholder nav items
+- [ ] Consistent empty states across all pages
+- [ ] Loading skeletons for all data-heavy pages

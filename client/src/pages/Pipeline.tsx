@@ -1,5 +1,5 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import CRMLayout from "@/components/CRMLayout";
+import { useAgency } from "@/contexts/AgencyContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -25,6 +25,7 @@ import {
   User,
 } from "lucide-react";
 import { useRef, useState } from "react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
 const STAGES = [
@@ -218,9 +219,19 @@ function CSVImportDialog({ agencyId, onSuccess }: { agencyId: number; onSuccess:
   );
 }
 
+const CONTACT_TYPE_TABS = [
+  { value: "all", label: "All Leads" },
+  { value: "borrower", label: "Borrowers" },
+  { value: "re_agent", label: "RE Agents" },
+  { value: "attorney", label: "Attorneys" },
+  { value: "insurance", label: "Insurance" },
+  { value: "title_co", label: "Title Co." },
+  { value: "builder", label: "Builders" },
+  { value: "lender", label: "Lenders" },
+] as const;
+
 export default function Pipeline() {
-  const { user } = useAuth();
-  const agencyId = (user as any)?.agencyId ?? 1;
+  const { agencyId } = useAgency();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [draggingId, setDraggingId] = useState<number | null>(null);
@@ -270,22 +281,25 @@ export default function Pipeline() {
               <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search leads..." className="pl-8 h-8 w-48 text-sm" />
             </div>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="h-8 w-36 text-sm">
-                <Filter className="w-3.5 h-3.5 mr-1.5" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {["borrower", "re_agent", "attorney", "insurance", "title_co", "builder", "lender"].map(t => (
-                  <SelectItem key={t} value={t}>{t.replace(/_/g, " ")}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <CSVImportDialog agencyId={agencyId} onSuccess={refetch} />
             <AddLeadDialog agencyId={agencyId} onSuccess={refetch} />
           </div>
         </div>
+
+        {/* Lead type tabs */}
+        <Tabs value={typeFilter} onValueChange={setTypeFilter}>
+          <TabsList className="flex-wrap h-auto gap-1">
+            {CONTACT_TYPE_TABS.map(tab => {
+              const count = Object.values(kanban || {}).flat().filter((l: Lead) => tab.value === "all" || l.contactType === tab.value).length;
+              return (
+                <TabsTrigger key={tab.value} value={tab.value} className="text-xs gap-1.5">
+                  {tab.label}
+                  <Badge variant="secondary" className="h-4 min-w-4 text-xs px-1">{count}</Badge>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        </Tabs>
 
         {/* Kanban Board */}
         <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: "calc(100vh - 220px)" }}>

@@ -164,4 +164,83 @@ export const campaignsRouter = router({
       await db.delete(campaignTemplates).where(and(eq(campaignTemplates.id, input.id), eq(campaignTemplates.agencyId, input.agencyId)));
       return { success: true };
     }),
+
+  // ── Send (via SendGrid / Twilio) ─────────────────────────────────────────
+  sendEmail: protectedProcedure
+    .input(z.object({
+      campaignId: z.number(),
+      agencyId: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [campaign] = await db.select().from(emailCampaigns)
+        .where(and(eq(emailCampaigns.id, input.campaignId), eq(emailCampaigns.agencyId, input.agencyId))).limit(1);
+      if (!campaign) throw new TRPCError({ code: "NOT_FOUND", message: "Campaign not found" });
+
+      const sendgridKey = process.env.SENDGRID_API_KEY;
+      if (!sendgridKey) {
+        // Mark as sent in demo mode
+        await db.update(emailCampaigns).set({ status: "sent", sentAt: new Date() })
+          .where(eq(emailCampaigns.id, input.campaignId));
+        return { success: true, demo: true, message: "Demo mode: SENDGRID_API_KEY not configured" };
+      }
+
+      try {
+        const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${sendgridKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            personalizations: [{ to: [{ email: campaign.fromEmail || "noreply@example.com" }] }],
+            from: { email: campaign.fromEmail || "noreply@example.com", name: campaign.fromName || "CRM" },
+            subject: campaign.subject,
+            content: [{ type: "text/html", value: campaign.content }],
+          }),
+        });
+        if (!response.ok) throw new Error(`SendGrid error: ${response.status}`);
+        await db.update(emailCampaigns).set({ status: "sent", sentAt: new Date() })
+          .where(eq(emailCampaigns.id, input.campaignId));
+        return { success: true };
+      } catch (err: any) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: err.message });
+      }
+    }),
+
+  sendSms: protectedProcedure
+    .input(z.object({
+      campaignId: z.number(),
+      agencyId: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [campaign] = await db.select().from(smsCampaigns)
+        .where(and(eq(smsCampaigns.id, input.campaignId), eq(smsCampaigns.agencyId, input.agencyId))).limit(1);
+      if (!campaign) throw new TRPCError({ code: "NOT_FOUND", message: "Campaign not found" });
+
+      const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+      const twilioToken = process.env.TWILIO_AUTH_TOKEN;
+      const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
+
+      if (!twilioSid || !twilioToken || !twilioPhone) {
+        await db.update(smsCampaigns).set({ status: "sent", sentAt: new Date() })
+          .where(eq(smsCampaigns.id, input.campaignId));
+        return { success: true, demo: true, message: "Demo mode: Twilio credentials not configured" };
+      }
+
+      try {
+        const auth = Buffer.from(`${twilioSid}:${twilioToken}`).toString("base64");
+        const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`, {
+          method: "POST",
+          headers: { "Authorization": `Basic ${auth}`, "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ From: twilioPhone, To: campaign.fromNumber || twilioPhone, Body: campaign.message }),
+        });
+        if (!response.ok) throw new Error(`Twilio error: ${response.status}`);
+        await db.update(smsCampaigns).set({ status: "sent", sentAt: new Date() })
+          .where(eq(smsCampaigns.id, input.campaignId));
+        return { success: true };
+      } catch (err: any) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: err.message });
+      }
+    }),
 });

@@ -228,6 +228,25 @@ export const leadsRouter = router({
       return { success: true };
     }),
 
+  listTasks: protectedProcedure
+    .input(z.object({ agencyId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      return db.select().from(leadTasks)
+        .where(eq(leadTasks.agencyId, input.agencyId))
+        .orderBy(asc(leadTasks.dueAt));
+    }),
+
+  completeTask: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      await db.update(leadTasks).set({ status: "completed", completedAt: new Date() }).where(eq(leadTasks.id, input.id));
+      return { success: true };
+    }),
+
   getKanban: protectedProcedure
     .input(z.object({ agencyId: z.number() }))
     .query(async ({ input }) => {

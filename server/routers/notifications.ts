@@ -46,6 +46,15 @@ export const notificationsRouter = router({
       return { success: true };
     }),
 
+  delete: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      await db.delete(teamNotifications).where(eq(teamNotifications.id, input.id));
+      return { success: true };
+    }),
+
   create: protectedProcedure
     .input(z.object({
       agencyId: z.number(),

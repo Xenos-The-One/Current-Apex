@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { conversations } from "../../drizzle/schema";
+import { conversationMessages, conversations } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
 
@@ -38,6 +38,45 @@ export const conversationsRouter = router({
       return conv;
     }),
 
+  getMessages: protectedProcedure
+    .input(z.object({ conversationId: z.number(), limit: z.number().default(50) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      return db.select().from(conversationMessages)
+        .where(eq(conversationMessages.conversationId, input.conversationId))
+        .orderBy(asc(conversationMessages.createdAt))
+        .limit(input.limit);
+    }),
+
+  sendMessage: protectedProcedure
+    .input(z.object({
+      conversationId: z.number(),
+      content: z.string().min(1),
+      direction: z.enum(["inbound", "outbound"]).default("outbound"),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      // Get conversation to find agencyId
+      const [conv] = await db.select().from(conversations)
+        .where(eq(conversations.id, input.conversationId)).limit(1);
+      if (!conv) throw new TRPCError({ code: "NOT_FOUND" });
+      const [result] = await db.insert(conversationMessages).values({
+        conversationId: input.conversationId,
+        agencyId: conv.agencyId,
+        direction: input.direction,
+        content: input.content,
+        sentByUserId: ctx.user.id,
+        status: "sent",
+      });
+      // Update conversation last message
+      await db.update(conversations)
+        .set({ lastMessageAt: new Date(), lastMessagePreview: input.content.slice(0, 100), isRead: true })
+        .where(eq(conversations.id, input.conversationId));
+      return { id: (result as any).insertId };
+    }),
+
   markRead: protectedProcedure
     .input(z.object({ id: z.number(), agencyId: z.number() }))
     .mutation(async ({ input }) => {
@@ -60,7 +99,7 @@ export const conversationsRouter = router({
       contactEmail: z.string().optional(),
       lastMessagePreview: z.string().optional(),
     }))
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const [result] = await db.insert(conversations).values({
