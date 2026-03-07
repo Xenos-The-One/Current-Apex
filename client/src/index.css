@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
@@ -43,6 +44,15 @@
 }
 
 :root {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  /* Sidebar custom vars */
+  --sidebar-bg: oklch(0.14 0.04 260);
+  --sidebar-fg: oklch(0.82 0.02 250);
+  --sidebar-muted-fg: oklch(0.55 0.02 250);
+  --sidebar-hover: oklch(0.22 0.04 260);
+  --sidebar-active: oklch(0.52 0.22 255);
+  --sidebar-border-color: oklch(0.22 0.03 260);
   --primary: var(--color-blue-700);
   --primary-foreground: var(--color-blue-50);
   --sidebar-primary: var(--color-blue-600);
@@ -119,6 +129,12 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -169,9 +185,52 @@
 
   @media (min-width: 1024px) {
     .container {
-      padding-left: 2rem; /* 32px - desktop padding */
+      padding-left: 2rem;
       padding-right: 2rem;
-      max-width: 1280px; /* Standard content width */
+      max-width: 1440px;
     }
   }
+
+  /* Sidebar nav item */
+  .sidebar-nav-item {
+    @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer select-none;
+    color: var(--sidebar-fg);
+  }
+  .sidebar-nav-item:hover {
+    background: var(--sidebar-hover);
+    color: white;
+  }
+  .sidebar-nav-item.active {
+    background: var(--sidebar-active);
+    color: white;
+  }
+
+  /* Stat card */
+  .stat-card {
+    @apply bg-card rounded-xl border border-border p-5 shadow-sm hover:shadow-md transition-shadow;
+  }
+
+  /* Kanban column */
+  .kanban-col {
+    @apply flex flex-col gap-2 rounded-xl p-2;
+    background: oklch(0.96 0.005 250);
+    min-height: 200px;
+  }
+
+  /* Score badge */
+  .score-high { @apply bg-green-100 text-green-700; }
+  .score-medium { @apply bg-yellow-100 text-yellow-700; }
+  .score-low { @apply bg-red-100 text-red-700; }
 }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: oklch(0.85 0.005 250); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: oklch(0.7 0.01 250); }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fade-in 0.15s ease-out; }
