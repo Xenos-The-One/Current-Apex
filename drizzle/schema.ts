@@ -470,6 +470,85 @@ export const webinarRegistrations = mysqlTable("webinar_registrations", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+// ─── CONVERSATIONS (Unified Inbox) ────────────────────────────────────────
+
+export const conversations = mysqlTable("conversations", {
+  id: int("id").autoincrement().primaryKey(),
+  agencyId: int("agencyId").notNull(),
+  leadId: int("leadId"),
+  borrowerId: int("borrowerId"),
+  assignedUserId: int("assignedUserId"),
+  channel: mysqlEnum("channel", ["sms", "email", "facebook", "instagram", "whatsapp"]).notNull(),
+  contactName: varchar("contactName", { length: 255 }),
+  contactPhone: varchar("contactPhone", { length: 32 }),
+  contactEmail: varchar("contactEmail", { length: 320 }),
+  lastMessageAt: timestamp("lastMessageAt"),
+  lastMessagePreview: text("lastMessagePreview"),
+  isRead: boolean("isRead").default(false),
+  isArchived: boolean("isArchived").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const conversationMessages = mysqlTable("conversation_messages", {
+  id: int("id").autoincrement().primaryKey(),
+  conversationId: int("conversationId").notNull(),
+  agencyId: int("agencyId").notNull(),
+  direction: mysqlEnum("direction", ["inbound", "outbound"]).notNull(),
+  content: text("content").notNull(),
+  mediaUrls: json("mediaUrls"),
+  status: mysqlEnum("status", ["sent", "delivered", "read", "failed"]).default("sent"),
+  sentByUserId: int("sentByUserId"),
+  externalMessageId: varchar("externalMessageId", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ─── MARKET ANALYTICS ──────────────────────────────────────────────────────
+
+export const marketAnalytics = mysqlTable("market_analytics", {
+  id: int("id").autoincrement().primaryKey(),
+  agencyId: int("agencyId").notNull(),
+  reportDate: timestamp("reportDate").notNull(),
+  marketArea: varchar("marketArea", { length: 255 }),
+  avgLoanAmount: decimal("avgLoanAmount", { precision: 12, scale: 2 }),
+  avgInterestRate: decimal("avgInterestRate", { precision: 5, scale: 3 }),
+  totalLoansInMarket: int("totalLoansInMarket"),
+  marketSharePct: decimal("marketSharePct", { precision: 5, scale: 2 }),
+  competitorData: json("competitorData"),
+  trendData: json("trendData"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ─── LEAD SOURCE ASSISTANT MAPPINGS ────────────────────────────────────────
+
+export const leadSourceAssistantMappings = mysqlTable("lead_source_assistant_mappings", {
+  id: int("id").autoincrement().primaryKey(),
+  agencyId: int("agencyId").notNull(),
+  leadSource: varchar("leadSource", { length: 100 }).notNull(),
+  vapiAssistantId: int("vapiAssistantId").notNull(),
+  isActive: boolean("isActive").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ─── FACEBOOK LEAD ADS ─────────────────────────────────────────────────────
+
+export const facebookLeadAds = mysqlTable("facebook_lead_ads", {
+  id: int("id").autoincrement().primaryKey(),
+  agencyId: int("agencyId").notNull(),
+  facebookLeadId: varchar("facebookLeadId", { length: 128 }).notNull().unique(),
+  formId: varchar("formId", { length: 128 }),
+  pageId: varchar("pageId", { length: 128 }),
+  adId: varchar("adId", { length: 128 }),
+  firstName: varchar("firstName", { length: 100 }),
+  lastName: varchar("lastName", { length: 100 }),
+  email: varchar("email", { length: 320 }),
+  phone: varchar("phone", { length: 32 }),
+  rawData: json("rawData"),
+  processedLeadId: int("processedLeadId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 // ─── TYPES ─────────────────────────────────────────────────────────────────
 
 export type User = typeof users.$inferSelect;

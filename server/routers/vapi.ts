@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { aiScripts, callLogs, vapiAssistants } from "../../drizzle/schema";
+import { aiScripts, callLogs, leadSourceAssistantMappings, vapiAssistants } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
 
@@ -130,6 +130,40 @@ export const vapiRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       await db.delete(aiScripts).where(and(eq(aiScripts.id, input.id), eq(aiScripts.agencyId, input.agencyId)));
+      return { success: true };
+    }),
+
+  // ─── Lead Source → Assistant Mappings ─────────────────────────────────────
+  listSourceMappings: protectedProcedure
+    .input(z.object({ agencyId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      return db.select().from(leadSourceAssistantMappings)
+        .where(eq(leadSourceAssistantMappings.agencyId, input.agencyId));
+    }),
+
+  createSourceMapping: protectedProcedure
+    .input(z.object({
+      agencyId: z.number(),
+      leadSource: z.string().min(1),
+      vapiAssistantId: z.number(),
+      isActive: z.boolean().default(true),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [result] = await db.insert(leadSourceAssistantMappings).values(input);
+      return { id: (result as any).insertId };
+    }),
+
+  deleteSourceMapping: protectedProcedure
+    .input(z.object({ id: z.number(), agencyId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      await db.delete(leadSourceAssistantMappings)
+        .where(and(eq(leadSourceAssistantMappings.id, input.id), eq(leadSourceAssistantMappings.agencyId, input.agencyId)));
       return { success: true };
     }),
 });

@@ -15,6 +15,13 @@
       "when": 1772900766861,
       "tag": "0001_even_argent",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1772902736145,
+      "tag": "0002_wide_silk_fever",
+      "breakpoints": true
     }
   ]
 }

@@ -90,3 +90,6 @@
 - [x] Toast notifications throughout
 - [x] Final UI polish and consistency pass
 - [x] Checkpoint and delivery
+
+## Bug Fixes
+- [x] Settings page (fix /settings 404 error) — API key config, agency profile, notifications

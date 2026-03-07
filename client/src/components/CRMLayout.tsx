@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import {
   BarChart3,
@@ -12,12 +13,14 @@ import {
   CreditCard,
   FileText,
   Folder,
+  Globe,
   Home,
   LayoutDashboard,
   LogOut,
   Mail,
   MessageSquare,
   Phone,
+  Search,
   Settings,
   Share2,
   Sparkles,
@@ -25,7 +28,7 @@ import {
   Workflow,
   Zap,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Badge } from "./ui/badge";
@@ -37,131 +40,60 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 interface NavItem {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: number;
-  children?: NavItem[];
+  adminOnly?: boolean;
 }
 
+// ─── Admin Navigation (matches skill spec exactly) ─────────────────────────
 function getAdminNav(): NavItem[] {
   return [
     { label: "Launchpad", href: "/dashboard", icon: Home },
-    { label: "Admin Dashboard", href: "/admin", icon: LayoutDashboard },
-    { label: "Agencies", href: "/admin/agencies", icon: Building2 },
-    { label: "Users", href: "/admin/users", icon: Users },
-    {
-      label: "Contacts", href: "/contacts", icon: Users,
-      children: [
-        { label: "Pipeline", href: "/pipeline", icon: ChevronRight },
-        { label: "Borrowers", href: "/borrowers", icon: ChevronRight },
-        { label: "Referral Partners", href: "/contacts", icon: ChevronRight },
-      ],
-    },
-    {
-      label: "Activity", href: "/appointments", icon: Zap,
-      children: [
-        { label: "Appointments", href: "/appointments", icon: Calendar },
-        { label: "AI Calling", href: "/calling", icon: Phone },
-      ],
-    },
-    {
-      label: "Marketing", href: "/campaigns", icon: Mail,
-      children: [
-        { label: "Campaigns", href: "/campaigns", icon: Mail },
-        { label: "Content Studio", href: "/content", icon: FileText },
-        { label: "Automations", href: "/automations", icon: Workflow },
-      ],
-    },
-    {
-      label: "Reports", href: "/analytics", icon: BarChart3,
-      children: [
-        { label: "Analytics", href: "/analytics", icon: BarChart3 },
-      ],
-    },
-    { label: "AI Assistant", href: "/ai", icon: Sparkles },
-    { label: "Documents", href: "/documents", icon: Folder },
-    { label: "Billing", href: "/billing", icon: CreditCard },
+    { label: "Admin Dashboard", href: "/admin", icon: LayoutDashboard, adminOnly: true },
+    { label: "Client Dashboard", href: "/client-dashboard", icon: Users },
+    { label: "Contacts", href: "/contacts", icon: Users },
+    { label: "Activity", href: "/activity", icon: Zap },
+    { label: "Marketing", href: "/marketing", icon: Mail },
+    { label: "Social Media", href: "/social-media", icon: Share2 },
+    { label: "Automations", href: "/automations", icon: Workflow },
+    { label: "Reports", href: "/reports", icon: BarChart3 },
+    { label: "AI SEO Portal", href: "/seo-portal", icon: Globe },
+    { label: "Tools", href: "/tools", icon: Folder },
   ];
 }
 
+// ─── Client Navigation (matches skill spec exactly) ────────────────────────
 function getClientNav(): NavItem[] {
   return [
     { label: "Dashboard", href: "/dashboard", icon: Home },
-    {
-      label: "Pipeline", href: "/pipeline", icon: Users,
-      children: [
-        { label: "All Leads", href: "/pipeline", icon: ChevronRight },
-        { label: "Borrowers", href: "/borrowers", icon: ChevronRight },
-        { label: "RE Agents", href: "/pipeline?type=re_agent", icon: ChevronRight },
-        { label: "Attorneys", href: "/pipeline?type=attorney", icon: ChevronRight },
-      ],
-    },
+    { label: "Pipeline", href: "/pipeline", icon: Users },
     { label: "Borrower Database", href: "/borrowers", icon: BookOpen },
-    { label: "Referral Partners", href: "/contacts", icon: Users },
+    { label: "Referral Partners", href: "/referral-partners", icon: Users },
     { label: "Appointments", href: "/appointments", icon: Calendar },
-    { label: "AI Calling", href: "/calling", icon: Phone },
-    {
-      label: "Campaigns", href: "/campaigns", icon: Mail,
-      children: [
-        { label: "Email & SMS", href: "/campaigns", icon: Mail },
-        { label: "Content Studio", href: "/content", icon: FileText },
-      ],
-    },
+    { label: "Follow-Ups", href: "/follow-ups", icon: Bell },
+    { label: "Conversations", href: "/conversations", icon: MessageSquare },
+    { label: "Campaigns", href: "/campaigns", icon: Mail },
     { label: "Automations", href: "/automations", icon: Workflow },
     { label: "Analytics", href: "/analytics", icon: BarChart3 },
-    { label: "AI Assistant", href: "/ai", icon: Sparkles },
-    { label: "Documents", href: "/documents", icon: Folder },
-    { label: "Billing", href: "/billing", icon: CreditCard },
+    { label: "Notifications", href: "/notifications", icon: Bell },
   ];
 }
 
 interface SidebarItemProps {
   item: NavItem;
-  depth?: number;
 }
 
-function SidebarItem({ item, depth = 0 }: SidebarItemProps) {
+function SidebarItem({ item }: SidebarItemProps) {
   const [location] = useLocation();
-  const [expanded, setExpanded] = useState(() => {
-    if (!item.children) return false;
-    return item.children.some(c => location.startsWith(c.href));
-  });
-
-  const isActive = location === item.href || (item.href !== "/dashboard" && location.startsWith(item.href) && !item.children);
-
-  if (item.children) {
-    return (
-      <div>
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className={`sidebar-nav-item w-full ${expanded ? "text-white" : ""}`}
-          style={{ paddingLeft: depth > 0 ? `${0.75 + depth * 0.75}rem` : undefined }}
-        >
-          <item.icon className="icon" />
-          <span className="flex-1 text-left">{item.label}</span>
-          {expanded ? <ChevronDown className="w-3.5 h-3.5 opacity-60" /> : <ChevronRight className="w-3.5 h-3.5 opacity-60" />}
-        </button>
-        {expanded && (
-          <div className="mt-0.5 space-y-0.5">
-            {item.children.map(child => (
-              <SidebarItem key={child.href} item={child} depth={depth + 1} />
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
+  const isActive = location === item.href || (item.href !== "/dashboard" && location.startsWith(item.href));
 
   return (
     <Link href={item.href}>
-      <div
-        className={`sidebar-nav-item ${isActive ? "active" : ""}`}
-        style={{ paddingLeft: depth > 0 ? `${0.75 + depth * 0.75}rem` : undefined }}
-      >
+      <div className={`sidebar-nav-item ${isActive ? "active" : ""}`}>
         <item.icon className="icon" />
         <span className="flex-1">{item.label}</span>
         {item.badge ? (
@@ -180,68 +112,100 @@ interface CRMLayoutProps {
 }
 
 export default function CRMLayout({ children, agencyId }: CRMLayoutProps) {
-  const { user, logout } = useAuth();
-  const isAdmin = user?.role === "super_admin" || user?.role === "admin";
-  const navItems = isAdmin ? getAdminNav() : getClientNav();
+  const { user, loading, isAuthenticated, logout } = useAuth();
+  const [location, navigate] = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const effectiveAgencyId = agencyId ?? (user as any)?.agencyId ?? 1;
   const { data: notifData } = trpc.notifications.unreadCount.useQuery(
-    { agencyId: effectiveAgencyId },
+    { agencyId: agencyId ?? 1 },
     { enabled: !!user }
   );
+  const unreadCount = notifData?.count ?? 0;
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      navigate(getLoginUrl());
+    }
+  }, [loading, isAuthenticated, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center animate-pulse">
+            <Zap className="w-5 h-5 text-primary-foreground" />
+          </div>
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return null;
+
+  const role = (user as any)?.role ?? "user";
+  const isSuperAdmin = role === "super_admin";
+  const isAdmin = role === "admin" || isSuperAdmin;
+  const navItems = isAdmin ? getAdminNav() : getClientNav();
 
   const initials = user?.name
-    ? user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+    ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
     : "U";
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen bg-background overflow-hidden">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+
       {/* Sidebar */}
-      <aside
-        className="flex flex-col w-60 flex-shrink-0 overflow-y-auto"
-        style={{ background: "var(--sidebar-bg)", borderRight: "1px solid var(--sidebar-border-color)" }}
-      >
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 z-50 lg:z-auto
+        w-[240px] flex-shrink-0 flex flex-col
+        bg-sidebar text-sidebar-foreground
+        transform transition-transform duration-200 ease-in-out
+        ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+      `}>
         {/* Logo */}
-        <div className="flex items-center gap-2.5 px-4 py-4" style={{ borderBottom: "1px solid var(--sidebar-border-color)" }}>
-          <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
-            <Building2 className="w-4 h-4 text-white" />
+        <div className="h-14 flex items-center gap-2.5 px-4 border-b border-white/10 flex-shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+            <Zap className="w-3.5 h-3.5 text-primary-foreground" />
           </div>
-          <div className="min-w-0">
-            <p className="text-white font-semibold text-sm font-display truncate">MortgageCRM</p>
-            <p className="text-xs truncate" style={{ color: "var(--sidebar-muted-fg)" }}>
-              {isAdmin ? "Admin Portal" : "Agent Portal"}
-            </p>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-sm truncate font-display">MortgageCRM</p>
+            <p className="text-xs text-white/50 truncate capitalize">{role.replace("_", " ")} Portal</p>
           </div>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
+        {/* Nav items */}
+        <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
           {navItems.map(item => (
             <SidebarItem key={item.href} item={item} />
           ))}
         </nav>
 
-        {/* User footer */}
-        <div className="px-2 py-3" style={{ borderTop: "1px solid var(--sidebar-border-color)" }}>
+        {/* User profile */}
+        <div className="border-t border-white/10 p-3 flex-shrink-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="sidebar-nav-item w-full">
+              <button className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-white/10 transition-colors text-left">
                 <Avatar className="w-7 h-7 flex-shrink-0">
-                  <AvatarFallback className="text-xs bg-blue-500 text-white">{initials}</AvatarFallback>
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">{initials}</AvatarFallback>
                 </Avatar>
-                <div className="flex-1 text-left min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{user?.name || "User"}</p>
-                  <p className="text-xs truncate" style={{ color: "var(--sidebar-muted-fg)" }}>{user?.role}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold truncate">{user?.name || "User"}</p>
+                  <p className="text-xs text-white/50 truncate capitalize">{role.replace("_", " ")}</p>
                 </div>
-                <ChevronDown className="w-3.5 h-3.5 opacity-60 flex-shrink-0" />
+                <ChevronDown className="w-3.5 h-3.5 text-white/50 flex-shrink-0" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem>
+            <DropdownMenuContent side="top" align="start" className="w-48">
+              <DropdownMenuItem onClick={() => navigate("/settings")}>
                 <Settings className="w-4 h-4 mr-2" /> Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout} className="text-destructive">
+              <DropdownMenuItem onClick={logout} className="text-red-600 focus:text-red-600">
                 <LogOut className="w-4 h-4 mr-2" /> Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -250,34 +214,45 @@ export default function CRMLayout({ children, agencyId }: CRMLayoutProps) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
-        <header className="flex items-center justify-between px-6 py-3 bg-card border-b border-border flex-shrink-0">
-          <div />
-          <div className="flex items-center gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link href="/notifications">
-                  <Button variant="ghost" size="icon" className="relative">
-                    <Bell className="w-4 h-4" />
-                    {(notifData?.count ?? 0) > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center">
-                        {notifData!.count > 9 ? "9+" : notifData!.count}
-                      </span>
-                    )}
-                  </Button>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent>Notifications</TooltipContent>
-            </Tooltip>
+        <header className="h-14 border-b border-border flex items-center gap-3 px-4 flex-shrink-0 bg-background">
+          <button
+            className="lg:hidden p-1.5 rounded-md hover:bg-muted"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <div className="w-5 h-0.5 bg-foreground mb-1" />
+            <div className="w-5 h-0.5 bg-foreground mb-1" />
+            <div className="w-5 h-0.5 bg-foreground" />
+          </button>
+
+          {/* Search */}
+          <div className="flex-1 max-w-sm hidden md:flex items-center gap-2 bg-muted rounded-lg px-3 h-8">
+            <Search className="w-3.5 h-3.5 text-muted-foreground" />
+            <input
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              placeholder="Search leads, borrowers..."
+            />
           </div>
+
+          <div className="flex-1" />
+
+          {/* Notification bell */}
+          <Button variant="ghost" size="sm" className="relative h-8 w-8 p-0" onClick={() => navigate("/notifications")}>
+            <Bell className="w-4 h-4" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </Button>
         </header>
 
         {/* Page content */}
-        <div className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto">
           {children}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

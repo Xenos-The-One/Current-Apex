@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { z } from "zod";
-import { appointments, borrowers, callLogs, emailCampaigns, leads, smsCampaigns, users } from "../../drizzle/schema";
+import { appointments, borrowers, callLogs, emailCampaigns, leads, marketAnalytics, smsCampaigns, users } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
 
@@ -103,5 +103,35 @@ export const analyticsRouter = router({
         .where(eq(smsCampaigns.agencyId, input.agencyId))
         .orderBy(desc(smsCampaigns.createdAt)).limit(10);
       return { email: emailStats, sms: smsStats };
+    }),
+
+  getMarketAnalytics: protectedProcedure
+    .input(z.object({ agencyId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      return db.select().from(marketAnalytics)
+        .where(eq(marketAnalytics.agencyId, input.agencyId))
+        .orderBy(desc(marketAnalytics.createdAt))
+        .limit(20);
+    }),
+
+  createMarketNote: protectedProcedure
+    .input(z.object({
+      agencyId: z.number(),
+      marketArea: z.string().optional(),
+      notes: z.string().optional(),
+      reportDate: z.date().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const [result] = await db.insert(marketAnalytics).values({
+        agencyId: input.agencyId,
+        marketArea: input.marketArea,
+        notes: input.notes,
+        reportDate: input.reportDate ?? new Date(),
+      });
+      return { id: (result as any).insertId };
     }),
 });

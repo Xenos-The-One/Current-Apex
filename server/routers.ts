@@ -16,6 +16,7 @@ import { documentsRouter } from "./routers/documents";
 import { leadsRouter } from "./routers/leads";
 import { notificationsRouter } from "./routers/notifications";
 import { vapiRouter } from "./routers/vapi";
+import { conversationsRouter } from "./routers/conversations";
 
 export const appRouter = router({
   system: systemRouter,
@@ -38,6 +39,7 @@ export const appRouter = router({
   analytics: analyticsRouter,
   documents: documentsRouter,
   content: contentRouter,
+  conversations: conversationsRouter,
   notifications: notificationsRouter,
   billing: billingRouter,
   ai: aiRouter,
