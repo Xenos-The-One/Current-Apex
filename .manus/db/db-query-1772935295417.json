@@ -1,0 +1,9 @@
+{
+  "query": "SHOW TABLES LIKE 'sub_account_credentials';\nSHOW TABLES LIKE 'onboarding_progress';\nSHOW TABLES LIKE 'push_subscriptions';\nSHOW TABLES LIKE 'content_revisions';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SHOW TABLES LIKE 'sub_account_credentials';\nSHOW TABLES LIKE 'onboarding_progress';\nSHOW TABLES LIKE 'push_subscriptions';\nSHOW TABLES LIKE 'content_revisions';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 64
+}

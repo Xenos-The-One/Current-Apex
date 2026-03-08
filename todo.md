@@ -116,3 +116,8 @@
 - [x] Add Stripe webhook secret — registered /api/stripe/webhook with express.raw() before json() middleware
 - [x] Add live Vapi call test button in Settings → Integrations → Vapi section
 - [x] Add SendGrid sender domain configuration in Settings → Integrations → SendGrid section
+
+## Round 4: Missing DB Tables Fix
+- [x] Create team_members table in database
+- [x] Create account_invitations table in database
+- [x] Create contentAnalytics table in database
