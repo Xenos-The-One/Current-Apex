@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { eq } from "drizzle-orm";
-import { facebookLeadAds, leads, leadSourceAssistantMappings } from "../../drizzle/schema";
+import { leads, leadSourceAssistantMappings } from "../../drizzle/schema";
 import { getDb } from "../db";
 
 /**
@@ -47,9 +47,7 @@ export async function facebookWebhookHandler(req: Request, res: Response) {
         if (change.field !== "leadgen") continue;
 
         const facebookLeadId: string = change.value?.leadgen_id;
-        const pageId: string | undefined = change.value?.page_id?.toString();
         const formId: string | undefined = change.value?.form_id?.toString();
-        const adId: string | undefined = change.value?.ad_id?.toString();
 
         if (!facebookLeadId) continue;
 
@@ -61,20 +59,8 @@ export async function facebookWebhookHandler(req: Request, res: Response) {
 
         const agencyId = mappings[0]?.agencyId ?? 1; // fallback to agency 1
 
-        // Store raw Facebook lead ad entry
-        await db.insert(facebookLeadAds).values({
-          agencyId,
-          facebookLeadId,
-          pageId,
-          formId,
-          adId,
-          firstName: "Facebook",
-          lastName: `Lead ${facebookLeadId.slice(-6)}`,
-          rawData: change.value,
-        }).onDuplicateKeyUpdate({ set: { rawData: change.value } });
-
         // Create a CRM lead from this Facebook lead
-        const [leadResult] = await db.insert(leads).values({
+        await db.insert(leads).values({
           agencyId,
           source: "facebook_ads",
           pipelineStage: "new",
@@ -84,14 +70,6 @@ export async function facebookWebhookHandler(req: Request, res: Response) {
           lastName: `Lead ${facebookLeadId.slice(-6)}`,
           notes: `Facebook Lead Ads lead. Leadgen ID: ${facebookLeadId}. Form: ${formId ?? "unknown"}`,
         });
-
-        // Update the facebookLeadAds record with the new CRM lead ID
-        const newLeadId = (leadResult as any).insertId;
-        if (newLeadId) {
-          await db.update(facebookLeadAds)
-            .set({ processedLeadId: newLeadId })
-            .where(eq(facebookLeadAds.facebookLeadId, facebookLeadId));
-        }
 
         console.log(`[Facebook] Processed lead ${facebookLeadId} for agency ${agencyId}`);
       }

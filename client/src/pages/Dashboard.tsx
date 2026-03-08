@@ -82,9 +82,9 @@ export default function Dashboard() {
     endDate: new Date(),
   }));
 
-  const { data: analytics, isLoading } = trpc.analytics.getDashboard.useQuery({ agencyId, ...dateRange });
-  const { data: funnel } = trpc.analytics.getFunnel.useQuery({ agencyId });
-  const { data: upcomingAppts } = trpc.appointments.upcoming.useQuery({ agencyId, limit: 5 });
+  const { data: analytics, isLoading } = trpc.analytics.getOverviewMetrics.useQuery({ agencyId, ...dateRange });
+  const { data: funnel } = trpc.analytics.getConversionFunnel.useQuery({ agencyId });
+  const { data: upcomingAppts } = trpc.appointments.getUpcoming.useQuery({ agencyId, limit: 5 });
 
   const funnelData = useMemo(() => {
     if (!funnel) return [];
@@ -93,7 +93,7 @@ export default function Dashboard() {
 
   const sourceData = useMemo(() => {
     if (!analytics?.sourceBreakdown) return [];
-    return analytics.sourceBreakdown.map((s, i) => ({
+    return analytics.sourceBreakdown.map((s: any, i: any) => ({
       name: s.source?.replace(/_/g, " ") || "unknown",
       value: s.count,
       fill: SOURCE_COLORS[i % SOURCE_COLORS.length],
@@ -196,13 +196,13 @@ export default function Dashboard() {
                   <ResponsiveContainer width="100%" height={140}>
                     <PieChart>
                       <Pie data={sourceData} cx="50%" cy="50%" innerRadius={40} outerRadius={65} dataKey="value" paddingAngle={2}>
-                        {sourceData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                        {sourceData.map((entry: any, i: any) => <Cell key={i} fill={entry.fill} />)}
                       </Pie>
                       <Tooltip formatter={(v) => [v, "Leads"]} />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="space-y-1 mt-2">
-                    {sourceData.slice(0, 4).map((s, i) => (
+                    {sourceData.slice(0, 4).map((s: any, i: any) => (
                       <div key={i} className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-1.5">
                           <div className="w-2.5 h-2.5 rounded-full" style={{ background: s.fill }} />
@@ -236,7 +236,7 @@ export default function Dashboard() {
                       tickFormatter={v => v.replace(/_/g, " ")} />
                     <Tooltip />
                     <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                      {funnelData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                      {funnelData.map((entry: any, i: any) => <Cell key={i} fill={entry.fill} />)}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>

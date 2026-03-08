@@ -9,7 +9,7 @@ export const automationsRouter = router({
   listWorkflows: protectedProcedure
     .input(z.object({ agencyId: z.number() }))
     .query(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       return db.select().from(automationWorkflows)
         .where(eq(automationWorkflows.agencyId, input.agencyId))
@@ -19,7 +19,7 @@ export const automationsRouter = router({
   getWorkflow: protectedProcedure
     .input(z.object({ id: z.number(), agencyId: z.number() }))
     .query(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const [workflow] = await db.select().from(automationWorkflows)
         .where(and(eq(automationWorkflows.id, input.id), eq(automationWorkflows.agencyId, input.agencyId))).limit(1);
@@ -44,7 +44,7 @@ export const automationsRouter = router({
       })).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const { steps, agencyId, triggerConfig, ...workflowData } = input;
       const [result] = await db.insert(automationWorkflows).values({
@@ -76,7 +76,7 @@ export const automationsRouter = router({
       })).optional(),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const { id, agencyId, steps, ...rest } = input;
       await db.update(automationWorkflows).set(rest).where(and(eq(automationWorkflows.id, id), eq(automationWorkflows.agencyId, agencyId)));
@@ -92,7 +92,7 @@ export const automationsRouter = router({
   deleteWorkflow: protectedProcedure
     .input(z.object({ id: z.number(), agencyId: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       await db.delete(automationWorkflowSteps).where(eq(automationWorkflowSteps.workflowId, input.id));
       await db.delete(automationWorkflows).where(and(eq(automationWorkflows.id, input.id), eq(automationWorkflows.agencyId, input.agencyId)));
@@ -102,7 +102,7 @@ export const automationsRouter = router({
   getExecutionLogs: protectedProcedure
     .input(z.object({ workflowId: z.number(), agencyId: z.number(), limit: z.number().default(50) }))
     .query(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       return db.select().from(automationExecutions)
         .where(and(eq(automationExecutions.workflowId, input.workflowId), eq(automationExecutions.agencyId, input.agencyId)))

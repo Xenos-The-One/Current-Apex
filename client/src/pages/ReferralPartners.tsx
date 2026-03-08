@@ -1,169 +1,429 @@
+import { useState, useMemo } from "react";
+import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/_core/hooks/useAuth";
-import CRMLayout from "@/components/CRMLayout";
-import { Badge } from "@/components/ui/badge";
+import { trpc } from "@/lib/trpc";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { trpc } from "@/lib/trpc";
-import { Building2, Mail, Phone, Plus, Search, Star, Users } from "lucide-react";
-import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Handshake,
+  Plus,
+  Search,
+  Users,
+  TrendingUp,
+  DollarSign,
+  Phone,
+  Mail,
+  Building2,
+  Star,
+  ChevronRight,
+  Edit,
+  Trash2,
+} from "lucide-react";
+import { useLocation } from "wouter";
 import { toast } from "sonner";
 
-const PARTNER_TYPE_COLORS: Record<string, string> = {
-  re_agent: "bg-blue-100 text-blue-700",
-  attorney: "bg-purple-100 text-purple-700",
-  title_co: "bg-teal-100 text-teal-700",
-  builder: "bg-amber-100 text-amber-700",
-  insurance: "bg-orange-100 text-orange-700",
-  lender: "bg-indigo-100 text-indigo-700",
-  accountant: "bg-pink-100 text-pink-700",
-  financial_advisor: "bg-green-100 text-green-700",
-  other: "bg-gray-100 text-gray-600",
-};
+const PARTNER_TYPES = [
+  { value: "real_estate_agent", label: "Real Estate Agent" },
+  { value: "real_estate_broker", label: "Real Estate Broker" },
+  { value: "financial_advisor", label: "Financial Advisor" },
+  { value: "insurance_agent", label: "Insurance Agent" },
+  { value: "attorney", label: "Attorney" },
+  { value: "cpa", label: "CPA" },
+  { value: "builder", label: "Builder" },
+  { value: "past_client", label: "Past Client" },
+  { value: "other", label: "Other" },
+];
 
-function AddPartnerDialog({ agencyId, onSuccess }: { agencyId: number; onSuccess: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "", company: "", partnerType: "re_agent", notes: "" });
-  const createMutation = trpc.contacts.createPartner.useMutation({
-    onSuccess: () => { toast.success("Partner added"); setOpen(false); onSuccess(); },
-    onError: (e) => toast.error(e.message),
-  });
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm"><Plus className="w-4 h-4 mr-1.5" /> Add Partner</Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>Add Referral Partner</DialogTitle></DialogHeader>
-        <form onSubmit={e => { e.preventDefault(); createMutation.mutate({ agencyId, ...form as any }); }} className="space-y-3 mt-2">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1"><Label>First Name *</Label><Input value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} required /></div>
-            <div className="space-y-1"><Label>Last Name</Label><Input value={form.lastName} onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))} /></div>
-          </div>
-          <div className="space-y-1">
-            <Label>Partner Type</Label>
-            <Select value={form.partnerType} onValueChange={v => setForm(f => ({ ...f, partnerType: v }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {Object.keys(PARTNER_TYPE_COLORS).map(t => (
-                  <SelectItem key={t} value={t}>{t.replace(/_/g, " ")}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1"><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
-            <div className="space-y-1"><Label>Phone</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
-          </div>
-          <div className="space-y-1"><Label>Company</Label><Input value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} /></div>
-          <div className="space-y-1"><Label>Notes</Label><Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} /></div>
-          <Button type="submit" className="w-full" disabled={createMutation.isPending}>{createMutation.isPending ? "Adding..." : "Add Partner"}</Button>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
+const RELATIONSHIP_STATUSES = [
+  { value: "new", label: "New", color: "bg-blue-100 text-blue-800" },
+  { value: "active", label: "Active", color: "bg-green-100 text-green-800" },
+  { value: "vip", label: "VIP", color: "bg-purple-100 text-purple-800" },
+  { value: "inactive", label: "Inactive", color: "bg-gray-100 text-gray-800" },
+  { value: "lost", label: "Lost", color: "bg-red-100 text-red-800" },
+];
+
+function getRelStatus(status: string) {
+  return RELATIONSHIP_STATUSES.find(s => s.value === status) || RELATIONSHIP_STATUSES[0];
+}
+
+function formatPhone(phone: string | null | undefined): string {
+  if (!phone) return "-";
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 10) return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  return phone;
 }
 
 export default function ReferralPartners() {
   const { user } = useAuth();
-  const agencyId = (user as any)?.agencyId ?? 1;
+  const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [showAddDialog, setShowAddDialog] = useState(false);
 
-  const { data: partners, refetch } = trpc.contacts.listPartners.useQuery({
-    agencyId,
+  const listInput = useMemo(() => ({
     search: search || undefined,
     partnerType: typeFilter !== "all" ? typeFilter : undefined,
-  });
+    relationshipStatus: statusFilter !== "all" ? statusFilter : undefined,
+    limit: 100,
+    offset: 0,
+  }), [search, typeFilter, statusFilter]);
 
-  const deleteMutation = trpc.contacts.deletePartner.useMutation({
-    onSuccess: () => { toast.success("Partner removed"); refetch(); },
-    onError: (e) => toast.error(e.message),
-  });
+  const { data: listData, isLoading, refetch } = trpc.referralPartners.list.useQuery(listInput);
+  const { data: stats } = trpc.referralPartners.stats.useQuery();
+
+  const partners = listData?.partners || [];
+  const total = listData?.total || 0;
 
   return (
-    <CRMLayout agencyId={agencyId}>
-      <div className="p-6 space-y-4 fade-in">
-        <div className="flex items-center justify-between flex-wrap gap-3">
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold font-display">Referral Partners</h1>
-            <p className="text-muted-foreground text-sm">{partners?.length ?? 0} partners in your network</p>
+            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <Handshake className="h-6 w-6 text-primary" />
+              Referral Partners
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              {total} partner{total !== 1 ? "s" : ""} in your network
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search partners..." className="pl-8 h-8 w-48 text-sm" />
-            </div>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="h-8 w-36 text-sm"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {Object.keys(PARTNER_TYPE_COLORS).map(t => (
-                  <SelectItem key={t} value={t}>{t.replace(/_/g, " ")}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <AddPartnerDialog agencyId={agencyId} onSuccess={refetch} />
-          </div>
+          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-1" /> Add Partner
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Add Referral Partner</DialogTitle>
+              </DialogHeader>
+              <AddPartnerForm
+                onSuccess={() => {
+                  setShowAddDialog(false);
+                  refetch();
+                }}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-          {partners?.map(p => (
-            <Card key={p.id} className="hover:shadow-md transition-all">
+        {/* Stats */}
+        {stats && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-sm font-bold text-purple-700">
-                      {p.firstName[0]}{p.lastName?.[0] || ""}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm">{p.firstName} {p.lastName}</p>
-                      {p.company && <p className="text-xs text-muted-foreground">{p.company}</p>}
-                    </div>
-                  </div>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${PARTNER_TYPE_COLORS[p.partnerType] || ""}`}>
-                    {p.partnerType.replace(/_/g, " ")}
-                  </span>
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  <span className="text-xs text-muted-foreground">Total Partners</span>
                 </div>
-
-                <div className="mt-3 space-y-1">
-                  {p.email && (
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Mail className="w-3 h-3" /> <span className="truncate">{p.email}</span>
-                    </div>
-                  )}
-                  {p.phone && (
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Phone className="w-3 h-3" /> <span>{p.phone}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-3 flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                    <span>{p.referralCount || 0} referrals</span>
-                  </div>
-                  <Badge variant="outline" className={`text-xs ${p.status === "active" ? "border-green-300 text-green-700" : "border-gray-300 text-gray-500"}`}>
-                    {p.status}
-                  </Badge>
-                </div>
+                <p className="text-2xl font-bold mt-1">{stats.total}</p>
               </CardContent>
             </Card>
-          ))}
-          {partners?.length === 0 && (
-            <div className="col-span-full py-16 text-center">
-              <Users className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-              <p className="text-muted-foreground">No referral partners yet</p>
-              <p className="text-sm text-muted-foreground/70 mt-1">Add your first referral partner to start tracking relationships</p>
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                  <span className="text-xs text-muted-foreground">Total Referrals</span>
+                </div>
+                <p className="text-2xl font-bold mt-1">{stats.totalReferrals}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4 text-amber-500" />
+                  <span className="text-xs text-muted-foreground">Closed Referrals</span>
+                </div>
+                <p className="text-2xl font-bold mt-1">{stats.totalClosedReferrals}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-green-600" />
+                  <span className="text-xs text-muted-foreground">Referral Volume</span>
+                </div>
+                <p className="text-lg font-bold mt-1">
+                  {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(stats.totalVolume)}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Search & Filters */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, company, email..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Partner Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              {PARTNER_TYPES.map(t => (
+                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              {RELATIONSHIP_STATUSES.map(s => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Partners Table */}
+        {isLoading ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3" />
+              <p className="text-muted-foreground">Loading partners...</p>
+            </CardContent>
+          </Card>
+        ) : partners.length === 0 ? (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <Handshake className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No referral partners yet</h3>
+              <p className="text-muted-foreground mb-4">Build your referral network by adding real estate agents, financial advisors, and other partners.</p>
+              <Button onClick={() => setShowAddDialog(true)}>
+                <Plus className="h-4 w-4 mr-1" /> Add First Partner
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-0 shadow-sm">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[200px]">Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Referrals</TableHead>
+                    <TableHead className="w-8"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {partners.map((p: any) => {
+                    const relStatus = getRelStatus(p.relationshipStatus);
+                    const typeLabel = PARTNER_TYPES.find(t => t.value === p.partnerType)?.label || p.partnerType;
+                    return (
+                      <TableRow
+                        key={p.id}
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => setLocation(`/referral-partners/${p.id}`)}
+                      >
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{p.firstName} {p.lastName}</p>
+                            {p.title && <p className="text-xs text-muted-foreground">{p.title}</p>}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">{typeLabel}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            {p.company && <Building2 className="h-3 w-3 text-muted-foreground" />}
+                            <span className="text-sm">{p.company || "-"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-0.5">
+                            {p.phone && (
+                              <div className="flex items-center gap-1 text-xs">
+                                <Phone className="h-3 w-3 text-muted-foreground" />
+                                <span>{formatPhone(p.phone)}</span>
+                              </div>
+                            )}
+                            {p.email && (
+                              <div className="flex items-center gap-1 text-xs">
+                                <Mail className="h-3 w-3 text-muted-foreground" />
+                                <span className="truncate max-w-[160px]">{p.email}</span>
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`${relStatus.color} text-xs border-0`}>
+                            {relStatus.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-medium">{p.totalReferrals || 0}</span>
+                          <span className="text-xs text-muted-foreground ml-1">
+                            ({p.closedReferrals || 0} closed)
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </div>
-          )}
+          </Card>
+        )}
+      </div>
+    </DashboardLayout>
+  );
+}
+
+// ============= ADD PARTNER FORM =============
+function AddPartnerForm({ onSuccess }: { onSuccess: () => void }) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [company, setCompany] = useState("");
+  const [title, setTitle] = useState("");
+  const [partnerType, setPartnerType] = useState<string>("real_estate_agent");
+  const [relationshipStatus, setRelationshipStatus] = useState<string>("new");
+  const [licenseNumber, setLicenseNumber] = useState("");
+  const [notes, setNotes] = useState("");
+
+  const createMutation = trpc.referralPartners.create.useMutation({
+    onSuccess: () => {
+      toast.success("Partner added!");
+      onSuccess();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!firstName || !lastName) {
+      toast.error("First and last name are required");
+      return;
+    }
+    createMutation.mutate({
+      firstName,
+      lastName,
+      email: email || null,
+      phone: phone || null,
+      company: company || null,
+      title: title || null,
+      partnerType: partnerType as any,
+      relationshipStatus: relationshipStatus as any,
+      licenseNumber: licenseNumber || null,
+      internalNotes: notes || null,
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label>First Name *</Label>
+          <Input value={firstName} onChange={e => setFirstName(e.target.value)} required />
+        </div>
+        <div>
+          <Label>Last Name *</Label>
+          <Input value={lastName} onChange={e => setLastName(e.target.value)} required />
         </div>
       </div>
-    </CRMLayout>
+      <div>
+        <Label>Partner Type *</Label>
+        <Select value={partnerType} onValueChange={setPartnerType}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {PARTNER_TYPES.map(t => (
+              <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label>Email</Label>
+          <Input type="email" value={email} onChange={e => setEmail(e.target.value)} />
+        </div>
+        <div>
+          <Label>Phone</Label>
+          <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="(555) 123-4567" />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label>Company</Label>
+          <Input value={company} onChange={e => setCompany(e.target.value)} />
+        </div>
+        <div>
+          <Label>Title</Label>
+          <Input value={title} onChange={e => setTitle(e.target.value)} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label>License #</Label>
+          <Input value={licenseNumber} onChange={e => setLicenseNumber(e.target.value)} />
+        </div>
+        <div>
+          <Label>Relationship Status</Label>
+          <Select value={relationshipStatus} onValueChange={setRelationshipStatus}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {RELATIONSHIP_STATUSES.map(s => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div>
+        <Label>Notes</Label>
+        <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="Internal notes about this partner..." />
+      </div>
+      <Button type="submit" className="w-full" disabled={createMutation.isPending}>
+        {createMutation.isPending ? "Adding..." : "Add Partner"}
+      </Button>
+    </form>
   );
 }

@@ -38,12 +38,12 @@ export default function FollowUps() {
   const { agencyId } = useAgency();
   const [filter, setFilter] = useState<"all" | "overdue" | "today" | "upcoming">("all");
 
-  const { data: tasks, isLoading, refetch } = trpc.leads.listTasks.useQuery(
+  const { data: tasks, isLoading, refetch } = trpc.leads.list.useQuery(
     { agencyId },
     { enabled: agencyId > 0 }
   );
 
-  const completeTaskMutation = trpc.leads.completeTask.useMutation({
+  const completeTaskMutation = trpc.leads.update.useMutation({
     onSuccess: () => {
       toast.success("Task marked complete");
       refetch();

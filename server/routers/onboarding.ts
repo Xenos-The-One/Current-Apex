@@ -1,0 +1,420 @@
+import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+import { eq, and } from "drizzle-orm";
+import crypto from "crypto";
+import bcrypt from "bcryptjs";
+import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
+import { getDb } from "../db";
+import { users, accountInvitations, subAccountCredentials, clients, agencies } from "../../drizzle/schema";
+import { sendEmail } from "../email-service";
+import { upsertUser as upsertSeoUser, getUserByOpenId, ensureLinkedSeoClient, getFirstAdminSeoUser } from "../seo-db";
+
+export const onboardingRouter = router({
+  /**
+   * Admin creates a sub-account invitation.
+   * Creates a pending user record + invitation token + sends verification email.
+   */
+  createSubAccount: protectedProcedure
+    .input(z.object({
+      firstName: z.string().min(1).max(100),
+      lastName: z.string().min(1).max(100),
+      email: z.string().email(),
+      phone: z.string().optional(),
+      company: z.string().optional(),
+      role: z.enum(["admin", "agency_owner", "client_user", "loa"]).default("client_user"),
+      agencyId: z.number().optional(),
+      clientId: z.number().optional(),
+      origin: z.string().url(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Only admins and super_admins can create sub-accounts
+      if (ctx.user.role !== "admin" && ctx.user.role !== "super_admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      }
+
+      // Only super_admin can create admin or super_admin accounts
+      if ((input.role === "admin" || input.role === "super_admin") && ctx.user.role !== "super_admin") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only super admins can create admin-level accounts.",
+        });
+      }
+
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      // Check if email already exists
+      const [existingUser] = await db
+        .select({ id: users.id, email: users.email })
+        .from(users)
+        .where(eq(users.email, input.email))
+        .limit(1);
+
+      if (existingUser) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "An account with this email already exists.",
+        });
+      }
+
+      // Create a pending user record with a placeholder openId
+      const placeholderOpenId = `pending_${crypto.randomBytes(16).toString("hex")}`;
+      const fullName = `${input.firstName} ${input.lastName}`;
+
+      const [insertResult] = await db.insert(users).values({
+        openId: placeholderOpenId,
+        name: fullName,
+        email: input.email,
+        phone: input.phone || null,
+        loginMethod: "email_password",
+        role: input.role,
+      });
+
+      const newUserId = (insertResult as any).insertId as number;
+
+      // Generate a secure invitation token (valid for 7 days)
+      const token = crypto.randomBytes(48).toString("hex");
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      await db.insert(accountInvitations).values({
+        token,
+        email: input.email,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        phone: input.phone || null,
+        company: input.company || null,
+        role: input.role,
+        agencyId: input.agencyId || null,
+        clientId: input.clientId || null,
+        status: "pending",
+        invitedByUserId: ctx.user.id,
+        expiresAt,
+      });
+
+      // Send verification email
+      const activationUrl = `${input.origin}/activate-account?token=${token}`;
+      const emailResult = await sendEmail({
+        to: input.email,
+        subject: "Activate Your Sterling Marketing CRM Account",
+        html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,sans-serif;">
+  <div style="max-width:600px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);padding:40px 40px 32px;text-align:center;">
+      <h1 style="color:#ffffff;margin:0;font-size:28px;font-weight:700;letter-spacing:-0.5px;">Sterling Marketing</h1>
+      <p style="color:#93c5fd;margin:8px 0 0;font-size:14px;">AI-Powered CRM Platform</p>
+    </div>
+    <!-- Body -->
+    <div style="padding:40px;">
+      <h2 style="color:#1e293b;font-size:22px;margin:0 0 16px;">Welcome, ${input.firstName}! 👋</h2>
+      <p style="color:#475569;font-size:16px;line-height:1.6;margin:0 0 24px;">
+        Your account has been created on the Sterling Marketing CRM platform${input.company ? ` for <strong>${input.company}</strong>` : ""}. 
+        Click the button below to verify your email and set up your password to get started.
+      </p>
+      <!-- CTA Button -->
+      <div style="text-align:center;margin:32px 0;">
+        <a href="${activationUrl}" 
+           style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;display:inline-block;box-shadow:0 4px 12px rgba(37,99,235,0.4);">
+          Activate My Account →
+        </a>
+      </div>
+      <!-- Details -->
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px;margin:24px 0;">
+        <p style="color:#64748b;font-size:13px;margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Account Details</p>
+        <p style="color:#1e293b;font-size:15px;margin:0 0 4px;"><strong>Name:</strong> ${fullName}</p>
+        <p style="color:#1e293b;font-size:15px;margin:0 0 4px;"><strong>Email:</strong> ${input.email}</p>
+        ${input.company ? `<p style="color:#1e293b;font-size:15px;margin:0;"><strong>Company:</strong> ${input.company}</p>` : ""}
+      </div>
+      <p style="color:#94a3b8;font-size:13px;line-height:1.6;margin:24px 0 0;">
+        This activation link expires in <strong>7 days</strong>. If you did not request this account, you can safely ignore this email.
+      </p>
+    </div>
+    <!-- Footer -->
+    <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:24px 40px;text-align:center;">
+      <p style="color:#94a3b8;font-size:12px;margin:0;">
+        © ${new Date().getFullYear()} Sterling Marketing | AI-Powered Lead Management
+      </p>
+    </div>
+  </div>
+</body>
+</html>`,
+        skipFooter: true,
+      });
+
+      console.log(`[Onboarding] Sub-account created for ${input.email} (userId: ${newUserId}), email sent: ${emailResult.success}`);
+
+      // Auto-provision a CRM client record and linked SEO client for client-level roles
+      if (input.role === "client_user" || input.role === "agency_owner") {
+        try {
+          let crmClientId: number | undefined = input.clientId;
+          if (!crmClientId) {
+            // Create a new CRM client record linked to this user
+            const agencyRows = await db.select().from(agencies).limit(1);
+            const agencyId = input.agencyId ?? (agencyRows[0]?.id ?? 1);
+            const clientInsert = await db.insert(clients).values({
+              agencyId,
+              userId: newUserId,
+              name: input.company || fullName,
+              email: input.email,
+              phone: input.phone || null,
+              subscriptionTier: "starter",
+              subscriptionStatus: "trial",
+              trialEndDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+              accessMode: "limited",
+            });
+            crmClientId = (clientInsert as any)[0]?.insertId ?? (clientInsert as any).insertId;
+          }
+          if (crmClientId) {
+            // Ensure the creating admin exists in seo_users
+            await upsertSeoUser({
+              openId: ctx.user.openId,
+              name: ctx.user.name,
+              email: ctx.user.email,
+              role: "admin",
+            });
+            const adminSeoUser = await getUserByOpenId(ctx.user.openId) ?? await getFirstAdminSeoUser();
+            if (adminSeoUser) {
+              await ensureLinkedSeoClient({
+                crmClientId,
+                name: input.company || fullName,
+                email: input.email,
+                phone: input.phone,
+                seoUserId: adminSeoUser.id,
+              });
+              console.log(`[Onboarding] SEO client auto-provisioned for crmClientId=${crmClientId}`);
+            }
+          }
+        } catch (seoErr) {
+          console.error("[Onboarding] Failed to auto-provision SEO client:", seoErr);
+        }
+      }
+
+      return {
+        success: true,
+        userId: newUserId,
+        emailSent: emailResult.success,
+        message: `Account created and activation email sent to ${input.email}`,
+      };
+    }),
+
+  /**
+   * Validate an invitation token (public — called when user opens the activation link)
+   */
+  validateInvitationToken: publicProcedure
+    .input(z.object({ token: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      const [invitation] = await db
+        .select()
+        .from(accountInvitations)
+        .where(eq(accountInvitations.token, input.token))
+        .limit(1);
+
+      if (!invitation) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Invalid activation link." });
+      }
+
+      if (invitation.status === "accepted") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This account has already been activated." });
+      }
+
+      if (invitation.status === "expired" || new Date() > invitation.expiresAt) {
+        // Mark as expired if not already
+        await db
+          .update(accountInvitations)
+          .set({ status: "expired" })
+          .where(eq(accountInvitations.id, invitation.id));
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This activation link has expired. Please contact your administrator." });
+      }
+
+      return {
+        valid: true,
+        firstName: invitation.firstName,
+        lastName: invitation.lastName,
+        email: invitation.email,
+        company: invitation.company,
+      };
+    }),
+
+  /**
+   * Activate account — user sets their password (public — no auth required)
+   */
+  activateAccount: publicProcedure
+    .input(z.object({
+      token: z.string(),
+      password: z.string().min(8, "Password must be at least 8 characters"),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      const [invitation] = await db
+        .select()
+        .from(accountInvitations)
+        .where(and(
+          eq(accountInvitations.token, input.token),
+          eq(accountInvitations.status, "pending"),
+        ))
+        .limit(1);
+
+      if (!invitation) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Invalid or already used activation link." });
+      }
+
+      if (new Date() > invitation.expiresAt) {
+        await db.update(accountInvitations).set({ status: "expired" }).where(eq(accountInvitations.id, invitation.id));
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This activation link has expired." });
+      }
+
+      // Find the pending user
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, invitation.email))
+        .limit(1);
+
+      if (!user) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "User account not found." });
+      }
+
+      // Hash the password
+      const passwordHash = await bcrypt.hash(input.password, 12);
+
+      // Create or update sub-account credentials
+      const [existingCred] = await db
+        .select()
+        .from(subAccountCredentials)
+        .where(eq(subAccountCredentials.userId, user.id))
+        .limit(1);
+
+      if (existingCred) {
+        await db
+          .update(subAccountCredentials)
+          .set({ passwordHash, isActive: true, activatedAt: new Date() })
+          .where(eq(subAccountCredentials.userId, user.id));
+      } else {
+        await db.insert(subAccountCredentials).values({
+          userId: user.id,
+          passwordHash,
+          isActive: true,
+          activatedAt: new Date(),
+        });
+      }
+
+      // Mark invitation as accepted
+      await db
+        .update(accountInvitations)
+        .set({ status: "accepted", acceptedAt: new Date() })
+        .where(eq(accountInvitations.id, invitation.id));
+
+      console.log(`[Onboarding] Account activated for ${invitation.email} (userId: ${user.id})`);
+
+      return {
+        success: true,
+        message: "Account activated successfully! You can now log in.",
+        email: invitation.email,
+        name: `${invitation.firstName} ${invitation.lastName}`,
+      };
+    }),
+
+  /**
+   * List all sub-accounts (admin only)
+   */
+  listSubAccounts: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.role !== "admin" && ctx.user.role !== "super_admin") {
+      throw new TRPCError({ code: "FORBIDDEN" });
+    }
+
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+    const invitations = await db
+      .select()
+      .from(accountInvitations)
+      .orderBy(accountInvitations.createdAt);
+
+    return invitations;
+  }),
+
+  /**
+   * Resend an invitation email — regenerates the token and extends expiry by 7 days.
+   */
+  resendInvitation: protectedProcedure
+    .input(z.object({
+      invitationId: z.number(),
+      origin: z.string().url(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin" && ctx.user.role !== "super_admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      }
+
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      const [invitation] = await db
+        .select()
+        .from(accountInvitations)
+        .where(eq(accountInvitations.id, input.invitationId))
+        .limit(1);
+
+      if (!invitation) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Invitation not found" });
+      }
+
+      if (invitation.status === "accepted") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This invitation has already been accepted — the account is active." });
+      }
+
+      // Generate a new token and extend expiry by 7 days
+      const newToken = crypto.randomBytes(48).toString("hex");
+      const newExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      await db
+        .update(accountInvitations)
+        .set({ token: newToken, expiresAt: newExpiry, status: "pending" })
+        .where(eq(accountInvitations.id, input.invitationId));
+
+      const activationUrl = `${input.origin}/activate-account?token=${newToken}`;
+      const fullName = `${invitation.firstName} ${invitation.lastName}`;
+
+      await sendEmail({
+        to: invitation.email,
+        subject: "Your Sterling Marketing CRM Activation Link (Resent)",
+        html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,sans-serif;">
+  <div style="max-width:600px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+    <div style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);padding:40px 40px 32px;text-align:center;">
+      <h1 style="color:#ffffff;margin:0;font-size:28px;font-weight:700;">Sterling Marketing</h1>
+      <p style="color:#93c5fd;margin:8px 0 0;font-size:14px;">AI-Powered CRM Platform</p>
+    </div>
+    <div style="padding:40px;">
+      <h2 style="color:#1e293b;font-size:22px;margin:0 0 16px;">Hi ${fullName}, here's your new activation link!</h2>
+      <p style="color:#475569;font-size:16px;line-height:1.6;margin:0 0 24px;">
+        Your previous activation link expired. We've generated a fresh one — click below to set up your password and access your account.
+      </p>
+      <div style="text-align:center;margin:32px 0;">
+        <a href="${activationUrl}" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;display:inline-block;box-shadow:0 4px 12px rgba(37,99,235,0.4);">Activate My Account →</a>
+      </div>
+      <p style="color:#94a3b8;font-size:13px;line-height:1.6;margin:24px 0 0;">This link expires in <strong>7 days</strong>.</p>
+    </div>
+    <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:24px 40px;text-align:center;">
+      <p style="color:#94a3b8;font-size:12px;margin:0;">© ${new Date().getFullYear()} Sterling Marketing | AI-Powered Lead Management</p>
+    </div>
+  </div>
+</body>
+</html>`,
+        skipFooter: true,
+      });
+
+      return { success: true, message: `Activation email resent to ${invitation.email}` };
+    }),
+});

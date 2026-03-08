@@ -1,137 +1,301 @@
-import { TRPCError } from "@trpc/server";
-import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { z } from "zod";
-import { appointments, borrowers, callLogs, emailCampaigns, leads, marketAnalytics, smsCampaigns, users } from "../../drizzle/schema";
-import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
+import { TRPCError } from "@trpc/server";
+import { getDb } from "../db";
+import { leads, emailCampaigns, smsCampaigns, leadActivities } from "../../drizzle/schema";
+import { sql, eq, and, gte, lte, count, desc } from "drizzle-orm";
+
+// Middleware to check if user is admin
+const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.user.role !== "admin" && ctx.user.role !== "super_admin") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Admin access required",
+    });
+  }
+  return next({ ctx });
+});
 
 export const analyticsRouter = router({
-  getDashboard: protectedProcedure
-    .input(z.object({ agencyId: z.number(), startDate: z.date().optional(), endDate: z.date().optional() }))
+  // ============= ADMIN ANALYTICS =============
+  
+  getOverviewMetrics: adminProcedure
+    .input(z.object({
+      agencyId: z.number().optional(),
+      startDate: z.date().optional(),
+      endDate: z.date().optional(),
+    }))
     .query(async ({ input }) => {
       const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const start = input.startDate ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      const end = input.endDate ?? new Date();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
 
-      const [totalLeads] = await db.select({ count: count() }).from(leads).where(eq(leads.agencyId, input.agencyId));
-      const [newLeads] = await db.select({ count: count() }).from(leads).where(and(eq(leads.agencyId, input.agencyId), gte(leads.createdAt, start), lte(leads.createdAt, end)));
-      const [convertedLeads] = await db.select({ count: count() }).from(leads).where(and(eq(leads.agencyId, input.agencyId), eq(leads.status, "converted")));
-      const [totalBorrowers] = await db.select({ count: count() }).from(borrowers).where(eq(borrowers.agencyId, input.agencyId));
-      const [totalAppointments] = await db.select({ count: count() }).from(appointments).where(and(eq(appointments.agencyId, input.agencyId), gte(appointments.startAt, start)));
-      const [totalCalls] = await db.select({ count: count() }).from(callLogs).where(and(eq(callLogs.agencyId, input.agencyId), gte(callLogs.createdAt, start)));
-      const [totalUsers] = await db.select({ count: count() }).from(users).where(eq(users.agencyId, input.agencyId));
+      const conditions = [];
+      if (input.agencyId) conditions.push(eq(leads.agencyId, input.agencyId));
+      if (input.startDate) conditions.push(gte(leads.createdAt, input.startDate));
+      if (input.endDate) conditions.push(lte(leads.createdAt, input.endDate));
 
-      // Lead source breakdown
-      const sourceBreakdown = await db.select({ source: leads.source, count: count() })
-        .from(leads).where(eq(leads.agencyId, input.agencyId))
-        .groupBy(leads.source);
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-      // Pipeline stage breakdown
-      const stageBreakdown = await db.select({ stage: leads.pipelineStage, count: count() })
-        .from(leads).where(eq(leads.agencyId, input.agencyId))
-        .groupBy(leads.pipelineStage);
+      // Total leads
+      const totalLeadsResult = await db
+        .select({ count: count() })
+        .from(leads)
+        .where(whereClause);
+      const totalLeads = totalLeadsResult[0]?.count || 0;
 
-      // Contact type breakdown
-      const typeBreakdown = await db.select({ type: leads.contactType, count: count() })
-        .from(leads).where(eq(leads.agencyId, input.agencyId))
-        .groupBy(leads.contactType);
+      // Leads by status
+      const leadsByStatus = await db
+        .select({
+          status: leads.status,
+          count: count(),
+        })
+        .from(leads)
+        .where(whereClause)
+        .groupBy(leads.status);
+
+      // Conversion rates
+      const newLeads = leadsByStatus.find(s => s.status === "new")?.count || 0;
+      const contacted = leadsByStatus.find(s => s.status === "contacted")?.count || 0;
+      const qualified = leadsByStatus.find(s => s.status === "qualified")?.count || 0;
+      const appointments = leadsByStatus.find(s => s.status === "appointment_set")?.count || 0;
+      const closedWon = leadsByStatus.find(s => s.status === "closed_won")?.count || 0;
 
       return {
-        kpis: {
-          totalLeads: totalLeads?.count ?? 0,
-          newLeads: newLeads?.count ?? 0,
-          convertedLeads: convertedLeads?.count ?? 0,
-          conversionRate: totalLeads?.count ? Math.round(((convertedLeads?.count ?? 0) / totalLeads.count) * 100) : 0,
-          totalBorrowers: totalBorrowers?.count ?? 0,
-          totalAppointments: totalAppointments?.count ?? 0,
-          totalCalls: totalCalls?.count ?? 0,
-          totalUsers: totalUsers?.count ?? 0,
+        totalLeads,
+        leadsByStatus,
+        conversionRates: {
+          newToContacted: newLeads > 0 ? (contacted / newLeads) * 100 : 0,
+          contactedToQualified: contacted > 0 ? (qualified / contacted) * 100 : 0,
+          qualifiedToAppointment: qualified > 0 ? (appointments / qualified) * 100 : 0,
+          appointmentToClosed: appointments > 0 ? (closedWon / appointments) * 100 : 0,
+          overallConversion: totalLeads > 0 ? (closedWon / totalLeads) * 100 : 0,
         },
-        sourceBreakdown,
-        stageBreakdown,
-        typeBreakdown,
       };
     }),
 
-  getFunnel: protectedProcedure
-    .input(z.object({ agencyId: z.number() }))
-    .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const stages = ["new", "contacted", "qualified", "proposal", "negotiation", "closed_won"] as const;
-      const funnel = [];
-      for (const stage of stages) {
-        const [row] = await db.select({ count: count() }).from(leads)
-          .where(and(eq(leads.agencyId, input.agencyId), eq(leads.pipelineStage, stage)));
-        funnel.push({ stage, count: row?.count ?? 0 });
-      }
-      return funnel;
-    }),
-
-  getTeamMetrics: protectedProcedure
-    .input(z.object({ agencyId: z.number() }))
-    .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const agentUsers = await db.select().from(users).where(eq(users.agencyId, input.agencyId));
-      const metrics = [];
-      for (const user of agentUsers) {
-        const [leadCount] = await db.select({ count: count() }).from(leads).where(and(eq(leads.agencyId, input.agencyId), eq(leads.assignedUserId, user.id)));
-        const [convertedCount] = await db.select({ count: count() }).from(leads).where(and(eq(leads.agencyId, input.agencyId), eq(leads.assignedUserId, user.id), eq(leads.status, "converted")));
-        const [apptCount] = await db.select({ count: count() }).from(appointments).where(and(eq(appointments.agencyId, input.agencyId), eq(appointments.userId, user.id)));
-        metrics.push({
-          user: { id: user.id, name: user.name, email: user.email },
-          leads: leadCount?.count ?? 0,
-          converted: convertedCount?.count ?? 0,
-          appointments: apptCount?.count ?? 0,
-          conversionRate: leadCount?.count ? Math.round(((convertedCount?.count ?? 0) / leadCount.count) * 100) : 0,
-        });
-      }
-      return metrics.sort((a, b) => b.converted - a.converted);
-    }),
-
-  getCampaignStats: protectedProcedure
-    .input(z.object({ agencyId: z.number() }))
-    .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const emailStats = await db.select().from(emailCampaigns)
-        .where(eq(emailCampaigns.agencyId, input.agencyId))
-        .orderBy(desc(emailCampaigns.createdAt)).limit(10);
-      const smsStats = await db.select().from(smsCampaigns)
-        .where(eq(smsCampaigns.agencyId, input.agencyId))
-        .orderBy(desc(smsCampaigns.createdAt)).limit(10);
-      return { email: emailStats, sms: smsStats };
-    }),
-
-  getMarketAnalytics: protectedProcedure
-    .input(z.object({ agencyId: z.number() }))
-    .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      return db.select().from(marketAnalytics)
-        .where(eq(marketAnalytics.agencyId, input.agencyId))
-        .orderBy(desc(marketAnalytics.createdAt))
-        .limit(20);
-    }),
-
-  createMarketNote: protectedProcedure
+  getLeadSourcePerformance: adminProcedure
     .input(z.object({
-      agencyId: z.number(),
-      marketArea: z.string().optional(),
-      notes: z.string().optional(),
-      reportDate: z.date().optional(),
+      agencyId: z.number().optional(),
+      startDate: z.date().optional(),
+      endDate: z.date().optional(),
     }))
-    .mutation(async ({ input }) => {
+    .query(async ({ input }) => {
       const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const [result] = await db.insert(marketAnalytics).values({
-        agencyId: input.agencyId,
-        marketArea: input.marketArea,
-        notes: input.notes,
-        reportDate: input.reportDate ?? new Date(),
-      });
-      return { id: (result as any).insertId };
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const conditions = [];
+      if (input.agencyId) conditions.push(eq(leads.agencyId, input.agencyId));
+      if (input.startDate) conditions.push(gte(leads.createdAt, input.startDate));
+      if (input.endDate) conditions.push(lte(leads.createdAt, input.endDate));
+
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+      const sourcePerformance = await db
+        .select({
+          source: leads.source,
+          total: count(),
+          closedWon: sql<number>`SUM(CASE WHEN ${leads.status} = 'closed_won' THEN 1 ELSE 0 END)`,
+          appointments: sql<number>`SUM(CASE WHEN ${leads.status} IN ('appointment_set', 'appointment_completed', 'closed_won') THEN 1 ELSE 0 END)`,
+        })
+        .from(leads)
+        .where(whereClause)
+        .groupBy(leads.source);
+
+      return sourcePerformance.map(s => ({
+        source: s.source || "Unknown",
+        total: s.total,
+        closedWon: Number(s.closedWon),
+        appointments: Number(s.appointments),
+        conversionRate: s.total > 0 ? (Number(s.closedWon) / s.total) * 100 : 0,
+        appointmentRate: s.total > 0 ? (Number(s.appointments) / s.total) * 100 : 0,
+      }));
+    }),
+
+  getCampaignPerformance: adminProcedure
+    .input(z.object({
+      agencyId: z.number().optional(),
+      startDate: z.date().optional(),
+      endDate: z.date().optional(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const conditions = [];
+      if (input.agencyId) conditions.push(eq(emailCampaigns.agencyId, input.agencyId));
+      if (input.startDate) conditions.push(gte(emailCampaigns.createdAt, input.startDate));
+      if (input.endDate) conditions.push(lte(emailCampaigns.createdAt, input.endDate));
+
+      const emailWhereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+      const smsConditions = [];
+      if (input.agencyId) smsConditions.push(eq(smsCampaigns.agencyId, input.agencyId));
+      if (input.startDate) smsConditions.push(gte(smsCampaigns.createdAt, input.startDate));
+      if (input.endDate) smsConditions.push(lte(smsCampaigns.createdAt, input.endDate));
+
+      const smsWhereClause = smsConditions.length > 0 ? and(...smsConditions) : undefined;
+
+      // Email campaigns
+      const emailStats = await db
+        .select({
+          total: count(),
+          sent: sql<number>`SUM(CASE WHEN ${emailCampaigns.status} = 'sent' THEN 1 ELSE 0 END)`,
+          totalSent: sql<number>`SUM(${emailCampaigns.sentCount})`,
+          totalFailed: sql<number>`SUM(${emailCampaigns.failedCount})`,
+          totalOpened: sql<number>`SUM(${emailCampaigns.openCount})`,
+          totalClicked: sql<number>`SUM(${emailCampaigns.clickCount})`,
+        })
+        .from(emailCampaigns)
+        .where(emailWhereClause);
+
+      // SMS campaigns
+      const smsStats = await db
+        .select({
+          total: count(),
+          sent: sql<number>`SUM(CASE WHEN ${smsCampaigns.status} = 'sent' THEN 1 ELSE 0 END)`,
+          totalSent: sql<number>`SUM(${smsCampaigns.sentCount})`,
+          totalDelivered: sql<number>`SUM(${smsCampaigns.deliveredCount})`,
+          totalFailed: sql<number>`SUM(${smsCampaigns.failedCount})`,
+        })
+        .from(smsCampaigns)
+        .where(smsWhereClause);
+
+      const emailData = emailStats[0] || { total: 0, sent: 0, totalSent: 0, totalFailed: 0, totalOpened: 0, totalClicked: 0 };
+      const smsData = smsStats[0] || { total: 0, sent: 0, totalSent: 0, totalDelivered: 0, totalFailed: 0 };
+
+      return {
+        email: {
+          totalCampaigns: emailData.total,
+          sentCampaigns: Number(emailData.sent),
+          totalSent: Number(emailData.totalSent),
+          totalFailed: Number(emailData.totalFailed),
+          totalOpened: Number(emailData.totalOpened),
+          totalClicked: Number(emailData.totalClicked),
+          failureRate: Number(emailData.totalSent) > 0 ? (Number(emailData.totalFailed) / Number(emailData.totalSent)) * 100 : 0,
+          openRate: Number(emailData.totalSent) > 0 ? (Number(emailData.totalOpened) / Number(emailData.totalSent)) * 100 : 0,
+          clickRate: Number(emailData.totalOpened) > 0 ? (Number(emailData.totalClicked) / Number(emailData.totalOpened)) * 100 : 0,
+        },
+        sms: {
+          totalCampaigns: smsData.total,
+          sentCampaigns: Number(smsData.sent),
+          totalSent: Number(smsData.totalSent),
+          totalDelivered: Number(smsData.totalDelivered),
+          totalFailed: Number(smsData.totalFailed),
+          deliveryRate: Number(smsData.totalSent) > 0 ? (Number(smsData.totalDelivered) / Number(smsData.totalSent)) * 100 : 0,
+          failureRate: Number(smsData.totalSent) > 0 ? (Number(smsData.totalFailed) / Number(smsData.totalSent)) * 100 : 0,
+        },
+      };
+    }),
+
+  /**
+   * Get conversion funnel statistics (simple version for quick overview)
+   */
+  conversionFunnel: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+    // Total leads
+    const totalLeadsResult = await db.select({ count: count() }).from(leads);
+    const totalLeads = totalLeadsResult[0]?.count || 0;
+
+    // Calls made (distinct leads with vapi_call activity)
+    const callsResult = await db
+      .select({ count: sql<number>`COUNT(DISTINCT ${leadActivities.leadId})` })
+      .from(leadActivities)
+      .where(sql`${leadActivities.activityType} = 'call'`);
+    const callsMade = Number(callsResult[0]?.count || 0);
+
+    // Appointments booked
+    const appointmentsResult = await db
+      .select({ count: count() })
+      .from(leads)
+      .where(sql`${leads.status} IN ('appointment_set', 'appointment_completed', 'closed_won')`);
+    const appointmentsBooked = appointmentsResult[0]?.count || 0;
+
+    // Appointments completed
+    const completedResult = await db
+      .select({ count: count() })
+      .from(leads)
+      .where(eq(leads.status, 'appointment_completed'));
+    const appointmentsCompleted = completedResult[0]?.count || 0;
+
+    // Webinar signups (leads with "Webinar" in source)
+    const webinarSignupsResult = await db
+      .select({ count: count() })
+      .from(leads)
+      .where(sql`${leads.source} LIKE '%Webinar%'`);
+    const webinarSignups = webinarSignupsResult[0]?.count || 0;
+
+    // Source breakdown
+    const sourceBreakdownResult = await db
+      .select({
+        source: leads.source,
+        count: count(),
+        appointmentsBooked: sql<number>`SUM(CASE WHEN ${leads.status} IN ('appointment_set', 'appointment_completed', 'closed_won') THEN 1 ELSE 0 END)`,
+      })
+      .from(leads)
+      .groupBy(leads.source);
+
+    return {
+      totalLeads,
+      callsMade,
+      appointmentsBooked,
+      appointmentsCompleted,
+      webinarSignups,
+      webinarAttendees: 0, // TODO: Track webinar attendance
+      webinarToAppointment: 0, // TODO: Track webinar → appointment conversion
+      sourceBreakdown: sourceBreakdownResult.map(s => ({
+        source: s.source || "Unknown",
+        count: s.count,
+        appointmentsBooked: Number(s.appointmentsBooked),
+      })),
+    };
+  }),
+
+  getActivityTimeline: adminProcedure
+    .input(z.object({
+      agencyId: z.number().optional(),
+      days: z.number().default(30),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - input.days);
+
+      const conditions = [gte(leadActivities.createdAt, startDate)];
+      if (input.agencyId) {
+        // Join with leads to filter by agency
+        const activities = await db
+          .select({
+            date: sql<string>`DATE(${leadActivities.createdAt})`,
+            activityType: leadActivities.activityType,
+            count: count(),
+          })
+          .from(leadActivities)
+          .innerJoin(leads, eq(leadActivities.leadId, leads.id))
+          .where(and(
+            gte(leadActivities.createdAt, startDate),
+            eq(leads.agencyId, input.agencyId)
+          ))
+          .groupBy(sql`DATE(${leadActivities.createdAt})`, leadActivities.activityType)
+          .orderBy(desc(sql`DATE(${leadActivities.createdAt})`));
+
+        return activities;
+      }
+
+      const activities = await db
+        .select({
+          date: sql<string>`DATE(${leadActivities.createdAt})`,
+          activityType: leadActivities.activityType,
+          count: count(),
+        })
+        .from(leadActivities)
+        .where(and(...conditions))
+        .groupBy(sql`DATE(${leadActivities.createdAt})`, leadActivities.activityType)
+        .orderBy(desc(sql`DATE(${leadActivities.createdAt})`));
+
+      return activities;
     }),
 });

@@ -14,7 +14,7 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
 
 export const billingRouter = router({
   listPlans: protectedProcedure.query(async () => {
-    const db = await getDb();
+    const db = (await getDb())!;
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
     return db.select().from(subscriptionPlans).where(eq(subscriptionPlans.isActive, true)).orderBy(subscriptionPlans.monthlyPrice);
   }),
@@ -34,7 +34,7 @@ export const billingRouter = router({
       stripePriceIdAnnual: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const { features, ...rest } = input;
       const [result] = await db.insert(subscriptionPlans).values({ ...rest, features: features ? JSON.stringify(features) : null });
@@ -44,7 +44,7 @@ export const billingRouter = router({
   getAgencyBilling: protectedProcedure
     .input(z.object({ agencyId: z.number() }))
     .query(async ({ input, ctx }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       if (ctx.user.role !== "super_admin" && ctx.user.agencyId !== input.agencyId) {
         throw new TRPCError({ code: "FORBIDDEN" });
@@ -64,7 +64,7 @@ export const billingRouter = router({
   listInvoices: adminProcedure
     .input(z.object({ agencyId: z.number(), limit: z.number().default(20) }))
     .query(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       return db.select().from(invoices)
         .where(eq(invoices.agencyId, input.agencyId))
@@ -75,7 +75,7 @@ export const billingRouter = router({
   assignPlan: adminProcedure
     .input(z.object({ agencyId: z.number(), planId: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const [plan] = await db.select().from(subscriptionPlans).where(eq(subscriptionPlans.id, input.planId)).limit(1);
       if (!plan) throw new TRPCError({ code: "NOT_FOUND", message: "Plan not found" });

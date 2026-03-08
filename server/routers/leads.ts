@@ -1,263 +1,364 @@
-import { TRPCError } from "@trpc/server";
-import { and, asc, count, desc, eq, gte, like, lte, or } from "drizzle-orm";
 import { z } from "zod";
-import { leadActivities, leadTasks, leads } from "../../drizzle/schema";
-import { getDb } from "../db";
-import { protectedProcedure, router } from "../_core/trpc";
-
-const leadInputSchema = z.object({
-  firstName: z.string().min(1),
-  lastName: z.string().optional(),
-  email: z.string().email().optional().or(z.literal("")),
-  phone: z.string().optional(),
-  company: z.string().optional(),
-  contactType: z.enum(["borrower", "re_agent", "attorney", "insurance", "title_co", "builder", "lender", "other"]).default("borrower"),
-  status: z.enum(["new", "contacted", "qualified", "appointment_set", "converted", "lost", "nurturing"]).default("new"),
-  pipelineStage: z.enum(["new", "contacted", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"]).default("new"),
-  source: z.enum(["social_media", "referral", "webinar", "import", "manual", "facebook_ads", "website", "cold_call", "other"]).default("manual"),
-  loanAmount: z.string().optional(),
-  propertyAddress: z.string().optional(),
-  notes: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  assignedUserId: z.number().optional(),
-  nextFollowUpAt: z.date().optional(),
-});
+import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
+import { 
+  createLead, 
+  getLeadsByAgency,
+  getLeadById,
+  updateLead,
+  deleteLead,
+  createLeadActivity,
+  getLeadActivities,
+  bulkCreateLeads
+} from "../db";
+import { makeVapiCall } from "../vapi";
+import { sendSmartAlert } from "../ai-operations-director";
+import { scheduleLeadFollowUp } from "../lead-automation";
+import { pushNewLead, pushLeadStatusChange } from "../push-triggers";
+import { TRPCError } from "@trpc/server";
+import { tagLeadAsRefiProspect, untagLeadAsRefiProspect, getRefiDripStatus } from "../refi-drip";
+import { sendSMS } from "../twilio";
+import { isTestLead } from "../test-lead-utils";
 
 export const leadsRouter = router({
+  // PUBLIC lead capture - for landing pages, Facebook ads, webinars (NO LOGIN REQUIRED)
+  capture: publicProcedure
+    .input(z.object({
+      agencyId: z.number().default(1),
+      clientId: z.number().default(1),
+      firstName: z.string().min(1),
+      lastName: z.string().min(1),
+      email: z.string().email().optional(),
+      phone: z.string().min(10),
+      source: z.string(),
+      status: z.enum(["new", "contacted", "qualified", "appointment_set", "appointment_completed", "closed_won", "closed_lost"]).default("new"),
+      loanType: z.string().optional(),
+      notes: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      // Format phone to E.164
+      const digits = input.phone.replace(/\D/g, "");
+      if (digits.length === 10) input.phone = `+1${digits}`;
+      else if (digits.length === 11 && digits.startsWith("1")) input.phone = `+${digits}`;
+      else if (!input.phone.startsWith("+")) input.phone = `+1${digits}`;
+      
+      console.log(`[Lead Capture] 🆕 New lead: ${input.firstName} ${input.lastName} | Phone: ${input.phone} | Source: ${input.source}`);
+      const lead = await createLead(input);
+      
+      // Log activity
+      await createLeadActivity({
+        leadId: lead.id,
+        activityType: "note",
+        description: `Lead captured from ${input.source} (public form)`,
+        performedBy: 1, // System
+      });
+
+      // Send smart alert for new lead
+      try {
+        await sendSmartAlert("new_lead", {
+          leadName: `${input.firstName} ${input.lastName}`,
+          leadPhone: input.phone,
+          leadSource: input.source,
+        });
+      } catch (e) {
+        console.error("[Lead Capture] Alert failed:", e);
+      }
+
+      // Send push notification for new lead
+      try {
+        await pushNewLead({
+          leadId: lead.id,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          phone: input.phone,
+          source: input.source,
+          email: input.email,
+        });
+      } catch (e) {
+        console.error("[Lead Capture] Push notification failed:", e);
+      }
+      
+      // Send instant welcome SMS to the lead
+      if (input.phone && !isTestLead({ email: input.email, phone: input.phone })) {
+        try {
+          const smsBody = `Hi ${input.firstName}! Thanks for your interest in a home loan. Tim Haskins (NMLS #1116876) from Premier Mortgage Resources will be reaching out to you shortly. Reply STOP to opt out.`;
+          const smsResult = await sendSMS({ to: input.phone, body: smsBody });
+          if (smsResult.success) {
+            console.log(`[Lead Capture] ✅ Welcome SMS sent to ${input.phone}`);
+          } else {
+            console.error(`[Lead Capture] ❌ Welcome SMS failed: ${smsResult.error}`);
+          }
+        } catch (smsErr) {
+          console.error("[Lead Capture] ❌ Exception sending welcome SMS:", smsErr);
+        }
+      }
+      // Auto Vapi calls disabled - Tim handles calls manually now
+      // Push notification above alerts Tim to call the lead himself
+      console.log(`[Lead Capture] ✅ Lead #${lead.id} created for ${input.firstName} - Tim will call manually`);
+      return { success: true, leadId: lead.id };
+    }),
+
+  // Get all leads for an agency
   list: protectedProcedure
     .input(z.object({
       agencyId: z.number(),
-      search: z.string().optional(),
-      contactType: z.string().optional(),
-      status: z.string().optional(),
-      pipelineStage: z.string().optional(),
-      source: z.string().optional(),
-      assignedUserId: z.number().optional(),
-      minScore: z.number().optional(),
-      limit: z.number().default(50),
-      offset: z.number().default(0),
-      sortBy: z.enum(["createdAt", "score", "lastName", "nextFollowUpAt"]).default("createdAt"),
-      sortDir: z.enum(["asc", "desc"]).default("desc"),
+      status: z.enum(["new", "contacted", "qualified", "appointment_set", "appointment_completed", "closed_won", "closed_lost"]).optional(),
+      leadSource: z.string().optional(),
+      contactType: z.enum(["borrower", "real_estate_agent", "attorney", "insurance_agent", "title_company", "builder_developer", "lender", "other"]).optional(),
+      limit: z.number().min(1).max(100).default(50),
+      offset: z.number().min(0).default(0),
     }))
     .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const conditions = [eq(leads.agencyId, input.agencyId)];
-      if (input.search) {
-        conditions.push(or(
-          like(leads.firstName, `%${input.search}%`),
-          like(leads.lastName, `%${input.search}%`),
-          like(leads.email, `%${input.search}%`),
-          like(leads.phone, `%${input.search}%`)
-        ) as any);
+      let leads = await getLeadsByAgency(
+        input.agencyId,
+        input.status,
+        input.leadSource,
+        input.limit,
+        input.offset
+      );
+      // Filter by contactType if provided
+      if (input.contactType) {
+        leads = leads.filter(l => (l as any).contactType === input.contactType);
       }
-      if (input.contactType) conditions.push(eq(leads.contactType, input.contactType as any));
-      if (input.status) conditions.push(eq(leads.status, input.status as any));
-      if (input.pipelineStage) conditions.push(eq(leads.pipelineStage, input.pipelineStage as any));
-      if (input.source) conditions.push(eq(leads.source, input.source as any));
-      if (input.assignedUserId) conditions.push(eq(leads.assignedUserId, input.assignedUserId));
-      if (input.minScore !== undefined) conditions.push(gte(leads.score, input.minScore));
-
-      const orderFn = input.sortDir === "asc" ? asc : desc;
-      const orderCol = input.sortBy === "score" ? leads.score : input.sortBy === "lastName" ? leads.lastName : input.sortBy === "nextFollowUpAt" ? leads.nextFollowUpAt : leads.createdAt;
-
-      const rows = await db.select().from(leads)
-        .where(and(...conditions))
-        .orderBy(orderFn(orderCol as any))
-        .limit(input.limit).offset(input.offset);
-
-      const [total] = await db.select({ count: count() }).from(leads).where(and(...conditions));
-      return { leads: rows, total: total?.count ?? 0 };
+      return leads;
     }),
 
-  getById: protectedProcedure
-    .input(z.object({ id: z.number(), agencyId: z.number() }))
+  // Get single lead by ID
+  get: protectedProcedure
+    .input(z.object({
+      leadId: z.number(),
+    }))
     .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const [lead] = await db.select().from(leads)
-        .where(and(eq(leads.id, input.id), eq(leads.agencyId, input.agencyId))).limit(1);
-      if (!lead) throw new TRPCError({ code: "NOT_FOUND" });
-      const activities = await db.select().from(leadActivities)
-        .where(eq(leadActivities.leadId, input.id))
-        .orderBy(desc(leadActivities.createdAt)).limit(50);
-      const tasks = await db.select().from(leadTasks)
-        .where(eq(leadTasks.leadId, input.id))
-        .orderBy(asc(leadTasks.dueAt));
-      return { ...lead, activities, tasks };
-    }),
-
-  create: protectedProcedure
-    .input(z.object({ agencyId: z.number() }).merge(leadInputSchema))
-    .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const { agencyId, tags, ...rest } = input;
-      const [result] = await db.insert(leads).values({
-        ...rest,
-        agencyId,
-        tags: tags ? JSON.stringify(tags) : null,
-        assignedUserId: rest.assignedUserId ?? ctx.user.id,
-      });
-      const insertId = (result as any).insertId;
-      await db.insert(leadActivities).values({
-        leadId: insertId, agencyId, userId: ctx.user.id,
-        type: "note", subject: "Lead created", content: `Lead created by ${ctx.user.name}`,
-      });
-      return { id: insertId };
-    }),
-
-  update: protectedProcedure
-    .input(z.object({ id: z.number(), agencyId: z.number() }).merge(leadInputSchema.partial()))
-    .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const { id, agencyId, tags, ...rest } = input;
-      const updateData: any = { ...rest };
-      if (tags !== undefined) updateData.tags = JSON.stringify(tags);
-      await db.update(leads).set(updateData).where(and(eq(leads.id, id), eq(leads.agencyId, agencyId)));
-      if (rest.status) {
-        await db.insert(leadActivities).values({
-          leadId: id, agencyId, userId: ctx.user.id,
-          type: "status_change", subject: "Status updated", content: `Status changed to ${rest.status}`,
+      const lead = await getLeadById(input.leadId);
+      if (!lead) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Lead not found",
         });
       }
-      return { success: true };
+      return lead;
     }),
 
-  updateStage: protectedProcedure
-    .input(z.object({ id: z.number(), agencyId: z.number(), pipelineStage: z.enum(["new", "contacted", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"]) }))
+  // Create single lead
+  create: protectedProcedure
+    .input(z.object({
+      agencyId: z.number(),
+      clientId: z.number(),
+      firstName: z.string().min(1),
+      lastName: z.string().min(1),
+      email: z.string().email().optional(),
+      phone: z.string().min(10),
+      source: z.string(),
+      status: z.enum(["new", "contacted", "qualified", "appointment_set", "appointment_completed", "closed_won", "closed_lost"]).default("new"),
+      loanType: z.string().optional(),
+      propertyAddress: z.string().optional(),
+      propertyCity: z.string().optional(),
+      propertyState: z.string().optional(),
+      propertyZip: z.string().optional(),
+      estimatedPurchasePrice: z.number().optional(),
+      downPaymentAmount: z.number().optional(),
+      notes: z.string().optional(),
+      referringAgent: z.string().optional(),
+      referringBrokerage: z.string().optional(),
+    }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      await db.update(leads).set({ pipelineStage: input.pipelineStage }).where(and(eq(leads.id, input.id), eq(leads.agencyId, input.agencyId)));
-      await db.insert(leadActivities).values({
-        leadId: input.id, agencyId: input.agencyId, userId: ctx.user.id,
-        type: "status_change", subject: "Stage moved", content: `Moved to ${input.pipelineStage}`,
+      const lead = await createLead(input);
+      
+      // Log activity
+      await createLeadActivity({
+        leadId: lead.id,
+        activityType: "note",
+        description: `Lead created from ${input.source}`,
+        performedBy: ctx.user.id,
       });
-      return { success: true };
+
+      // Send smart alert for high-value leads (estimated purchase price >= $500k)
+      if (input.estimatedPurchasePrice && input.estimatedPurchasePrice >= 500000) {
+        await sendSmartAlert("hot_lead", {
+          leadName: `${input.firstName} ${input.lastName}`,
+          leadPhone: input.phone,
+          leadSource: input.source,
+          estimatedValue: input.estimatedPurchasePrice,
+        });
+      }
+      
+      // Auto Vapi calls disabled - Tim handles calls manually now
+      console.log(`[Lead Capture] ✅ Lead #${lead.id} created for ${input.firstName} - Tim will call manually`);
+
+      return lead;
     }),
 
-  delete: protectedProcedure
-    .input(z.object({ id: z.number(), agencyId: z.number() }))
-    .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      await db.delete(leads).where(and(eq(leads.id, input.id), eq(leads.agencyId, input.agencyId)));
-      return { success: true };
-    }),
-
+  // Bulk import leads from CSV
   bulkImport: protectedProcedure
     .input(z.object({
       agencyId: z.number(),
-      rows: z.array(z.object({
+      clientId: z.number(),
+      leads: z.array(z.object({
         firstName: z.string(),
-        lastName: z.string().optional(),
+        lastName: z.string(),
         email: z.string().optional(),
-        phone: z.string().optional(),
-        company: z.string().optional(),
-        source: z.string().optional(),
-        contactType: z.string().optional(),
+        phone: z.string(),
+        source: z.string(),
+        loanType: z.string().optional(),
+        propertyAddress: z.string().optional(),
+        propertyCity: z.string().optional(),
+        propertyState: z.string().optional(),
+        propertyZip: z.string().optional(),
+        estimatedPurchasePrice: z.number().optional(),
+        downPaymentAmount: z.number().optional(),
         notes: z.string().optional(),
+        referringAgent: z.string().optional(),
+        referringBrokerage: z.string().optional(),
       })),
     }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      let imported = 0;
-      for (const row of input.rows) {
-        try {
-          await db.insert(leads).values({
-            agencyId: input.agencyId,
-            firstName: row.firstName || "Unknown",
-            lastName: row.lastName,
-            email: row.email,
-            phone: row.phone,
-            company: row.company,
-            source: (row.source as any) || "import",
-            contactType: (row.contactType as any) || "borrower",
-            notes: row.notes,
-            assignedUserId: ctx.user.id,
-          });
-          imported++;
-        } catch (_) {}
+      const results = await bulkCreateLeads(
+        input.agencyId,
+        input.clientId,
+        input.leads
+      );
+
+      // Log bulk import activity
+      if (results.length > 0) {
+        await createLeadActivity({
+          leadId: results[0].id,
+          activityType: "note",
+          description: `Bulk imported ${results.length} leads`,
+          performedBy: ctx.user.id,
+        });
       }
-      return { imported, total: input.rows.length };
+
+      return {
+        success: true,
+        imported: results.length,
+        leads: results,
+      };
     }),
 
+  // Update lead
+  update: protectedProcedure
+    .input(z.object({
+      leadId: z.number(),
+      status: z.enum(["new", "contacted", "qualified", "appointment_set", "appointment_completed", "closed_won", "closed_lost"]).optional(),
+      notes: z.string().optional(),
+      loanType: z.string().optional(),
+      propertyAddress: z.string().optional(),
+      propertyCity: z.string().optional(),
+      propertyState: z.string().optional(),
+      propertyZip: z.string().optional(),
+      estimatedPurchasePrice: z.number().optional(),
+      downPaymentAmount: z.number().optional(),
+      isTest: z.boolean().optional(),
+      // Tier 1 fields
+      contactType: z.enum(["borrower", "real_estate_agent", "attorney", "insurance_agent", "title_company", "builder_developer", "lender", "other"]).optional(),
+      loanAmount: z.number().optional(),
+      probability: z.number().min(0).max(100).optional(),
+      partnerTier: z.enum(["bronze", "silver", "gold", "platinum"]).optional(),
+      partnerStage: z.enum(["prospect", "contacted", "meeting_scheduled", "active_partner", "top_partner"]).optional(),
+      assignedToUserId: z.number().nullable().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      // Get current lead for status comparison
+      const currentLead = await getLeadById(input.leadId);
+      const oldStatus = currentLead?.status || 'unknown';
+      
+      const updateData = {
+        ...input,
+        loanAmount: input.loanAmount !== undefined ? String(input.loanAmount) : undefined,
+      };
+      const lead = await updateLead(input.leadId, updateData);
+      
+      // Log activity
+      await createLeadActivity({
+        leadId: input.leadId,
+        activityType: "status_change",
+        description: `Lead updated${input.status ? ` - Status: ${oldStatus} → ${input.status}` : ''}`,
+        performedBy: ctx.user.id,
+      });
+
+      // Push notification for significant status changes
+      if (input.status && input.status !== oldStatus && currentLead) {
+        try {
+          await pushLeadStatusChange({
+            leadId: input.leadId,
+            firstName: currentLead.firstName || '',
+            lastName: currentLead.lastName || '',
+            oldStatus,
+            newStatus: input.status,
+          });
+        } catch (e) {
+          console.error("[Lead Update] Push notification failed:", e);
+        }
+      }
+
+      return lead;
+    }),
+
+  // Delete lead
+  delete: protectedProcedure
+    .input(z.object({
+      leadId: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      await deleteLead(input.leadId);
+      return { success: true };
+    }),
+
+  // Get lead activities/timeline
+  activities: protectedProcedure
+    .input(z.object({
+      leadId: z.number(),
+    }))
+    .query(async ({ input }) => {
+      const activities = await getLeadActivities(input.leadId);
+      return activities;
+    }),
+
+  // ─── Refi Drip Procedures ────────────────────────────────────────────────────
+
+  // Tag a lead as a refi prospect and start the 14-day drip sequence
+  tagRefiProspect: protectedProcedure
+    .input(z.object({ leadId: z.number() }))
+    .mutation(async ({ input }) => {
+      const result = await tagLeadAsRefiProspect(input.leadId);
+      if (!result.success) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: result.message });
+      }
+      return result;
+    }),
+
+  // Remove the refi prospect tag and stop the drip
+  untagRefiProspect: protectedProcedure
+    .input(z.object({ leadId: z.number() }))
+    .mutation(async ({ input }) => {
+      const result = await untagLeadAsRefiProspect(input.leadId);
+      if (!result.success) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: result.message });
+      }
+      return result;
+    }),
+
+  // Get the current refi drip status for a lead
+  getRefiDripStatus: protectedProcedure
+    .input(z.object({ leadId: z.number() }))
+    .query(async ({ input }) => {
+      return await getRefiDripStatus(input.leadId);
+    }),
+
+  // Add activity/note to lead
   addActivity: protectedProcedure
     .input(z.object({
       leadId: z.number(),
-      agencyId: z.number(),
-      type: z.enum(["call", "email", "sms", "note", "task", "appointment", "status_change", "score_change", "import", "ai_call"]),
-      subject: z.string().optional(),
-      content: z.string().optional(),
+      activityType: z.enum(["call", "email", "sms", "note", "appointment", "status_change"]),
+      description: z.string(),
+      scheduledDate: z.date().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const [result] = await db.insert(leadActivities).values({ ...input, userId: ctx.user.id });
-      await db.update(leads).set({ lastContactedAt: new Date() }).where(eq(leads.id, input.leadId));
-      return { id: (result as any).insertId };
-    }),
-
-  addTask: protectedProcedure
-    .input(z.object({
-      leadId: z.number(),
-      agencyId: z.number(),
-      title: z.string(),
-      description: z.string().optional(),
-      priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
-      dueAt: z.date().optional(),
-      assignedUserId: z.number().optional(),
-    }))
-    .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const [result] = await db.insert(leadTasks).values({ ...input, assignedUserId: input.assignedUserId ?? ctx.user.id });
-      return { id: (result as any).insertId };
-    }),
-
-  updateTask: protectedProcedure
-    .input(z.object({ id: z.number(), status: z.enum(["pending", "in_progress", "completed", "cancelled"]) }))
-    .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const completedAt = input.status === "completed" ? new Date() : null;
-      await db.update(leadTasks).set({ status: input.status, completedAt: completedAt ?? undefined }).where(eq(leadTasks.id, input.id));
-      return { success: true };
-    }),
-
-  listTasks: protectedProcedure
-    .input(z.object({ agencyId: z.number() }))
-    .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      return db.select().from(leadTasks)
-        .where(eq(leadTasks.agencyId, input.agencyId))
-        .orderBy(asc(leadTasks.dueAt));
-    }),
-
-  completeTask: protectedProcedure
-    .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      await db.update(leadTasks).set({ status: "completed", completedAt: new Date() }).where(eq(leadTasks.id, input.id));
-      return { success: true };
-    }),
-
-  getKanban: protectedProcedure
-    .input(z.object({ agencyId: z.number() }))
-    .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const allLeads = await db.select().from(leads)
-        .where(eq(leads.agencyId, input.agencyId))
-        .orderBy(desc(leads.score), desc(leads.createdAt));
-      const stages = ["new", "contacted", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"] as const;
-      const kanban: Record<string, typeof allLeads> = {};
-      for (const stage of stages) kanban[stage] = allLeads.filter(l => l.pipelineStage === stage);
-      return kanban;
+      const activity = await createLeadActivity({
+        leadId: input.leadId,
+        activityType: input.activityType,
+        description: input.description,
+        performedBy: ctx.user.id,
+      });
+      return activity;
     }),
 });

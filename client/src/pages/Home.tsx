@@ -1,234 +1,255 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { getLoginUrl } from "@/const";
-import {
-  BarChart3,
-  Bot,
-  Building2,
-  Calendar,
-  CheckCircle,
-  FileText,
-  Mail,
-  Phone,
-  Shield,
-  Sparkles,
-  Users,
-  Workflow,
-  Zap,
-} from "lucide-react";
-import { useEffect } from "react";
-import { useLocation } from "wouter";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LogIn, BookOpen, TrendingUp, Zap } from "lucide-react";
 
-const FEATURES = [
-  { icon: Users, label: "Lead Pipeline", desc: "Drag-and-drop Kanban pipeline with AI lead scoring and bulk CSV import" },
-  { icon: Bot, label: "AI Calling", desc: "Vapi-powered AI calls with transcripts, recordings, and automated follow-ups" },
-  { icon: Mail, label: "Email & SMS Campaigns", desc: "Multi-channel campaigns with SendGrid/Twilio, audience targeting, and delivery tracking" },
-  { icon: Workflow, label: "Workflow Automation", desc: "Visual automation builder with triggers, multi-step actions, and conditional logic" },
-  { icon: Calendar, label: "Appointment Scheduling", desc: "Calendar management with automated email/SMS reminders and availability control" },
-  { icon: FileText, label: "Borrower Database", desc: "Loan milestones, document storage with version control, and activity tracking" },
-  { icon: BarChart3, label: "Analytics Dashboard", desc: "Real-time KPIs, conversion funnels, lead source attribution, and team metrics" },
-  { icon: Sparkles, label: "AI Assistant", desc: "LLM-powered lead scoring, personalized email/SMS generation, and next-action recommendations" },
-  { icon: Building2, label: "Multi-Agency Management", desc: "Secure multi-tenant architecture with role-based access and agency isolation" },
-];
+const LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663346016577/LMov9oD5hWD87TsDa4kZ8o/GradientLogoBlue2Green_5403585a.png";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { useEffect } from "react";
+import { getLoginUrl } from "@/const";
+import { trpc } from "@/lib/trpc";
 
 export default function Home() {
-  const { user, loading, isAuthenticated } = useAuth();
-  const [, navigate] = useLocation();
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
 
-  // Redirect authenticated users to dashboard
+  // Check if this is a first-time sub-account login (email_password method, no onboarding progress)
+  const isSubAccount = user?.loginMethod === "email_password";
+  const { data: launchpadProgress } = trpc.launchpad.getProgress.useQuery(
+    undefined,
+    { enabled: !loading && !!user && isSubAccount }
+  );
+
+  // Redirect logged-in users to their dashboard (or Launchpad for first-time sub-accounts)
   useEffect(() => {
-    if (!loading && isAuthenticated) {
-      navigate("/dashboard");
+    if (!loading && user) {
+      if (user.role === "admin" || user.role === "super_admin") {
+        setLocation("/admin");
+      } else if (user.role === "loa") {
+        // First-time LOA sub-accounts go to Launchpad
+        if (isSubAccount && launchpadProgress !== undefined && launchpadProgress.completedCount === 0) {
+          setLocation("/launchpad");
+        } else if (launchpadProgress !== undefined || !isSubAccount) {
+          setLocation("/loa");
+        }
+      } else {
+        // First-time client sub-accounts go to Launchpad
+        if (isSubAccount && launchpadProgress !== undefined && launchpadProgress.completedCount === 0) {
+          setLocation("/launchpad");
+        } else if (launchpadProgress !== undefined || !isSubAccount) {
+          setLocation("/dashboard");
+        }
+      }
     }
-  }, [loading, isAuthenticated, navigate]);
+  }, [user, loading, setLocation, isSubAccount, launchpadProgress]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center animate-pulse">
-            <Zap className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <p className="text-sm text-muted-foreground">Loading...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       {/* Header */}
-      <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Zap className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <span className="font-bold text-lg font-display">MortgageCRM</span>
-          </div>
+      <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" asChild>
-              <a href="#features">Features</a>
-            </Button>
-            <Button variant="ghost" size="sm" asChild>
-              <a href="#pricing">Pricing</a>
-            </Button>
-            <Button size="sm" asChild>
-              <a href={getLoginUrl()}>Get Started</a>
+            <div className="flex items-center gap-2">
+              <img src={LOGO_URL} alt="Sterling Marketing" className="w-8 h-8 object-contain" />
+              <span className="text-2xl font-bold">Sterling Marketing</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <a
+              href={getLoginUrl()}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Sign In
+            </a>
+            <Button asChild>
+              <a href={getLoginUrl()}>
+                <LogIn className="w-4 h-4 mr-2" />
+                Login to CRM
+              </a>
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-background to-purple-50/30 pointer-events-none" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32 relative">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium mb-6">
-              <Sparkles className="w-3.5 h-3.5" />
-              AI-Powered Mortgage CRM
+      {/* Hero Section - Login Focused */}
+      <section className="py-20 md:py-32">
+        <div className="container">
+          <div className="max-w-4xl mx-auto text-center space-y-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
+              <img src={LOGO_URL} alt="" className="w-4 h-4 object-contain" />
+              <span>AI-Powered Lead Management Platform</span>
             </div>
-            <h1 className="text-4xl lg:text-6xl font-bold font-display leading-tight text-foreground">
-              Close More Loans.<br />
-              <span className="text-primary">Automate Everything.</span>
+
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+              Welcome to{" "}
+              <span className="text-primary">Sterling Marketing</span>
             </h1>
-            <p className="mt-6 text-lg text-muted-foreground max-w-2xl leading-relaxed">
-              The complete CRM and marketing automation platform built for mortgage professionals. Manage leads, automate follow-ups, schedule AI calls, and track every loan from application to close.
+
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Your complete CRM solution for managing leads, campaigns, and appointments. 
+              Login to access your dashboard and start managing your pipeline.
             </p>
-            <div className="mt-8 flex items-center gap-4 flex-wrap">
-              <Button size="lg" className="gap-2 text-base px-6" asChild>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+              <Button size="lg" className="text-lg px-12 py-6" asChild>
                 <a href={getLoginUrl()}>
-                  <Zap className="w-4 h-4" /> Start Free Trial
+                  <LogIn className="w-5 h-5 mr-2" />
+                  Login to Your CRM
                 </a>
               </Button>
-              <Button size="lg" variant="outline" className="text-base px-6">
-                Watch Demo
+            </div>
+
+            <div className="pt-8 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
+              <Card className="border-2 hover:border-primary/50 transition-colors">
+                <CardHeader className="text-center">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
+                    <TrendingUp className="w-6 h-6 text-primary" />
+                  </div>
+                  <CardTitle className="text-lg">Lead Management</CardTitle>
+                  <CardDescription>Track and convert leads efficiently</CardDescription>
+                </CardHeader>
+              </Card>
+
+              <Card className="border-2 hover:border-primary/50 transition-colors">
+                <CardHeader className="text-center">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
+                    <Zap className="w-6 h-6 text-primary" />
+                  </div>
+                  <CardTitle className="text-lg">AI Automation</CardTitle>
+                  <CardDescription>Automated follow-ups and campaigns</CardDescription>
+                </CardHeader>
+              </Card>
+
+              <Card className="border-2 hover:border-primary/50 transition-colors">
+                <CardHeader className="text-center">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
+                    <BookOpen className="w-6 h-6 text-primary" />
+                  </div>
+                  <CardTitle className="text-lg">Analytics</CardTitle>
+                  <CardDescription>Real-time performance insights</CardDescription>
+                </CardHeader>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Blog Section */}
+      <section className="py-20 bg-muted/30">
+        <div className="container">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">System Updates & Guides</h2>
+              <p className="text-lg text-muted-foreground">
+                Stay up to date with new features, system improvements, and helpful guides
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Placeholder blog posts - will be replaced with dynamic content */}
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="text-sm text-muted-foreground mb-2">February 17, 2026</div>
+                  <CardTitle>PWA Push Notifications Now Live</CardTitle>
+                  <CardDescription className="text-base mt-2">
+                    Install the Sterling Marketing CRM as a Progressive Web App on your phone and receive instant push notifications for hot leads, appointments, and daily standups.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Link href="/blog/pwa-push-notifications" className="text-primary hover:underline text-sm font-medium">
+                    Read more →
+                  </Link>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="text-sm text-muted-foreground mb-2">February 15, 2026</div>
+                  <CardTitle>Getting Started Guide</CardTitle>
+                  <CardDescription className="text-base mt-2">
+                    New to Sterling Marketing? Learn how to set up your account, import leads, and launch your first campaign in under 10 minutes.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Link href="/blog/getting-started" className="text-primary hover:underline text-sm font-medium">
+                    Read more →
+                  </Link>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="text-sm text-muted-foreground mb-2">February 10, 2026</div>
+                  <CardTitle>AI Operations Director</CardTitle>
+                  <CardDescription className="text-base mt-2">
+                    Meet your new AI Ops Director: daily standups, smart alerts for hot leads and no-shows, weekly strategy sessions, and automated team coordination.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Link href="/blog/ai-ops-director" className="text-primary hover:underline text-sm font-medium">
+                    Read more →
+                  </Link>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="text-sm text-muted-foreground mb-2">February 5, 2026</div>
+                  <CardTitle>Lead Scoring Algorithm</CardTitle>
+                  <CardDescription className="text-base mt-2">
+                    Our new lead scoring system automatically prioritizes your hottest leads based on engagement, call history, and appointment behavior.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Link href="/blog/lead-scoring" className="text-primary hover:underline text-sm font-medium">
+                    Read more →
+                  </Link>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="text-center mt-12">
+              <Button variant="outline" size="lg" asChild>
+                <Link href="/blog">
+                  View All Updates
+                </Link>
               </Button>
             </div>
-            <div className="mt-8 flex items-center gap-6 text-sm text-muted-foreground">
-              {["No credit card required", "14-day free trial", "Cancel anytime"].map(t => (
-                <div key={t} className="flex items-center gap-1.5">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>{t}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats bar */}
-      <section className="border-y border-border bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            {[
-              { value: "10,000+", label: "Loans Processed" },
-              { value: "500+", label: "Agencies" },
-              { value: "98%", label: "Uptime SLA" },
-              { value: "3.2x", label: "Avg. Conversion Lift" },
-            ].map(({ value, label }) => (
-              <div key={label}>
-                <p className="text-3xl font-bold font-display text-primary">{value}</p>
-                <p className="text-sm text-muted-foreground mt-1">{label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold font-display">Everything You Need to Grow</h2>
-            <p className="text-muted-foreground mt-3 max-w-xl mx-auto">A complete platform purpose-built for mortgage loan officers and real estate professionals</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {FEATURES.map(({ icon: Icon, label, desc }) => (
-              <div key={label} className="p-5 rounded-2xl border border-border hover:border-primary/40 hover:shadow-md transition-all bg-card group">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
-                  <Icon className="w-5 h-5 text-primary" />
-                </div>
-                <p className="font-semibold text-sm">{label}</p>
-                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="pricing" className="py-20 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold font-display">Simple, Transparent Pricing</h2>
-            <p className="text-muted-foreground mt-3">Choose the plan that fits your team</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {[
-              { name: "Starter", price: 97, desc: "Individual loan officers", features: ["500 leads", "Email campaigns", "Pipeline", "1 seat"], popular: false },
-              { name: "Professional", price: 297, desc: "Growing teams", features: ["Unlimited leads", "Email + SMS", "AI calling", "AI scoring", "5 seats", "Analytics"], popular: true },
-              { name: "Enterprise", price: 697, desc: "Large agencies", features: ["Everything in Pro", "Unlimited seats", "White-label", "Custom AI", "Dedicated support"], popular: false },
-            ].map(plan => (
-              <div key={plan.name} className={`p-6 rounded-2xl border-2 bg-card ${plan.popular ? "border-primary shadow-lg relative" : "border-border"}`}>
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full">Most Popular</span>
-                  </div>
-                )}
-                <p className="font-bold text-lg font-display">{plan.name}</p>
-                <p className="text-sm text-muted-foreground">{plan.desc}</p>
-                <div className="mt-3 mb-5">
-                  <span className="text-4xl font-bold font-display">${plan.price}</span>
-                  <span className="text-muted-foreground text-sm">/mo</span>
-                </div>
-                <ul className="space-y-2 mb-6">
-                  {plan.features.map(f => (
-                    <li key={f} className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button className="w-full" variant={plan.popular ? "default" : "outline"} asChild>
-                  <a href={getLoginUrl()}>Get Started</a>
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-20">
-        <div className="max-w-3xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold font-display">Ready to Transform Your Business?</h2>
-          <p className="text-muted-foreground mt-3">Join hundreds of mortgage professionals who use MortgageCRM to close more loans and grow their pipeline.</p>
-          <div className="mt-8">
-            <Button size="lg" className="gap-2 text-base px-8" asChild>
-              <a href={getLoginUrl()}>
-                <Zap className="w-4 h-4" /> Start Your Free Trial
-              </a>
-            </Button>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">
-              <Zap className="w-3 h-3 text-primary-foreground" />
+      <footer className="py-12 border-t border-border bg-card/50">
+        <div className="container">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <img src={LOGO_URL} alt="Sterling Marketing" className="w-6 h-6 object-contain" />
+              <span className="text-lg font-semibold">Sterling Marketing</span>
             </div>
-            <span className="font-bold font-display text-sm">MortgageCRM</span>
+            <p className="text-sm text-muted-foreground">
+              © 2026 Sterling Marketing. All rights reserved.
+            </p>
+            <div className="flex items-center gap-6">
+              <a href={getLoginUrl()} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Login
+              </a>
+              <Link href="/blog" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Blog
+              </Link>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Shield className="w-3.5 h-3.5" />
-            <span>SOC 2 Type II · GDPR Compliant · 256-bit Encryption</span>
-          </div>
-          <p className="text-xs text-muted-foreground">© 2026 MortgageCRM. All rights reserved.</p>
         </div>
       </footer>
     </div>

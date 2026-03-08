@@ -16,7 +16,7 @@ export const contactsRouter = router({
       offset: z.number().default(0),
     }))
     .query(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const conditions = [eq(referralPartners.agencyId, input.agencyId)];
       if (input.search) {
@@ -38,7 +38,7 @@ export const contactsRouter = router({
   getPartnerById: protectedProcedure
     .input(z.object({ id: z.number(), agencyId: z.number() }))
     .query(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const [partner] = await db.select().from(referralPartners)
         .where(and(eq(referralPartners.id, input.id), eq(referralPartners.agencyId, input.agencyId))).limit(1);
@@ -58,7 +58,7 @@ export const contactsRouter = router({
       notes: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const [result] = await db.insert(referralPartners).values({ ...input, assignedUserId: ctx.user.id });
       return { id: (result as any).insertId };
@@ -78,7 +78,7 @@ export const contactsRouter = router({
       notes: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const { id, agencyId, ...rest } = input;
       await db.update(referralPartners).set(rest as any).where(and(eq(referralPartners.id, id), eq(referralPartners.agencyId, agencyId)));
@@ -88,7 +88,7 @@ export const contactsRouter = router({
   deletePartner: protectedProcedure
     .input(z.object({ id: z.number(), agencyId: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       await db.delete(referralPartners).where(and(eq(referralPartners.id, input.id), eq(referralPartners.agencyId, input.agencyId)));
       return { success: true };

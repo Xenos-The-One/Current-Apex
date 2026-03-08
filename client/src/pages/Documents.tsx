@@ -50,7 +50,7 @@ function UploadDocumentDialog({ agencyId, onSuccess }: { agencyId: number; onSuc
   const [file, setFile] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const uploadMutation = trpc.documents.upload.useMutation({
+  const uploadMutation = trpc.borrowers.upload.useMutation({
     onSuccess: () => { toast.success("Document uploaded"); setOpen(false); setFile(null); onSuccess(); },
     onError: (e: any) => toast.error(e.message),
   });
@@ -128,7 +128,7 @@ export default function Documents() {
   const agencyId = (user as any)?.agencyId ?? 1;
   const [filterType, setFilterType] = useState("all");
 
-  const { data: docs, refetch } = trpc.documents.list.useQuery({ agencyId, type: filterType === "all" ? undefined : filterType });
+  const { data: docs, refetch } = trpc.borrowers.list.useQuery({ agencyId, type: filterType === "all" ? undefined : filterType });
 
   const totalSize = docs?.reduce((s: number, d: any) => s + (d.fileSize || 0), 0) ?? 0;
   const formatSize = (bytes: number) => bytes > 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${(bytes / 1024).toFixed(0)} KB`;

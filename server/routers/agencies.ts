@@ -16,7 +16,7 @@ export const agenciesRouter = router({
   list: adminProcedure
     .input(z.object({ search: z.string().optional(), status: z.string().optional(), limit: z.number().default(50), offset: z.number().default(0) }))
     .query(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const conditions = [];
       if (input.search) conditions.push(like(agencies.name, `%${input.search}%`));
@@ -31,7 +31,7 @@ export const agenciesRouter = router({
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input, ctx }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const [agency] = await db.select().from(agencies).where(eq(agencies.id, input.id)).limit(1);
       if (!agency) throw new TRPCError({ code: "NOT_FOUND" });
@@ -53,7 +53,7 @@ export const agenciesRouter = router({
       maxLeads: z.number().default(500),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const existing = await db.select().from(agencies).where(eq(agencies.slug, input.slug)).limit(1);
       if (existing.length) throw new TRPCError({ code: "CONFLICT", message: "Slug already exists" });
@@ -74,7 +74,7 @@ export const agenciesRouter = router({
       maxLeads: z.number().optional(),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const { id, ...data } = input;
       await db.update(agencies).set(data).where(eq(agencies.id, id));
@@ -84,7 +84,7 @@ export const agenciesRouter = router({
   getStats: adminProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const [userCount] = await db.select({ count: count() }).from(users).where(eq(users.agencyId, input.id));
       const [leadCount] = await db.select({ count: count() }).from(leads).where(eq(leads.agencyId, input.id));
@@ -94,7 +94,7 @@ export const agenciesRouter = router({
   listUsers: protectedProcedure
     .input(z.object({ agencyId: z.number() }))
     .query(async ({ input, ctx }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       if (ctx.user.role !== "super_admin" && ctx.user.agencyId !== input.agencyId) {
         throw new TRPCError({ code: "FORBIDDEN" });

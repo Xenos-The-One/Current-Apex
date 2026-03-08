@@ -37,7 +37,7 @@ const COLORS = ["#6366f1", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"
 
 // ─── Analytics Tab ─────────────────────────────────────────────────────────
 function AnalyticsTab({ agencyId }: { agencyId: number }) {
-  const { data } = trpc.analytics.getDashboard.useQuery({ agencyId });
+  const { data } = trpc.analytics.getOverviewMetrics.useQuery({ agencyId });
 
   const kpis = [
     { label: "Total Leads", value: data?.kpis.totalLeads ?? 0, color: "text-blue-600" },
@@ -251,7 +251,7 @@ function MarketTab({ agencyId: _agencyId }: { agencyId: number }) {
 
 // ─── Funnel Tab ────────────────────────────────────────────────────────────
 function FunnelTab({ agencyId }: { agencyId: number }) {
-  const { data } = trpc.analytics.getDashboard.useQuery({ agencyId });
+  const { data } = trpc.analytics.getOverviewMetrics.useQuery({ agencyId });
 
   const totalLeads = data?.kpis.totalLeads ?? 0;
   const funnelStages = [

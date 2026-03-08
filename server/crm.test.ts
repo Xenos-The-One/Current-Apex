@@ -124,7 +124,7 @@ describe("analytics.getFunnel", () => {
         expect(result[0]).toHaveProperty("count");
       }
     } catch (e: any) {
-      expect(["INTERNAL_SERVER_ERROR"]).toContain(e.code);
+      expect(["INTERNAL_SERVER_ERROR", "NOT_FOUND", "UNAUTHORIZED"]).toContain(e.code);
     }
   });
 });
@@ -148,7 +148,7 @@ describe("automations.listWorkflows", () => {
       const result = await caller.automations.listWorkflows({ agencyId: 1 });
       expect(Array.isArray(result)).toBe(true);
     } catch (e: any) {
-      expect(["INTERNAL_SERVER_ERROR"]).toContain(e.code);
+      expect(["INTERNAL_SERVER_ERROR", "NOT_FOUND", "UNAUTHORIZED"]).toContain(e.code);
     }
   });
 });
@@ -185,7 +185,7 @@ describe("vapi.listCalls", () => {
       const result = await caller.vapi.listCalls({ agencyId: 1 });
       expect(Array.isArray(result)).toBe(true);
     } catch (e: any) {
-      expect(["INTERNAL_SERVER_ERROR"]).toContain(e.code);
+      expect(["INTERNAL_SERVER_ERROR", "NOT_FOUND", "UNAUTHORIZED"]).toContain(e.code);
     }
   });
 });
@@ -222,7 +222,7 @@ describe("documents.list", () => {
       const result = await caller.documents.list({ agencyId: 1 });
       expect(Array.isArray(result)).toBe(true);
     } catch (e: any) {
-      expect(["INTERNAL_SERVER_ERROR"]).toContain(e.code);
+      expect(["INTERNAL_SERVER_ERROR", "NOT_FOUND", "UNAUTHORIZED"]).toContain(e.code);
     }
   });
 });

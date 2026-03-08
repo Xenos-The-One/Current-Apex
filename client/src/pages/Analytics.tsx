@@ -1,263 +1,282 @@
-import { useAuth } from "@/_core/hooks/useAuth";
-import CRMLayout from "@/components/CRMLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { trpc } from "@/lib/trpc";
-import {
-  ArrowUpRight,
-  BarChart3,
-  Calendar,
-  DollarSign,
-  Mail,
-  Phone,
-  TrendingUp,
-  Users,
-} from "lucide-react";
 import { useState } from "react";
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import DashboardLayout from "@/components/DashboardLayout";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { trpc } from "@/lib/trpc";
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { TrendingUp, Users, Target, Mail, MessageSquare, Activity } from "lucide-react";
 
-const COLORS = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444", "#06b6d4"];
-
-function KPICard({ label, value, sub, icon: Icon, trend, color = "blue" }: {
-  label: string; value: string | number; sub?: string; icon: any; trend?: number; color?: string;
-}) {
-  return (
-    <div className="stat-card">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="text-2xl font-bold font-display mt-0.5">{value}</p>
-          {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
-        </div>
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-${color}-50`}>
-          <Icon className={`w-5 h-5 text-${color}-600`} />
-        </div>
-      </div>
-      {trend !== undefined && (
-        <div className={`mt-2 flex items-center gap-1 text-xs font-medium ${trend >= 0 ? "text-green-600" : "text-red-500"}`}>
-          <ArrowUpRight className={`w-3 h-3 ${trend < 0 ? "rotate-180" : ""}`} />
-          <span>{Math.abs(trend)}% vs last period</span>
-        </div>
-      )}
-    </div>
-  );
-}
+const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
 
 export default function Analytics() {
-  const { user } = useAuth();
-  const agencyId = (user as any)?.agencyId ?? 1;
-  const [period, setPeriod] = useState("30");
+  const [dateRange, setDateRange] = useState<{ start?: Date; end?: Date }>({});
 
-  const startDate = new Date(Date.now() - parseInt(period) * 24 * 60 * 60 * 1000);
-  const { data: dashboard } = trpc.analytics.getDashboard.useQuery({ agencyId, startDate });
-  const { data: funnelRaw } = trpc.analytics.getFunnel.useQuery({ agencyId });
-  const { data: campaignStats } = trpc.analytics.getCampaignStats.useQuery({ agencyId });
-  const overview = dashboard?.kpis;
-  const leadsBySource = dashboard?.sourceBreakdown;
-  const leadsByStage = dashboard?.stageBreakdown;
+  const { data: overview, isLoading: overviewLoading } = trpc.analytics.getOverviewMetrics.useQuery({
+    startDate: dateRange.start,
+    endDate: dateRange.end,
+  });
 
-  // Build chart data from real API
-  const sourceData = leadsBySource?.map((s: any) => ({ name: s.source?.replace(/_/g, " ") || "Unknown", value: s.count })) || [];
-  const stageData = leadsByStage?.map((s: any) => ({ name: s.stage?.replace(/_/g, " ") || "Unknown", count: s.count })) || [];
-  const funnelData = funnelRaw || [];
-  const campaignPerf = campaignStats;
+  const { data: sourcePerformance = [], isLoading: sourceLoading } = trpc.analytics.getLeadSourcePerformance.useQuery({
+    startDate: dateRange.start,
+    endDate: dateRange.end,
+  });
+
+  const { data: campaignPerformance, isLoading: campaignLoading } = trpc.analytics.getCampaignPerformance.useQuery({
+    startDate: dateRange.start,
+    endDate: dateRange.end,
+  });
+
+  if (overviewLoading || sourceLoading || campaignLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Activity className="w-12 h-12 mx-auto mb-4 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading analytics...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const statusData = overview?.leadsByStatus.map((s: any) => ({
+    name: s.status.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase()),
+    value: s.count,
+  })) || [];
+
+  const conversionFunnelData = [
+    { stage: "New Leads", count: overview?.leadsByStatus.find((s: any) => s.status === "new")?.count || 0, rate: 100 },
+    { stage: "Contacted", count: overview?.leadsByStatus.find((s: any) => s.status === "contacted")?.count || 0, rate: overview?.conversionRates.newToContacted || 0 },
+    { stage: "Qualified", count: overview?.leadsByStatus.find((s: any) => s.status === "qualified")?.count || 0, rate: overview?.conversionRates.contactedToQualified || 0 },
+    { stage: "Appointment", count: overview?.leadsByStatus.find((s: any) => s.status === "appointment_set")?.count || 0, rate: overview?.conversionRates.qualifiedToAppointment || 0 },
+    { stage: "Closed Won", count: overview?.leadsByStatus.find((s: any) => s.status === "closed_won")?.count || 0, rate: overview?.conversionRates.appointmentToClosed || 0 },
+  ];
 
   return (
-    <CRMLayout agencyId={agencyId}>
-      <div className="p-6 space-y-5 fade-in">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-2xl font-bold font-display">Analytics</h1>
-            <p className="text-muted-foreground text-sm">Business intelligence and performance metrics</p>
-          </div>
-          <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-36 h-8 text-sm"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7">Last 7 days</SelectItem>
-              <SelectItem value="30">Last 30 days</SelectItem>
-              <SelectItem value="90">Last 90 days</SelectItem>
-              <SelectItem value="365">Last year</SelectItem>
-            </SelectContent>
-          </Select>
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
+          <p className="text-muted-foreground">Track performance metrics and conversion rates</p>
         </div>
 
-        {/* KPI Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <KPICard label="Total Leads" value={overview?.totalLeads ?? 0} icon={Users} color="blue" />
-          <KPICard label="New Leads" value={overview?.newLeads ?? 0} sub={`in last ${period} days`} icon={TrendingUp} color="green" />
-          <KPICard label="Appointments" value={overview?.totalAppointments ?? 0} icon={Calendar} color="purple" />
-          <KPICard label="Calls Made" value={overview?.totalCalls ?? 0} icon={Mail} color="amber" />
+        {/* Key Metrics */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Leads</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{overview?.totalLeads || 0}</div>
+              <p className="text-xs text-muted-foreground">All time</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Overall Conversion</CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{overview?.conversionRates.overallConversion.toFixed(1)}%</div>
+              <p className="text-xs text-muted-foreground">Lead to closed won</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Email Open Rate</CardTitle>
+              <Mail className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{campaignPerformance?.email.openRate.toFixed(1)}%</div>
+              <p className="text-xs text-muted-foreground">{campaignPerformance?.email.totalSent} emails sent</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">SMS Delivery Rate</CardTitle>
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{campaignPerformance?.sms.deliveryRate.toFixed(1)}%</div>
+              <p className="text-xs text-muted-foreground">{campaignPerformance?.sms.totalSent} SMS sent</p>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <KPICard label="Borrowers" value={overview?.totalBorrowers ?? 0} icon={Users} color="teal" />
-          <KPICard label="Converted" value={overview?.convertedLeads ?? 0} icon={DollarSign} color="green" />
-          <KPICard label="Team Members" value={overview?.totalUsers ?? 0} icon={Phone} color="blue" />
-          <KPICard label="Conversion Rate" value={`${overview?.conversionRate ?? 0}%`} icon={BarChart3} color="purple" />
-        </div>
-
-        <Tabs defaultValue="pipeline">
-          <TabsList>
-            <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
-            <TabsTrigger value="sources">Lead Sources</TabsTrigger>
-            <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-            <TabsTrigger value="funnel">Conversion Funnel</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="pipeline" className="mt-4">
-            <Card>
-              <CardHeader><CardTitle className="text-base">Leads by Pipeline Stage</CardTitle></CardHeader>
-              <CardContent>
-                {stageData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={stageData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: 12 }} />
-                      <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-64 flex items-center justify-center text-muted-foreground">
-                    <p>No pipeline data yet</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="sources" className="mt-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader><CardTitle className="text-base">Lead Sources Distribution</CardTitle></CardHeader>
-                <CardContent>
-                  {sourceData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={280}>
-                      <PieChart>
-                        <Pie data={sourceData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
-                          {sourceData.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                        </Pie>
-                        <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: 12 }} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="h-64 flex items-center justify-center text-muted-foreground">
-                      <p>No source data yet</p>
+        {/* Conversion Funnel */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Lead Conversion Funnel
+            </CardTitle>
+            <CardDescription>Track how leads progress through your pipeline</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={conversionFunnelData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="stage" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="count" fill="#3b82f6" name="Lead Count" />
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="mt-4 grid grid-cols-5 gap-2 text-center">
+              {conversionFunnelData.map((stage, index) => (
+                <div key={stage.stage} className="space-y-1">
+                  <div className="text-sm font-medium">{stage.stage}</div>
+                  <div className="text-2xl font-bold">{stage.count}</div>
+                  {index > 0 && (
+                    <div className="text-xs text-muted-foreground">
+                      {stage.rate.toFixed(1)}% conversion
                     </div>
                   )}
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader><CardTitle className="text-base">Source Breakdown</CardTitle></CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {sourceData.length > 0 ? sourceData.map((s: any, i: number) => {
-                      const total = sourceData.reduce((acc: number, x: any) => acc + x.value, 0);
-                      const pct = total > 0 ? Math.round((s.value / total) * 100) : 0;
-                      return (
-                        <div key={s.name}>
-                          <div className="flex items-center justify-between text-sm mb-1">
-                            <span className="capitalize">{s.name}</span>
-                            <span className="font-medium">{s.value} ({pct}%)</span>
-                          </div>
-                          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: COLORS[i % COLORS.length] }} />
-                          </div>
-                        </div>
-                      );
-                    }) : <p className="text-muted-foreground text-sm">No data yet</p>}
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              ))}
             </div>
-          </TabsContent>
+          </CardContent>
+        </Card>
 
-          <TabsContent value="campaigns" className="mt-4">
-            <Card>
-              <CardHeader><CardTitle className="text-base">Campaign Performance</CardTitle></CardHeader>
-              <CardContent>
-                {(campaignStats?.email?.length || campaignStats?.sms?.length) ? (
-                  <div className="space-y-3">
-                    {[...(campaignStats?.email || []), ...(campaignStats?.sms || [])].map((c: any) => (
-                      <div key={c.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
-                        <div>
-                          <p className="text-sm font-medium">{c.name}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{c.type}</p>
-                        </div>
-                        <div className="flex items-center gap-6 text-sm">
-                          <div className="text-center"><p className="font-bold">{c.sent || 0}</p><p className="text-xs text-muted-foreground">Sent</p></div>
-                          <div className="text-center"><p className="font-bold">{c.opened || 0}</p><p className="text-xs text-muted-foreground">Opened</p></div>
-                          <div className="text-center"><p className="font-bold">{c.clicked || 0}</p><p className="text-xs text-muted-foreground">Clicked</p></div>
-                          <div className="text-center">
-                            <p className="font-bold">{c.sent > 0 ? `${Math.round((c.opened / c.sent) * 100)}%` : "0%"}</p>
-                            <p className="text-xs text-muted-foreground">Open Rate</p>
-                          </div>
-                        </div>
-                      </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Lead Status Distribution */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Lead Status Distribution</CardTitle>
+              <CardDescription>Current pipeline breakdown</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={statusData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {statusData.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
-                  </div>
-                ) : (
-                  <div className="h-48 flex items-center justify-center text-muted-foreground">
-                    <p>No campaign data yet</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
 
-          <TabsContent value="funnel" className="mt-4">
-            <Card>
-              <CardHeader><CardTitle className="text-base">Conversion Funnel</CardTitle></CardHeader>
-              <CardContent>
-                {funnelData.length > 0 ? (
-                  <div className="space-y-3">
-                    {funnelData.map((stage: any, i: number) => {
-                      const maxCount = funnelData[0]?.count || 1;
-                      const pct = Math.round((stage.count / maxCount) * 100);
-                      return (
-                        <div key={stage.stage}>
-                          <div className="flex items-center justify-between text-sm mb-1">
-                            <span className="capitalize font-medium">{stage.stage?.replace(/_/g, " ")}</span>
-                            <span className="text-muted-foreground">{stage.count} leads ({pct}%)</span>
-                          </div>
-                          <div className="h-8 bg-muted rounded-lg overflow-hidden">
-                            <div
-                              className="h-full rounded-lg flex items-center pl-3 text-xs font-medium text-white transition-all"
-                              style={{ width: `${Math.max(pct, 5)}%`, background: COLORS[i % COLORS.length] }}
-                            >
-                              {pct}%
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+          {/* Lead Source Performance */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Lead Source Performance</CardTitle>
+              <CardDescription>Conversion rates by source</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={sourcePerformance}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="source" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="total" fill="#3b82f6" name="Total Leads" />
+                  <Bar dataKey="closedWon" fill="#10b981" name="Closed Won" />
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="mt-4 space-y-2">
+                {sourcePerformance.map((source: any) => (
+                  <div key={source.source} className="flex items-center justify-between text-sm">
+                    <span className="font-medium">{source.source}</span>
+                    <div className="flex gap-4 text-muted-foreground">
+                      <span>{source.total} leads</span>
+                      <span className="text-green-600 font-medium">
+                        {source.conversionRate.toFixed(1)}% conversion
+                      </span>
+                    </div>
                   </div>
-                ) : (
-                  <div className="h-48 flex items-center justify-center text-muted-foreground">
-                    <p>No funnel data yet</p>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Campaign Performance */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="w-5 h-5" />
+                Email Campaign Performance
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm text-muted-foreground">Total Campaigns</div>
+                  <div className="text-2xl font-bold">{campaignPerformance?.email.totalCampaigns}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Emails Sent</div>
+                  <div className="text-2xl font-bold">{campaignPerformance?.email.totalSent}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Open Rate</div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {campaignPerformance?.email.openRate.toFixed(1)}%
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Click Rate</div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {campaignPerformance?.email.clickRate.toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" />
+                SMS Campaign Performance
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm text-muted-foreground">Total Campaigns</div>
+                  <div className="text-2xl font-bold">{campaignPerformance?.sms.totalCampaigns}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">SMS Sent</div>
+                  <div className="text-2xl font-bold">{campaignPerformance?.sms.totalSent}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Delivery Rate</div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {campaignPerformance?.sms.deliveryRate.toFixed(1)}%
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Failure Rate</div>
+                  <div className="text-2xl font-bold text-red-600">
+                    {campaignPerformance?.sms.failureRate.toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </CRMLayout>
+    </DashboardLayout>
   );
 }

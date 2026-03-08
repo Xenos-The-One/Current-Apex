@@ -34,7 +34,7 @@ export default function SEOPortal() {
   const [metaDesc, setMetaDesc] = useState("");
   const [generatingMeta, setGeneratingMeta] = useState(false);
 
-  const generateBlogPost = trpc.ai.generateEmailContent.useMutation({
+  const generateBlogPost = trpc.ai.generateScript.useMutation({
     onSuccess: (data) => {
       setGeneratedContent(data.content ?? "");
       setGeneratingContent(false);

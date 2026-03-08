@@ -1,233 +1,692 @@
-import CRMLayout from "@/components/CRMLayout";
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
+import DashboardLayout from "@/components/DashboardLayout";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
-import { Building2, CheckCircle, Edit, Plus, Users, XCircle } from "lucide-react";
-import { useState } from "react";
+import { 
+  Building2, 
+  Users, 
+  Phone, 
+  TrendingUp, 
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  FileText,
+  Eye,
+  MousePointerClick,
+  Star,
+  ArrowRight,
+  UserPlus,
+  Mail,
+  Loader2,
+  ShieldCheck,
+  Rocket,
+} from "lucide-react";
+import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
-
-const STATUS_COLORS: Record<string, string> = {
-  active: "bg-green-100 text-green-700",
-  trial: "bg-blue-100 text-blue-700",
-  suspended: "bg-red-100 text-red-700",
-  cancelled: "bg-gray-100 text-gray-600",
-};
-
-function CreateAgencyDialog({ onSuccess }: { onSuccess: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", slug: "", email: "", phone: "", maxUsers: "10", maxLeads: "1000" });
-  const createMutation = trpc.agencies.create.useMutation({
-    onSuccess: () => { toast.success("Agency created"); setOpen(false); onSuccess(); },
-    onError: (e) => toast.error(e.message),
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    createMutation.mutate({ ...form, maxUsers: parseInt(form.maxUsers), maxLeads: parseInt(form.maxLeads) });
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm"><Plus className="w-4 h-4 mr-1.5" /> New Agency</Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Create New Agency</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-          <div className="space-y-1.5">
-            <Label>Agency Name *</Label>
-            <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value, slug: e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") }))} placeholder="Acme Mortgage" required />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Slug *</Label>
-            <Input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} placeholder="acme-mortgage" required />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Email</Label>
-              <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="admin@acme.com" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Phone</Label>
-              <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="+1 555-0100" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Max Users</Label>
-              <Input type="number" value={form.maxUsers} onChange={e => setForm(f => ({ ...f, maxUsers: e.target.value }))} min="1" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Max Leads</Label>
-              <Input type="number" value={form.maxLeads} onChange={e => setForm(f => ({ ...f, maxLeads: e.target.value }))} min="1" />
-            </div>
-          </div>
-          <Button type="submit" className="w-full" disabled={createMutation.isPending}>
-            {createMutation.isPending ? "Creating..." : "Create Agency"}
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
+import { SetupProgressTracker } from "@/components/SetupProgressTracker";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 
 export default function AdminDashboard() {
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-
-  const { data: agencies, refetch, isLoading } = trpc.agencies.list.useQuery({
-    search: search || undefined,
-    status: statusFilter !== "all" ? statusFilter : undefined,
+  const { user, loading: authLoading } = useAuth();
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    company: "",
+    role: "client_user" as "agency_owner" | "client_user" | "loa",
+  });
+  const [adminForm, setAdminForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    company: "",
+    role: "admin" as "admin" | "super_admin",
   });
 
-  const updateMutation = trpc.agencies.update.useMutation({
-    onSuccess: () => { toast.success("Agency updated"); refetch(); },
-    onError: (e) => toast.error(e.message),
+  const isSuperAdmin = user?.role === "super_admin";
+  const [, setLocation] = useLocation();
+  const { startImpersonatingAsAdmin, startImpersonatingAsClient } = useImpersonation();
+  const utils = trpc.useUtils();
+
+  /** Admin-context mode: click the row name — keep admin sidebar, filter data to this client */
+  const handleViewAsAdmin = (clientId: number | null | undefined, clientName: string) => {
+    if (!clientId) {
+      toast.error("No client account linked to this agency yet.", {
+        description: "The client needs to complete account activation first.",
+      });
+      return;
+    }
+    startImpersonatingAsAdmin(clientId, clientName);
+    toast.success(`Viewing ${clientName}'s data`, {
+      description: "Admin Mode — your admin sidebar stays. Click 'Exit to Admin' to return.",
+    });
+    utils.invalidate();
+    setLocation("/dashboard");
+  };
+
+  /** Client-view mode: click 'View as Client' — switch to full client sidebar + client UX */
+  const handleViewAsClient = (clientId: number | null | undefined, clientName: string) => {
+    if (!clientId) {
+      toast.error("No client account linked to this agency yet.", {
+        description: "The client needs to complete account activation first.",
+      });
+      return;
+    }
+    startImpersonatingAsClient(clientId, clientName);
+    toast.success(`Switched to ${clientName}'s client view`, {
+      description: "Client View — you see their exact experience. Click 'Exit to Admin' to return.",
+    });
+    utils.invalidate();
+    setLocation("/dashboard");
+  };
+
+  const createSubAccount = trpc.onboarding.createSubAccount.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.emailSent
+        ? `Account created! Activation email sent to ${createForm.email}`
+        : `Account created, but email failed to send. Please resend manually.`);
+      setShowCreateModal(false);
+      setCreateForm({ firstName: "", lastName: "", email: "", phone: "", company: "", role: "client_user" });
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to create account");
+    },
   });
 
-  const toggleStatus = (id: number, currentStatus: string) => {
-    const newStatus = currentStatus === "active" ? "suspended" : "active";
-    updateMutation.mutate({ id, status: newStatus as any });
+  const handleCreateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createForm.firstName || !createForm.lastName || !createForm.email) {
+      toast.error("First name, last name, and email are required");
+      return;
+    }
+    createSubAccount.mutate({
+      ...createForm,
+      origin: window.location.origin,
+    });
+  };
+
+  const createAdminAccount = trpc.onboarding.createSubAccount.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.emailSent
+        ? `Admin account created! Activation email sent to ${adminForm.email}`
+        : `Admin account created, but email failed to send. Please resend manually.`);
+      setShowAdminModal(false);
+      setAdminForm({ firstName: "", lastName: "", email: "", phone: "", company: "", role: "admin" });
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to create admin account");
+    },
+  });
+
+  const handleAdminSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminForm.firstName || !adminForm.lastName || !adminForm.email) {
+      toast.error("First name, last name, and email are required");
+      return;
+    }
+    createAdminAccount.mutate({
+      ...adminForm,
+      origin: window.location.origin,
+    });
+  };
+
+  // Only fetch agencies when user is confirmed admin - prevents UNAUTHORIZED redirect loop
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+  const { data: agencies, isLoading: agenciesLoading } = trpc.admin.listAgencies.useQuery(
+    undefined,
+    { enabled: isAdmin }
+  );
+  // SEO performance summary
+  const { data: seoSummary } = trpc.seo.reports.getSummary.useQuery(
+    undefined,
+    { enabled: isAdmin }
+  );
+  // Pending invitations
+  const { data: invitations, refetch: refetchInvitations } = trpc.onboarding.listSubAccounts.useQuery(
+    undefined,
+    { enabled: isAdmin }
+  );
+  const resendInvitation = trpc.onboarding.resendInvitation.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.message);
+      refetchInvitations();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  if (authLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading dashboard...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <Card className="max-w-md">
+            <CardHeader>
+              <CardTitle>Access Denied</CardTitle>
+              <CardDescription>
+                You don't have permission to access the admin dashboard.
+                {!user && " Please sign in first."}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (agenciesLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading agencies...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const stats = {
+    totalAgencies: agencies?.length || 0,
+    activeAgencies: agencies?.filter(a => a.status === "active").length || 0,
+    pendingCalls: agencies?.filter(a => a.status === "pending_call").length || 0,
+    pendingPayment: agencies?.filter(a => a.status === "pending_payment").length || 0,
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "active":
+        return <Badge className="bg-success text-success-foreground">Active</Badge>;
+      case "pending_call":
+        return <Badge variant="secondary">Pending Call</Badge>;
+      case "pending_payment":
+        return <Badge variant="outline">Pending Payment</Badge>;
+      case "suspended":
+        return <Badge variant="destructive">Suspended</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
   };
 
   return (
-    <CRMLayout>
-      <div className="p-6 space-y-6 fade-in">
-        <div className="flex items-center justify-between">
+    <DashboardLayout>
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="page-header">
           <div>
-            <h1 className="text-2xl font-bold font-display">Admin Dashboard</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">Manage all agencies and platform settings</p>
+            <h1 className="text-lg font-semibold">Admin Dashboard</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Manage clients and monitor performance
+            </p>
           </div>
-          <CreateAgencyDialog onSuccess={refetch} />
+          <div className="flex items-center gap-2">
+            {isSuperAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAdminModal(true)}
+                className="gap-1.5 h-8 text-xs"
+              >
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Add Admin
+              </Button>
+            )}
+            <Button
+              size="sm"
+              onClick={() => setShowCreateModal(true)}
+              className="gap-1.5 h-8 text-xs"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              New Sub-Account
+            </Button>
+          </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: "Total Agencies", value: agencies?.length ?? 0, icon: Building2, color: "blue" },
-            { label: "Active", value: agencies?.filter(a => a.status === "active").length ?? 0, icon: CheckCircle, color: "green" },
-            { label: "Trial", value: agencies?.filter(a => a.status === "trial").length ?? 0, icon: Building2, color: "orange" },
-            { label: "Suspended", value: agencies?.filter(a => a.status === "suspended").length ?? 0, icon: XCircle, color: "red" },
-          ].map(({ label, value, icon: Icon, color }) => (
-            <Card key={label}>
-              <CardContent className="pt-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">{label}</p>
-                    <p className="text-2xl font-bold font-display mt-0.5">{value}</p>
+        {/* Create Sub-Account Modal */}
+        <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5 text-primary" />
+                Create Sub-Account
+              </DialogTitle>
+              <DialogDescription>
+                Fill in the details below. The account holder will receive a verification email to activate their account and set their own password.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleCreateSubmit}>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name <span className="text-destructive">*</span></Label>
+                    <Input
+                      id="firstName"
+                      placeholder="John"
+                      value={createForm.firstName}
+                      onChange={(e) => setCreateForm(f => ({ ...f, firstName: e.target.value }))}
+                      required
+                    />
                   </div>
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-${color}-50`}>
-                    <Icon className={`w-5 h-5 text-${color}-600`} />
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name <span className="text-destructive">*</span></Label>
+                    <Input
+                      id="lastName"
+                      placeholder="Smith"
+                      value={createForm.lastName}
+                      onChange={(e) => setCreateForm(f => ({ ...f, lastName: e.target.value }))}
+                      required
+                    />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address <span className="text-destructive">*</span></Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="john@example.com"
+                      className="pl-9"
+                      value={createForm.email}
+                      onChange={(e) => setCreateForm(f => ({ ...f, email: e.target.value }))}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="+1 (702) 555-0100"
+                      className="pl-9"
+                      value={createForm.phone}
+                      onChange={(e) => setCreateForm(f => ({ ...f, phone: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="company">Company Name</Label>
+                  <Input
+                    id="company"
+                    placeholder="PMR Loans"
+                    value={createForm.company}
+                    onChange={(e) => setCreateForm(f => ({ ...f, company: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">Account Role</Label>
+                  <Select
+                    value={createForm.role}
+                    onValueChange={(v) => setCreateForm(f => ({ ...f, role: v as typeof f.role }))}
+                  >
+                    <SelectTrigger id="role">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="client_user">Client User</SelectItem>
+                      <SelectItem value="loa">Loan Officer / Agent (LOA)</SelectItem>
+                      <SelectItem value="agency_owner">Agency Owner</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createSubAccount.isPending} className="gap-2">
+                  {createSubAccount.isPending ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Creating...</>
+                  ) : (
+                    <><UserPlus className="h-4 w-4" /> Create & Send Invite</>
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Admin Account Modal — super_admin only */}
+        {isSuperAdmin && (
+          <Dialog open={showAdminModal} onOpenChange={setShowAdminModal}>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5 text-primary" />
+                  Create Admin Account
+                </DialogTitle>
+                <DialogDescription>
+                  Create an internal admin account. This option is only visible to super admins and cannot be accessed by any client-level user.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleAdminSubmit}>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="adminFirstName">First Name <span className="text-destructive">*</span></Label>
+                      <Input
+                        id="adminFirstName"
+                        placeholder="Jane"
+                        value={adminForm.firstName}
+                        onChange={(e) => setAdminForm(f => ({ ...f, firstName: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="adminLastName">Last Name <span className="text-destructive">*</span></Label>
+                      <Input
+                        id="adminLastName"
+                        placeholder="Doe"
+                        value={adminForm.lastName}
+                        onChange={(e) => setAdminForm(f => ({ ...f, lastName: e.target.value }))}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="adminEmail">Email Address <span className="text-destructive">*</span></Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="adminEmail"
+                        type="email"
+                        placeholder="jane@sterlingmarketing.com"
+                        className="pl-9"
+                        value={adminForm.email}
+                        onChange={(e) => setAdminForm(f => ({ ...f, email: e.target.value }))}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="adminPhone">Phone Number</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="adminPhone"
+                        type="tel"
+                        placeholder="+1 (702) 555-0100"
+                        className="pl-9"
+                        value={adminForm.phone}
+                        onChange={(e) => setAdminForm(f => ({ ...f, phone: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="adminCompany">Company / Department</Label>
+                    <Input
+                      id="adminCompany"
+                      placeholder="Sterling Marketing"
+                      value={adminForm.company}
+                      onChange={(e) => setAdminForm(f => ({ ...f, company: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="adminRole">Admin Role</Label>
+                    <Select
+                      value={adminForm.role}
+                      onValueChange={(v) => setAdminForm(f => ({ ...f, role: v as typeof f.role }))}
+                    >
+                      <SelectTrigger id="adminRole">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="super_admin">Super Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setShowAdminModal(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={createAdminAccount.isPending} className="gap-2">
+                    {createAdminAccount.isPending ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Creating...</>
+                    ) : (
+                      <><ShieldCheck className="h-4 w-4" /> Create Admin Account</>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* Stats Grid — compact inline stat bar */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: "Total Clients", value: stats.totalAgencies, icon: Building2, color: "text-blue-500" },
+            { label: "Active", value: stats.activeAgencies, icon: CheckCircle2, color: "text-emerald-500" },
+            { label: "Pending Call", value: stats.pendingCalls, icon: Clock, color: "text-amber-500" },
+            { label: "Pending Sub", value: stats.pendingPayment, icon: AlertCircle, color: "text-red-500" },
+          ].map(({ label, value, icon: Icon, color }) => (
+            <div key={label} className="stat-card flex items-center gap-3">
+              <div className={`shrink-0 ${color}`}>
+                <Icon className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xl font-bold leading-none">{value}</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{label}</div>
+              </div>
+            </div>
           ))}
         </div>
 
-        {/* Agencies Table */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between gap-3">
-              <CardTitle className="text-base">All Agencies</CardTitle>
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder="Search agencies..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="h-8 w-48 text-sm"
-                />
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="h-8 w-32 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="trial">Trial</SelectItem>
-                    <SelectItem value="suspended">Suspended</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
+        {/* SEO Performance Widget */}
+        {seoSummary && (
+          <Card className="border-l-4 border-l-primary">
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <div>
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  AI SEO Performance
+                </CardTitle>
+                <CardDescription>Content pipeline across all clients</CardDescription>
               </div>
+              <Link href="/seo">
+                <Button variant="outline" size="sm" className="gap-1">
+                  Open SEO Portal <ArrowRight className="h-3 w-3" />
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-3 rounded-lg bg-muted/40">
+                  <FileText className="h-5 w-5 mx-auto mb-1 text-primary" />
+                  <div className="text-2xl font-bold">{seoSummary.totalContent}</div>
+                  <div className="text-xs text-muted-foreground">Total Content</div>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-muted/40">
+                  <CheckCircle2 className="h-5 w-5 mx-auto mb-1 text-success" />
+                  <div className="text-2xl font-bold">{seoSummary.statusCounts?.approved || 0}</div>
+                  <div className="text-xs text-muted-foreground">Published</div>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-muted/40">
+                  <Eye className="h-5 w-5 mx-auto mb-1 text-blue-500" />
+                  <div className="text-2xl font-bold">{(seoSummary.totalViews || 0).toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground">Total Views</div>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-muted/40">
+                  <Star className="h-5 w-5 mx-auto mb-1 text-yellow-500" />
+                  <div className="text-2xl font-bold">{seoSummary.avgQualityScore || 0}</div>
+                  <div className="text-xs text-muted-foreground">Avg Quality Score</div>
+                </div>
+              </div>
+              {seoSummary.contentByClient && seoSummary.contentByClient.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Top SEO Clients</p>
+                  <div className="space-y-1">
+                    {seoSummary.contentByClient.slice(0, 3).map((c: any) => (
+                      <div key={c.name} className="flex items-center justify-between text-sm">
+                        <span className="font-medium truncate">{c.name}</span>
+                        <span className="text-muted-foreground ml-2 shrink-0">{c.count} posts · {c.approved} approved</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Clients Table */}
+        <Card>
+          <CardHeader className="py-3 px-4 border-b">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold">Clients</CardTitle>
+              <span className="text-xs text-muted-foreground">{agencies?.length || 0} total</span>
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            {isLoading ? (
-              <div className="p-8 text-center text-muted-foreground text-sm">Loading agencies...</div>
-            ) : agencies?.length === 0 ? (
-              <div className="p-12 text-center">
-                <Building2 className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-muted-foreground">No agencies found</p>
-                <p className="text-sm text-muted-foreground/70 mt-1">Create your first agency to get started</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Agency</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Limits</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {agencies?.map(agency => (
-                    <TableRow key={agency.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                            <Building2 className="w-4 h-4 text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">{agency.name}</p>
-                            <p className="text-xs text-muted-foreground">{agency.email || agency.slug}</p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[agency.status] || ""}`}>
-                          {agency.status}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Users className="w-3 h-3" /> {agency.maxUsers} users · {agency.maxLeads?.toLocaleString()} leads
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {new Date(agency.createdAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
+            {agencies && agencies.length > 0 ? (
+              <table className="w-full table-compact">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left">Client</th>
+                    <th className="text-left hidden md:table-cell">Type</th>
+                    <th className="text-left hidden lg:table-cell">Team</th>
+                    <th className="text-left">Status</th>
+                    <th className="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {agencies.map((agency) => (
+                    <tr key={agency.id}>
+                      <td>
+                        <button
+                          className="font-medium text-sm hover:text-primary hover:underline transition-colors text-left"
+                          onClick={() => handleViewAsAdmin((agency as any).clientId, (agency as any).clientName || agency.name)}
+                          title="View this client's data with admin sidebar"
+                        >
+                          {agency.name}
+                        </button>
+                      </td>
+                      <td className="hidden md:table-cell text-xs text-muted-foreground">
+                        {agency.businessType === "loan_officer" ? "Loan Officer" : "Real Estate"}
+                      </td>
+                      <td className="hidden lg:table-cell text-xs text-muted-foreground">{agency.teamSize}</td>
+                      <td>{getStatusBadge(agency.status)}</td>
+                      <td className="text-right">
+                        <div className="flex gap-1 justify-end">
                           <Button
-                            variant="ghost" size="sm" className="h-7 text-xs"
-                            onClick={() => toggleStatus(agency.id, agency.status)}
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            onClick={() => handleViewAsClient((agency as any).clientId, (agency as any).clientName || agency.name)}
+                            title="View as client"
                           >
-                            {agency.status === "active" ? "Suspend" : "Activate"}
+                            <Eye className="w-3 h-3" />
+                            Client View
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7">
-                            <Edit className="w-3.5 h-3.5" />
-                          </Button>
+                          <Link href="/launchpad">
+                            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1">
+                              <Rocket className="w-3 h-3" />
+                              Launchpad
+                            </Button>
+                          </Link>
+                          <Link href={`/admin/agencies/${agency.id}`}>
+                            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">Details</Button>
+                          </Link>
                         </div>
-                      </TableCell>
-                    </TableRow>
+                      </td>
+                    </tr>
                   ))}
-                </TableBody>
-              </Table>
+                </tbody>
+              </table>
+            ) : (
+              <div className="text-center py-10 text-muted-foreground">
+                <Building2 className="w-8 h-8 mx-auto mb-3 opacity-40" />
+                <p className="text-sm">No clients yet</p>
+                <p className="text-xs mt-1">New clients will appear here after subscribing</p>
+              </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Pending Invitations */}
+        {invitations && invitations.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="w-5 h-5" />
+                Pending Invitations
+              </CardTitle>
+              <CardDescription>
+                Track sub-account onboarding status and resend activation emails
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {invitations.map((inv) => {
+                  const isExpired = inv.status === "expired" || new Date() > new Date(inv.expiresAt);
+                  const statusColor = inv.status === "accepted" ? "default" : isExpired ? "destructive" : "secondary";
+                  const statusLabel = inv.status === "accepted" ? "✓ Activated" : isExpired ? "Expired" : "Pending";
+                  return (
+                    <div key={inv.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-sm">{inv.firstName} {inv.lastName}</span>
+                          <Badge variant={statusColor} className="text-xs">{statusLabel}</Badge>
+                          <Badge variant="outline" className="text-xs capitalize">{inv.role.replace("_", " ")}</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">{inv.email}</p>
+                        {inv.company && <p className="text-xs text-muted-foreground">{inv.company}</p>}
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Invited {new Date(inv.createdAt).toLocaleDateString()} · Expires {new Date(inv.expiresAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      {inv.status !== "accepted" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="ml-3 shrink-0"
+                          disabled={resendInvitation.isPending}
+                          onClick={() => resendInvitation.mutate({ invitationId: inv.id, origin: window.location.origin })}
+                        >
+                          {resendInvitation.isPending ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Mail className="w-3.5 h-3.5 mr-1" />
+                          )}
+                          Resend
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
-    </CRMLayout>
+    </DashboardLayout>
   );
 }

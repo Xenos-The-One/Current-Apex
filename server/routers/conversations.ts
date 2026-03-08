@@ -10,12 +10,11 @@ export const conversationsRouter = router({
     .input(z.object({
       agencyId: z.number(),
       channel: z.string().optional(),
-      isRead: z.boolean().optional(),
       limit: z.number().default(30),
       offset: z.number().default(0),
     }))
     .query(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const conditions = [eq(conversations.agencyId, input.agencyId)];
       if (input.channel) conditions.push(eq(conversations.channel, input.channel as any));
@@ -29,7 +28,7 @@ export const conversationsRouter = router({
   getById: protectedProcedure
     .input(z.object({ id: z.number(), agencyId: z.number() }))
     .query(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const [conv] = await db.select().from(conversations)
         .where(and(eq(conversations.id, input.id), eq(conversations.agencyId, input.agencyId)))
@@ -41,7 +40,7 @@ export const conversationsRouter = router({
   getMessages: protectedProcedure
     .input(z.object({ conversationId: z.number(), limit: z.number().default(50) }))
     .query(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       return db.select().from(conversationMessages)
         .where(eq(conversationMessages.conversationId, input.conversationId))
@@ -56,7 +55,7 @@ export const conversationsRouter = router({
       direction: z.enum(["inbound", "outbound"]).default("outbound"),
     }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       // Get conversation to find agencyId
       const [conv] = await db.select().from(conversations)
@@ -72,7 +71,7 @@ export const conversationsRouter = router({
       });
       // Update conversation last message
       await db.update(conversations)
-        .set({ lastMessageAt: new Date(), lastMessagePreview: input.content.slice(0, 100), isRead: true })
+        .set({ lastMessageAt: new Date(), lastMessagePreview: input.content.slice(0, 100),
         .where(eq(conversations.id, input.conversationId));
       return { id: (result as any).insertId };
     }),
@@ -80,10 +79,10 @@ export const conversationsRouter = router({
   markRead: protectedProcedure
     .input(z.object({ id: z.number(), agencyId: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       await db.update(conversations)
-        .set({ isRead: true })
+        .set({
         .where(and(eq(conversations.id, input.id), eq(conversations.agencyId, input.agencyId)));
       return { success: true };
     }),
@@ -100,7 +99,7 @@ export const conversationsRouter = router({
       lastMessagePreview: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const [result] = await db.insert(conversations).values({
         ...input,

@@ -14,7 +14,7 @@ export const contentRouter = router({
       limit: z.number().default(50),
     }))
     .query(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const conditions = [eq(socialMediaPosts.agencyId, input.agencyId)];
       if (input.platform) conditions.push(eq(socialMediaPosts.platform, input.platform as any));
@@ -31,7 +31,7 @@ export const contentRouter = router({
       scheduledAt: z.date().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const { mediaUrls, ...rest } = input;
       const [result] = await db.insert(socialMediaPosts).values({
@@ -52,7 +52,7 @@ export const contentRouter = router({
       scheduledAt: z.date().optional(),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const { id, agencyId, ...rest } = input;
       await db.update(socialMediaPosts).set(rest).where(and(eq(socialMediaPosts.id, id), eq(socialMediaPosts.agencyId, agencyId)));
@@ -62,7 +62,7 @@ export const contentRouter = router({
   deletePost: protectedProcedure
     .input(z.object({ id: z.number(), agencyId: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       await db.delete(socialMediaPosts).where(and(eq(socialMediaPosts.id, input.id), eq(socialMediaPosts.agencyId, input.agencyId)));
       return { success: true };
@@ -71,7 +71,7 @@ export const contentRouter = router({
   listApprovals: protectedProcedure
     .input(z.object({ agencyId: z.number(), status: z.string().optional() }))
     .query(async ({ input }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const conditions = [eq(contentApprovals.agencyId, input.agencyId)];
       if (input.status) conditions.push(eq(contentApprovals.status, input.status as any));
@@ -85,7 +85,7 @@ export const contentRouter = router({
       contentId: z.number(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const [result] = await db.insert(contentApprovals).values({ ...input, requestedByUserId: ctx.user.id });
       return { id: (result as any).insertId };
@@ -99,7 +99,7 @@ export const contentRouter = router({
       comments: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
+      const db = (await getDb())!;
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const { id, agencyId, ...rest } = input;
       await db.update(contentApprovals).set({ ...rest, reviewedByUserId: ctx.user.id })

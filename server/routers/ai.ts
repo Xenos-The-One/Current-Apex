@@ -1,177 +1,194 @@
-import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { leads } from "../../drizzle/schema";
-import { getDb } from "../db";
-import { invokeLLM } from "../_core/llm";
 import { protectedProcedure, router } from "../_core/trpc";
-
-type LLMMessage = { role: "system" | "user" | "assistant"; content: string };
-
-async function callLLM(messages: LLMMessage[], schema: Record<string, unknown>, schemaName: string) {
-  const response = await invokeLLM({
-    messages,
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: schemaName,
-        strict: true,
-        schema,
-      },
-    },
-  });
-  const content = response.choices?.[0]?.message?.content;
-  if (typeof content !== "string") throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "LLM returned unexpected content" });
-  return JSON.parse(content);
-}
+import { TRPCError } from "@trpc/server";
+import { invokeLLM } from "../_core/llm";
+import {
+  getClientByUserId,
+  createAiScript,
+  getAiScriptsByClientId,
+  getAiScriptById,
+  updateAiScript,
+} from "../db";
 
 export const aiRouter = router({
-  scoreLead: protectedProcedure
-    .input(z.object({ leadId: z.number(), agencyId: z.number() }))
-    .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const [lead] = await db.select().from(leads).where(eq(leads.id, input.leadId)).limit(1);
-      if (!lead) throw new TRPCError({ code: "NOT_FOUND" });
-
-      const parsed = await callLLM(
-        [
-          { role: "system", content: "You are a mortgage CRM lead scoring expert. Score leads from 0-100 based on their profile. Return JSON only." },
-          { role: "user", content: `Score this lead and explain why:\n${JSON.stringify({ name: `${lead.firstName} ${lead.lastName}`, email: lead.email, phone: lead.phone, contactType: lead.contactType, status: lead.status, source: lead.source, loanAmount: lead.loanAmount, notes: lead.notes })}` },
-        ],
-        {
-          type: "object",
-          properties: {
-            score: { type: "integer", description: "Score 0-100" },
-            reasoning: { type: "string", description: "Why this score" },
-            nextActions: { type: "array", items: { type: "string" }, description: "Recommended next actions" },
-          },
-          required: ["score", "reasoning", "nextActions"],
-          additionalProperties: false,
-        },
-        "lead_score"
-      );
-
-      const score = Math.min(100, Math.max(0, parsed.score || 0));
-      await db.update(leads).set({ score }).where(eq(leads.id, input.leadId));
-      return { score, reasoning: parsed.reasoning as string, nextActions: parsed.nextActions as string[] };
-    }),
-
-  getRecommendations: protectedProcedure
-    .input(z.object({ leadId: z.number(), agencyId: z.number() }))
-    .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const [lead] = await db.select().from(leads).where(eq(leads.id, input.leadId)).limit(1);
-      if (!lead) throw new TRPCError({ code: "NOT_FOUND" });
-
-      return callLLM(
-        [
-          { role: "system", content: "You are a mortgage CRM assistant. Analyze the lead and provide actionable recommendations. Return JSON only." },
-          { role: "user", content: `Analyze this lead:\n${JSON.stringify({ name: `${lead.firstName} ${lead.lastName}`, contactType: lead.contactType, status: lead.status, pipelineStage: lead.pipelineStage, source: lead.source, score: lead.score, loanAmount: lead.loanAmount, notes: lead.notes })}` },
-        ],
-        {
-          type: "object",
-          properties: {
-            priority: { type: "string" },
-            summary: { type: "string" },
-            nextActions: { type: "array", items: { type: "string" } },
-            suggestedMessage: { type: "string" },
-            riskFactors: { type: "array", items: { type: "string" } },
-          },
-          required: ["priority", "summary", "nextActions", "suggestedMessage", "riskFactors"],
-          additionalProperties: false,
-        },
-        "recommendations"
-      );
-    }),
-
-  generateEmailContent: protectedProcedure
+  // ============= SCRIPT GENERATION =============
+  
+  generateScript: protectedProcedure
     .input(z.object({
-      purpose: z.string(),
-      recipientName: z.string().optional(),
-      senderName: z.string().optional(),
-      context: z.string().optional(),
-      tone: z.enum(["professional", "friendly", "urgent", "nurturing"]).default("professional"),
+      scriptType: z.enum(["email", "sms", "social", "voice", "youtube"]),
+      prompt: z.string(),
+      context: z.object({
+        businessType: z.enum(["loan_officer", "real_estate"]).optional(),
+        targetAudience: z.string().optional(),
+        tone: z.enum(["professional", "friendly", "casual", "urgent"]).optional(),
+        length: z.enum(["short", "medium", "long"]).optional(),
+      }).optional(),
     }))
-    .mutation(async ({ input }) => {
-      return callLLM(
-        [
-          { role: "system", content: "You are an expert mortgage marketing copywriter. Generate compelling email content. Return JSON only." },
-          { role: "user", content: `Generate an email for: ${input.purpose}. Recipient: ${input.recipientName || "the lead"}. Sender: ${input.senderName || "a loan officer"}. Context: ${input.context || "mortgage services"}. Tone: ${input.tone}.` },
+    .mutation(async ({ ctx, input }) => {
+      const client = await getClientByUserId(ctx.user.id);
+      if (!client) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Client profile not found",
+        });
+      }
+
+      // Check access mode
+      if (client.accessMode !== "full") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: client.accessMode === "limited" 
+            ? "Limited access mode. Please complete your strategy call to unlock full access."
+            : "Read-only access. Contact your agency administrator.",
+        });
+      }
+
+      // Build system prompt based on script type
+      let systemPrompt = "";
+      
+      switch (input.scriptType) {
+        case "voice":
+          systemPrompt = `You are an expert AI voice script writer for ${input.context?.businessType || "sales"} professionals. Create a natural, conversational script for an AI voice assistant that will call leads. The script should:
+- Be warm and professional
+- Ask qualifying questions
+- Handle objections gracefully
+- Guide toward booking an appointment
+- Sound natural when spoken aloud
+- Include pauses and natural speech patterns
+${input.context?.tone ? `Tone: ${input.context.tone}` : ""}`;
+          break;
+          
+        case "email":
+          systemPrompt = `You are an expert email copywriter for ${input.context?.businessType || "sales"} professionals. Create a compelling email that:
+- Has an attention-grabbing subject line
+- Opens with a personalized hook
+- Provides clear value proposition
+- Includes a strong call-to-action
+- Is optimized for mobile reading
+${input.context?.tone ? `Tone: ${input.context.tone}` : ""}
+${input.context?.length ? `Length: ${input.context.length}` : ""}`;
+          break;
+          
+        case "sms":
+          systemPrompt = `You are an expert SMS copywriter for ${input.context?.businessType || "sales"} professionals. Create a concise, impactful text message that:
+- Is under 160 characters if possible
+- Gets straight to the point
+- Includes a clear call-to-action
+- Uses conversational language
+- Respects the personal nature of SMS
+${input.context?.tone ? `Tone: ${input.context.tone}` : ""}`;
+          break;
+          
+        case "social":
+          systemPrompt = `You are an expert social media content creator for ${input.context?.businessType || "sales"} professionals. Create engaging social media content that:
+- Captures attention in the first line
+- Provides value or entertainment
+- Includes relevant hashtags
+- Encourages engagement (likes, comments, shares)
+- Is platform-appropriate (Facebook, Instagram, LinkedIn)
+${input.context?.tone ? `Tone: ${input.context.tone}` : ""}
+${input.context?.length ? `Length: ${input.context.length}` : ""}`;
+          break;
+          
+        case "youtube":
+          systemPrompt = `You are an expert YouTube script writer for ${input.context?.businessType || "sales"} professionals. Create a video script that:
+- Has a hook in the first 10 seconds
+- Provides valuable, actionable content
+- Includes timestamps for key sections
+- Has a strong call-to-action at the end
+- Is engaging and keeps viewers watching
+${input.context?.tone ? `Tone: ${input.context.tone}` : ""}
+${input.context?.length ? `Length: ${input.context.length}` : ""}`;
+          break;
+      }
+
+      // Generate content using LLM
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: input.prompt },
         ],
-        {
-          type: "object",
-          properties: {
-            subject: { type: "string" },
-            body: { type: "string" },
-            callToAction: { type: "string" },
-          },
-          required: ["subject", "body", "callToAction"],
-          additionalProperties: false,
-        },
-        "email_content"
-      );
+      });
+
+      const messageContent = response.choices[0]?.message?.content;
+      const generatedContent = typeof messageContent === 'string' ? messageContent : "";
+
+      if (!generatedContent) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to generate content",
+        });
+      }
+
+      // Save to database
+      await createAiScript({
+        clientId: client.id,
+        agencyId: client.agencyId,
+        scriptType: input.scriptType,
+        prompt: input.prompt,
+        generatedContent,
+        createdBy: ctx.user.id,
+      });
+
+      return {
+        content: generatedContent,
+      };
     }),
 
-  generateSmsContent: protectedProcedure
-    .input(z.object({
-      purpose: z.string(),
-      recipientName: z.string().optional(),
-      context: z.string().optional(),
-    }))
-    .mutation(async ({ input }) => {
-      return callLLM(
-        [
-          { role: "system", content: "You are a mortgage marketing expert. Write concise, effective SMS messages under 160 characters. Return JSON only." },
-          { role: "user", content: `Write an SMS for: ${input.purpose}. Recipient: ${input.recipientName || "the lead"}. Context: ${input.context || "mortgage services"}.` },
-        ],
-        {
-          type: "object",
-          properties: {
-            message: { type: "string" },
-            alternatives: { type: "array", items: { type: "string" } },
-          },
-          required: ["message", "alternatives"],
-          additionalProperties: false,
-        },
-        "sms_content"
-      );
+  listScripts: protectedProcedure.query(async ({ ctx }) => {
+    const client = await getClientByUserId(ctx.user.id);
+    if (!client) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Client profile not found",
+      });
+    }
+
+    return await getAiScriptsByClientId(client.id);
+  }),
+
+  getScript: protectedProcedure
+    .input(z.object({ scriptId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const client = await getClientByUserId(ctx.user.id);
+      if (!client) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Client profile not found",
+        });
+      }
+
+      const script = await getAiScriptById(input.scriptId);
+      if (!script || script.clientId !== client.id) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Script not found",
+        });
+      }
+
+      return script;
     }),
 
-  generateCallScript: protectedProcedure
-    .input(z.object({
-      purpose: z.enum(["cold_call", "follow_up", "appointment_booking", "re_engagement", "referral_request", "other"]),
-      leadContext: z.string().optional(),
-      agentName: z.string().optional(),
-    }))
-    .mutation(async ({ input }) => {
-      return callLLM(
-        [
-          { role: "system", content: "You are an expert mortgage sales trainer. Generate a professional call script. Return JSON only." },
-          { role: "user", content: `Generate a ${input.purpose} call script for loan officer ${input.agentName || "the agent"}. Lead context: ${input.leadContext || "prospective borrower"}.` },
-        ],
-        {
-          type: "object",
-          properties: {
-            opening: { type: "string" },
-            mainPoints: { type: "array", items: { type: "string" } },
-            objectionHandlers: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: { objection: { type: "string" }, response: { type: "string" } },
-                required: ["objection", "response"],
-                additionalProperties: false,
-              },
-            },
-            closing: { type: "string" },
-            fullScript: { type: "string" },
-          },
-          required: ["opening", "mainPoints", "objectionHandlers", "closing", "fullScript"],
-          additionalProperties: false,
-        },
-        "call_script"
-      );
+  markAsUsed: protectedProcedure
+    .input(z.object({ scriptId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const client = await getClientByUserId(ctx.user.id);
+      if (!client) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Client profile not found",
+        });
+      }
+
+      const script = await getAiScriptById(input.scriptId);
+      if (!script || script.clientId !== client.id) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Script not found",
+        });
+      }
+
+      await updateAiScript(input.scriptId, { isUsed: true });
+      return { success: true };
     }),
 });

@@ -17,7 +17,7 @@ function ScoreLeadPanel({ agencyId }: { agencyId: number }) {
   const [leadId, setLeadId] = useState("");
   const [result, setResult] = useState<any>(null);
 
-  const scoreMutation = trpc.ai.scoreLead.useMutation({
+  const scoreMutation = trpc.ai.generateScript.useMutation({
     onSuccess: (data: any) => { setResult(data); toast.success("Lead scored"); },
     onError: (e: any) => toast.error(e.message),
   });
@@ -85,7 +85,7 @@ function EmailGeneratorPanel({ agencyId }: { agencyId: number }) {
   const [form, setForm] = useState({ purpose: "", tone: "professional", recipientType: "borrower" });
   const [result, setResult] = useState<any>(null);
 
-  const generateMutation = trpc.ai.generateEmailContent.useMutation({
+  const generateMutation = trpc.ai.generateScript.useMutation({
     onSuccess: (data) => { setResult(data); toast.success("Email generated"); },
     onError: (e: any) => toast.error(e.message),
   });

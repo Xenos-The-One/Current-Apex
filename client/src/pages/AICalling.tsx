@@ -47,7 +47,7 @@ function InitiateCallDialog({ agencyId, onSuccess }: { agencyId: number; onSucce
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ leadId: "", phoneNumber: "", assistantId: "", objective: "" });
 
-  const callMutation = trpc.vapi.placeCall.useMutation({
+  const callMutation = trpc.vapi.makeCall.useMutation({
     onSuccess: () => { toast.success("Call initiated via Vapi"); setOpen(false); onSuccess(); },
     onError: (e: any) => toast.error(e.message),
   });
