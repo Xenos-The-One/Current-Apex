@@ -1,0 +1,28 @@
+{
+  "query": "\nSELECT table_name FROM information_schema.tables \nWHERE table_schema = DATABASE() \nAND table_name IN ('content', 'seoClients', 'seoUsers', 'contentTemplates', 'contentAnalytics', 'contentRevisions', 'notification_logs', 'team_members')\nORDER BY table_name;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nSELECT table_name FROM information_schema.tables \nWHERE table_schema = DATABASE() \nAND table_name IN ('content', 'seoClients', 'seoUsers', 'contentTemplates', 'contentAnalytics', 'contentRevisions', 'notification_logs', 'team_members')\nORDER BY table_name;\n",
+  "rows": [
+    {
+      "table_name": "contentAnalytics"
+    },
+    {
+      "table_name": "contentRevisions"
+    },
+    {
+      "table_name": "contentTemplates"
+    },
+    {
+      "table_name": "notification_logs"
+    },
+    {
+      "table_name": "seoUsers"
+    },
+    {
+      "table_name": "team_members"
+    }
+  ],
+  "messages": [],
+  "stdout": "table_name\ncontentAnalytics\ncontentRevisions\ncontentTemplates\nnotification_logs\nseoUsers\nteam_members\n",
+  "stderr": "",
+  "execution_time_ms": 83
+}

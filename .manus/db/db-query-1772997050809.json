@@ -1,0 +1,85 @@
+{
+  "query": "\nSELECT table_name FROM information_schema.tables \nWHERE table_schema = DATABASE() \nAND table_name IN (\n  'content', 'contentRevisions', 'contentAnalytics', 'contentRepurposed', 'contentComments',\n  'gbpConnections', 'gbpLocations', 'gbpPosts', 'brandVoiceHistory', 'ads',\n  'competitorKeywords', 'gapAnalysisRuns', 'savedKeywords', 'seoAuditHistory',\n  'keywordRankings', 'keywordRankAlerts', 'gapKeywordBriefs', 'contentPackages',\n  'notification_logs', 'email_templates', 'inbound_emails',\n  'viral_topics', 'social_posts', 'content_calendar', 'heygen_sessions'\n)\nORDER BY table_name;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nSELECT table_name FROM information_schema.tables \nWHERE table_schema = DATABASE() \nAND table_name IN (\n  'content', 'contentRevisions', 'contentAnalytics', 'contentRepurposed', 'contentComments',\n  'gbpConnections', 'gbpLocations', 'gbpPosts', 'brandVoiceHistory', 'ads',\n  'competitorKeywords', 'gapAnalysisRuns', 'savedKeywords', 'seoAuditHistory',\n  'keywordRankings', 'keywordRankAlerts', 'gapKeywordBriefs', 'contentPackages',\n  'notification_logs', 'email_templates', 'inbound_emails',\n  'viral_topics', 'social_posts', 'content_calendar', 'heygen_sessions'\n)\nORDER BY table_name;\n",
+  "rows": [
+    {
+      "table_name": "ads"
+    },
+    {
+      "table_name": "brandVoiceHistory"
+    },
+    {
+      "table_name": "competitorKeywords"
+    },
+    {
+      "table_name": "content"
+    },
+    {
+      "table_name": "contentAnalytics"
+    },
+    {
+      "table_name": "contentComments"
+    },
+    {
+      "table_name": "contentPackages"
+    },
+    {
+      "table_name": "contentRepurposed"
+    },
+    {
+      "table_name": "contentRevisions"
+    },
+    {
+      "table_name": "content_calendar"
+    },
+    {
+      "table_name": "email_templates"
+    },
+    {
+      "table_name": "gapAnalysisRuns"
+    },
+    {
+      "table_name": "gapKeywordBriefs"
+    },
+    {
+      "table_name": "gbpConnections"
+    },
+    {
+      "table_name": "gbpLocations"
+    },
+    {
+      "table_name": "gbpPosts"
+    },
+    {
+      "table_name": "heygen_sessions"
+    },
+    {
+      "table_name": "inbound_emails"
+    },
+    {
+      "table_name": "keywordRankAlerts"
+    },
+    {
+      "table_name": "keywordRankings"
+    },
+    {
+      "table_name": "notification_logs"
+    },
+    {
+      "table_name": "savedKeywords"
+    },
+    {
+      "table_name": "seoAuditHistory"
+    },
+    {
+      "table_name": "social_posts"
+    },
+    {
+      "table_name": "viral_topics"
+    }
+  ],
+  "messages": [],
+  "stdout": "table_name\nads\nbrandVoiceHistory\ncompetitorKeywords\ncontent\ncontentAnalytics\ncontentComments\ncontentPackages\ncontentRepurposed\ncontentRevisions\ncontent_calendar\nemail_templates\ngapAnalysisRuns\ngapKeywordBriefs\ngbpConnections\ngbpLocations\ngbpPosts\nheygen_sessions\ninbound_emails\nkeywordRankAlerts\nkeywordRankings\nnotification_logs\nsavedKeywords\nseoAuditHistory\nsocial_posts\nviral_topics\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

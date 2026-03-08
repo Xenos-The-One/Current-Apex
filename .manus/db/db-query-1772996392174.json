@@ -1,0 +1,73 @@
+{
+  "query": "\nSELECT 'content' as tbl WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='content')\nUNION SELECT 'gbpConnections' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='gbpConnections')\nUNION SELECT 'gbpLocations' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='gbpLocations')\nUNION SELECT 'gbpPosts' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='gbpPosts')\nUNION SELECT 'brandVoiceHistory' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='brandVoiceHistory')\nUNION SELECT 'ads' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='ads')\nUNION SELECT 'competitorKeywords' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='competitorKeywords')\nUNION SELECT 'gapAnalysisRuns' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='gapAnalysisRuns')\nUNION SELECT 'savedKeywords' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='savedKeywords')\nUNION SELECT 'seoAuditHistory' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='seoAuditHistory')\nUNION SELECT 'keywordRankings' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='keywordRankings')\nUNION SELECT 'keywordRankAlerts' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='keywordRankAlerts')\nUNION SELECT 'gapKeywordBriefs' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='gapKeywordBriefs')\nUNION SELECT 'contentPackages' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='contentPackages')\nUNION SELECT 'notificationLogs' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='notificationLogs')\nUNION SELECT 'emailTemplates' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='emailTemplates')\nUNION SELECT 'inboundEmails' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='inboundEmails')\nUNION SELECT 'viralTopics' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='viralTopics')\nUNION SELECT 'socialPosts' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='socialPosts')\nUNION SELECT 'contentCalendar' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='contentCalendar')\nUNION SELECT 'heygenSessions' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='heygenSessions')\nUNION SELECT 'contentRevisions' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='contentRevisions')\nUNION SELECT 'contentAnalytics' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='contentAnalytics');\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nSELECT 'content' as tbl WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='content')\nUNION SELECT 'gbpConnections' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='gbpConnections')\nUNION SELECT 'gbpLocations' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='gbpLocations')\nUNION SELECT 'gbpPosts' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='gbpPosts')\nUNION SELECT 'brandVoiceHistory' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='brandVoiceHistory')\nUNION SELECT 'ads' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='ads')\nUNION SELECT 'competitorKeywords' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='competitorKeywords')\nUNION SELECT 'gapAnalysisRuns' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='gapAnalysisRuns')\nUNION SELECT 'savedKeywords' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='savedKeywords')\nUNION SELECT 'seoAuditHistory' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='seoAuditHistory')\nUNION SELECT 'keywordRankings' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='keywordRankings')\nUNION SELECT 'keywordRankAlerts' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='keywordRankAlerts')\nUNION SELECT 'gapKeywordBriefs' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='gapKeywordBriefs')\nUNION SELECT 'contentPackages' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='contentPackages')\nUNION SELECT 'notificationLogs' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='notificationLogs')\nUNION SELECT 'emailTemplates' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='emailTemplates')\nUNION SELECT 'inboundEmails' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='inboundEmails')\nUNION SELECT 'viralTopics' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='viralTopics')\nUNION SELECT 'socialPosts' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='socialPosts')\nUNION SELECT 'contentCalendar' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='contentCalendar')\nUNION SELECT 'heygenSessions' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='heygenSessions')\nUNION SELECT 'contentRevisions' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='contentRevisions')\nUNION SELECT 'contentAnalytics' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='contentAnalytics');\n",
+  "rows": [
+    {
+      "tbl": "competitorKeywords"
+    },
+    {
+      "tbl": "gapAnalysisRuns"
+    },
+    {
+      "tbl": "gbpPosts"
+    },
+    {
+      "tbl": "keywordRankAlerts"
+    },
+    {
+      "tbl": "brandVoiceHistory"
+    },
+    {
+      "tbl": "keywordRankings"
+    },
+    {
+      "tbl": "emailTemplates"
+    },
+    {
+      "tbl": "ads"
+    },
+    {
+      "tbl": "viralTopics"
+    },
+    {
+      "tbl": "contentPackages"
+    },
+    {
+      "tbl": "heygenSessions"
+    },
+    {
+      "tbl": "content"
+    },
+    {
+      "tbl": "gapKeywordBriefs"
+    },
+    {
+      "tbl": "contentCalendar"
+    },
+    {
+      "tbl": "savedKeywords"
+    },
+    {
+      "tbl": "notificationLogs"
+    },
+    {
+      "tbl": "socialPosts"
+    },
+    {
+      "tbl": "gbpLocations"
+    },
+    {
+      "tbl": "seoAuditHistory"
+    },
+    {
+      "tbl": "gbpConnections"
+    },
+    {
+      "tbl": "inboundEmails"
+    }
+  ],
+  "messages": [],
+  "stdout": "tbl\ncompetitorKeywords\ngapAnalysisRuns\ngbpPosts\nkeywordRankAlerts\nbrandVoiceHistory\nkeywordRankings\nemailTemplates\nads\nviralTopics\ncontentPackages\nheygenSessions\ncontent\ngapKeywordBriefs\ncontentCalendar\nsavedKeywords\nnotificationLogs\nsocialPosts\ngbpLocations\nseoAuditHistory\ngbpConnections\ninboundEmails\n",
+  "stderr": "",
+  "execution_time_ms": 151
+}

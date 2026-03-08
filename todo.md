@@ -161,6 +161,9 @@
 - [x] Notify client when content is ready — "Your first content batch is ready!" banner shown in Content Approvals
 - [x] Admin can monitor onboarding completion — clientOnboarding.getStatus procedure available; DB connection ECONNRESET auto-reconnect fixed
 
+## Round 11: Missing Tables Fix
+- [x] Create `content` table and 24 other missing seo-schema tables directly via SQL (contentRevisions, contentAnalytics, contentRepurposed, contentComments, gbpConnections, gbpLocations, gbpPosts, brandVoiceHistory, ads, competitorKeywords, gapAnalysisRuns, savedKeywords, seoAuditHistory, keywordRankings, keywordRankAlerts, gapKeywordBriefs, contentPackages, notification_logs, email_templates, inbound_emails, viral_topics, social_posts, content_calendar, heygen_sessions) — all 25 tables now exist in DB
+
 ## Round 10: Dashboard Error Fixes
 - [x] Fix admin user lookup errors — getMyInfo, dashboardStats, getSlaAlerts, dashboardStatsByRange, globalSearch, getContactTypeCounts, getSuggested, getAllSuggested, getCompletionStats all return empty/null gracefully for admin users without client profiles
 - [x] Create contentQualityScores table in database

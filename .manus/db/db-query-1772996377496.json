@@ -1,0 +1,229 @@
+{
+  "query": "\nSELECT table_name FROM information_schema.tables \nWHERE table_schema = DATABASE() \nORDER BY table_name;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nSELECT table_name FROM information_schema.tables \nWHERE table_schema = DATABASE() \nORDER BY table_name;\n",
+  "rows": [
+    {
+      "table_name": "__drizzle_migrations"
+    },
+    {
+      "table_name": "abTests"
+    },
+    {
+      "table_name": "account_invitations"
+    },
+    {
+      "table_name": "agencies"
+    },
+    {
+      "table_name": "agencySettings"
+    },
+    {
+      "table_name": "ai_scripts"
+    },
+    {
+      "table_name": "appNotifications"
+    },
+    {
+      "table_name": "appointments"
+    },
+    {
+      "table_name": "automation_executions"
+    },
+    {
+      "table_name": "automation_workflow_steps"
+    },
+    {
+      "table_name": "automation_workflows"
+    },
+    {
+      "table_name": "borrowers"
+    },
+    {
+      "table_name": "call_logs"
+    },
+    {
+      "table_name": "campaign_templates"
+    },
+    {
+      "table_name": "clientPortalUsers"
+    },
+    {
+      "table_name": "clientPublishingPermissions"
+    },
+    {
+      "table_name": "clients"
+    },
+    {
+      "table_name": "contentAnalytics"
+    },
+    {
+      "table_name": "contentBriefs"
+    },
+    {
+      "table_name": "contentComments"
+    },
+    {
+      "table_name": "contentQualityScores"
+    },
+    {
+      "table_name": "contentRepurposed"
+    },
+    {
+      "table_name": "contentRevisions"
+    },
+    {
+      "table_name": "contentTemplates"
+    },
+    {
+      "table_name": "content_approvals"
+    },
+    {
+      "table_name": "conversation_messages"
+    },
+    {
+      "table_name": "conversations"
+    },
+    {
+      "table_name": "conversion_funnel"
+    },
+    {
+      "table_name": "designStandards"
+    },
+    {
+      "table_name": "documents"
+    },
+    {
+      "table_name": "email_campaigns"
+    },
+    {
+      "table_name": "facebook_lead_ads"
+    },
+    {
+      "table_name": "googleAnalyticsConnections"
+    },
+    {
+      "table_name": "invoices"
+    },
+    {
+      "table_name": "lead_activities"
+    },
+    {
+      "table_name": "lead_source_assistant_mappings"
+    },
+    {
+      "table_name": "lead_tasks"
+    },
+    {
+      "table_name": "leads"
+    },
+    {
+      "table_name": "loan_milestones"
+    },
+    {
+      "table_name": "manusPublishHistory"
+    },
+    {
+      "table_name": "manusWebsites"
+    },
+    {
+      "table_name": "market_analytics"
+    },
+    {
+      "table_name": "metrics"
+    },
+    {
+      "table_name": "notification_logs"
+    },
+    {
+      "table_name": "onboarding_progress"
+    },
+    {
+      "table_name": "pipelineCards"
+    },
+    {
+      "table_name": "portalBranding"
+    },
+    {
+      "table_name": "publishLogs"
+    },
+    {
+      "table_name": "publishingAnalytics"
+    },
+    {
+      "table_name": "publishingSchedules"
+    },
+    {
+      "table_name": "push_subscriptions"
+    },
+    {
+      "table_name": "recurringPlans"
+    },
+    {
+      "table_name": "referral_partners"
+    },
+    {
+      "table_name": "searchConsoleCredentials"
+    },
+    {
+      "table_name": "searchConsoleMetrics"
+    },
+    {
+      "table_name": "seoUsers"
+    },
+    {
+      "table_name": "seo_clients"
+    },
+    {
+      "table_name": "seo_content_packages"
+    },
+    {
+      "table_name": "seo_repurposed_content"
+    },
+    {
+      "table_name": "sms_campaigns"
+    },
+    {
+      "table_name": "social_media_posts"
+    },
+    {
+      "table_name": "sub_account_credentials"
+    },
+    {
+      "table_name": "subscription_plans"
+    },
+    {
+      "table_name": "subscription_tiers"
+    },
+    {
+      "table_name": "team_members"
+    },
+    {
+      "table_name": "team_notifications"
+    },
+    {
+      "table_name": "users"
+    },
+    {
+      "table_name": "vapi_assistants"
+    },
+    {
+      "table_name": "webhookConfigs"
+    },
+    {
+      "table_name": "webinar_registrations"
+    },
+    {
+      "table_name": "webinars"
+    },
+    {
+      "table_name": "wordpressConnections"
+    },
+    {
+      "table_name": "wordpressPublishHistory"
+    }
+  ],
+  "messages": [],
+  "stdout": "table_name\n__drizzle_migrations\nabTests\naccount_invitations\nagencies\nagencySettings\nai_scripts\nappNotifications\nappointments\nautomation_executions\nautomation_workflow_steps\nautomation_workflows\nborrowers\ncall_logs\ncampaign_templates\nclientPortalUsers\nclientPublishingPermissions\nclients\ncontentAnalytics\ncontentBriefs\ncontentComments\ncontentQualityScores\ncontentRepurposed\ncontentRevisions\ncontentTemplates\ncontent_approvals\nconversation_messages\nconversations\nconversion_funnel\ndesignStandards\ndocuments\nemail_campaigns\nfacebook_lead_ads\ngoogleAnalyticsConnections\ninvoices\nlead_activities\nlead_source_assistant_mappings\nlead_tasks\nleads\nloan_milestones\nmanusPublishHistory\nmanusWebsites\nmarket_analytics\nmetrics\nnotification_logs\nonboarding_progress\npipelineCards\nportalBranding\npublishLogs\npublishingAnalytics\npublishingSchedules\npush_subscriptions\nrecurringPlans\nreferral_partners\nsearchConsoleCredentials\nsearchConsoleMetrics\nseoUsers\nseo_clients\nseo_content_packages\nseo_repurposed_content\nsms_campaigns\nsocial_media_posts\nsub_account_credentials\nsubscription_plans\nsubscription_tiers\nteam_members\nteam_notifications\nusers\nvapi_assistants\nwebhookConfigs\nwebinar_registrations\nwebinars\nwordpressConnections\nwordpressPublishHistory\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}
