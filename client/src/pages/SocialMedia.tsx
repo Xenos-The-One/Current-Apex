@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Calendar, Plus, Facebook, Instagram, Linkedin, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { ArrowRight, Calendar, Plus, Facebook, Instagram, Linkedin, Clock, CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 
 export default function SocialMedia() {
@@ -60,10 +60,11 @@ export default function SocialMedia() {
             </p>
           </div>
           {!isReadOnly && (
-            <Link href="/social/new">
+            <Link href="/seo/content">
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
                 Create Post
+                <ExternalLink className="w-3.5 h-3.5 ml-1.5 opacity-70" />
               </Button>
             </Link>
           )}
@@ -166,10 +167,11 @@ export default function SocialMedia() {
                 <p className="font-medium">No posts yet</p>
                 <p className="text-sm mt-1">Create your first social media post to get started</p>
                 {!isReadOnly && (
-                  <Link href="/social/new">
+                  <Link href="/seo/content">
                     <Button className="mt-4">
                       <Plus className="w-4 h-4 mr-2" />
-                      Create Post
+                      Create Post in AI SEO Portal
+                      <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                     </Button>
                   </Link>
                 )}

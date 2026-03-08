@@ -61,7 +61,7 @@ function getAdminNav(): NavItem[] {
     { label: "Social Media", href: "/social-media", icon: Share2 },
     { label: "Automations", href: "/automations", icon: Workflow },
     { label: "Reports", href: "/reports", icon: BarChart3 },
-    { label: "AI SEO Portal", href: "/seo-portal", icon: Globe },
+    { label: "AI SEO Portal", href: "/seo", icon: Globe },
     { label: "Tools", href: "/tools", icon: Folder },
   ];
 }

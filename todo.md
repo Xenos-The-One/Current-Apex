@@ -172,3 +172,12 @@
 ## Round 12: seo_clients Missing Columns Fix
 - [x] Added 4 missing columns to seo_clients table: `notes`, `createdBy`, `createdAt`, `updatedAt` (the table was originally created from an older schema that predated these fields)
 - [x] Wrapped seo.reports.getSummary in try/catch to return null gracefully on DB errors instead of throwing to the client
+
+## Round 13: Follow-ups Tabs + Content Consolidation
+- [x] Add 2nd tab "AI Suggestions" to Follow-ups page (uses getAllSuggested, urgency filter, AI message drafting, snooze, mark contacted, send SMS)
+- [x] Add 3rd tab "Completion Stats" to Follow-ups page (uses getCompletionStats, weekly/monthly rate progress bars, performance guidance)
+- [x] Social Media page: replace "Create Post" button with link to /seo/content
+- [x] /social/new route: redirect to /seo/content
+- [x] Old /seo-portal page: replaced with redirect to full AI SEO Portal at /seo
+- [x] CRMLayout sidebar: updated AI SEO Portal link from /seo-portal to /seo
+- [x] Old /email-campaigns route: already mapped to MarketingHub (no change needed)
