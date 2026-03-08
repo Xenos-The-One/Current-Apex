@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
@@ -27,6 +28,8 @@ import {
   Loader2,
   ShieldCheck,
   Rocket,
+  XCircle,
+  ClipboardList,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
@@ -58,6 +61,11 @@ export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const { startImpersonatingAsAdmin, startImpersonatingAsClient } = useImpersonation();
   const utils = trpc.useUtils();
+
+  // Content oversight state
+  const [showRejectOversightDialog, setShowRejectOversightDialog] = useState(false);
+  const [oversightRejectId, setOversightRejectId] = useState<number | null>(null);
+  const [oversightRejectFeedback, setOversightRejectFeedback] = useState("");
 
   /** Admin-context mode: click the row name — keep admin sidebar, filter data to this client */
   const handleViewAsAdmin = (clientId: number | null | undefined, clientName: string) => {
@@ -155,6 +163,31 @@ export default function AdminDashboard() {
 
   // Only fetch agencies when user is confirmed admin - prevents UNAUTHORIZED redirect loop
   const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+
+  // Content oversight: all pending approvals across clients
+  const { data: allPendingApprovals, isLoading: oversightLoading } = trpc.contentApprovals.listPending.useQuery(
+    {},
+    { enabled: isAdmin }
+  );
+
+  const adminApproveMutation = trpc.contentApprovals.adminApprove.useMutation({
+    onSuccess: () => {
+      toast.success("Content approved!");
+      utils.contentApprovals.listPending.invalidate();
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const adminRejectMutation = trpc.contentApprovals.adminReject.useMutation({
+    onSuccess: () => {
+      toast.success("Content rejected with feedback.");
+      setShowRejectOversightDialog(false);
+      setOversightRejectFeedback("");
+      setOversightRejectId(null);
+      utils.contentApprovals.listPending.invalidate();
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
   const { data: agencies, isLoading: agenciesLoading } = trpc.admin.listAgencies.useQuery(
     undefined,
     { enabled: isAdmin }
@@ -652,6 +685,117 @@ export default function AdminDashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Content Oversight */}
+        <Card>
+          <CardHeader className="py-3 px-4 border-b">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="w-4 h-4 text-primary" />
+                <CardTitle className="text-sm font-semibold">Content Oversight</CardTitle>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {allPendingApprovals?.length || 0} pending across all clients
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {oversightLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : allPendingApprovals && allPendingApprovals.length > 0 ? (
+              <div className="divide-y">
+                {allPendingApprovals.slice(0, 20).map((approval: any) => (
+                  <div key={approval.id} className="flex items-start gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <Badge variant="outline" className="text-xs">{approval.brand}</Badge>
+                        {approval.platform && (
+                          <Badge variant="secondary" className="text-xs">{approval.platform}</Badge>
+                        )}
+                        <Badge variant="secondary" className="text-xs">{approval.contentType}</Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(approval.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium truncate">{approval.title}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{approval.content}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Button
+                        size="sm"
+                        className="h-7 px-2 text-xs bg-green-600 hover:bg-green-700 gap-1"
+                        disabled={adminApproveMutation.isPending}
+                        onClick={() => adminApproveMutation.mutate({ approvalId: approval.id })}
+                      >
+                        {adminApproveMutation.isPending ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="w-3 h-3" />
+                        )}
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="h-7 px-2 text-xs gap-1"
+                        onClick={() => {
+                          setOversightRejectId(approval.id);
+                          setShowRejectOversightDialog(true);
+                        }}
+                      >
+                        <XCircle className="w-3 h-3" />
+                        Reject
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {allPendingApprovals.length > 20 && (
+                  <div className="px-4 py-2 text-xs text-muted-foreground text-center">
+                    Showing 20 of {allPendingApprovals.length} pending items
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <CheckCircle2 className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                <p className="text-sm">All content reviewed — no pending approvals</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Oversight Reject Dialog */}
+        <Dialog open={showRejectOversightDialog} onOpenChange={setShowRejectOversightDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reject Content</DialogTitle>
+              <DialogDescription>Provide feedback so the client knows what to change.</DialogDescription>
+            </DialogHeader>
+            <Textarea
+              placeholder="e.g., The hook isn't strong enough. Try leading with a question instead..."
+              value={oversightRejectFeedback}
+              onChange={(e) => setOversightRejectFeedback(e.target.value)}
+              rows={5}
+            />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowRejectOversightDialog(false)}>Cancel</Button>
+              <Button
+                variant="destructive"
+                disabled={adminRejectMutation.isPending || !oversightRejectFeedback.trim()}
+                onClick={() => {
+                  if (oversightRejectId !== null) {
+                    adminRejectMutation.mutate({ approvalId: oversightRejectId, feedback: oversightRejectFeedback });
+                  }
+                }}
+              >
+                {adminRejectMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <XCircle className="w-4 h-4 mr-2" />}
+                Reject with Feedback
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Pending Invitations */}
         {invitations && invitations.length > 0 && (

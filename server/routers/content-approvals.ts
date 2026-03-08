@@ -261,6 +261,84 @@ export const contentApprovalsRouter = router({
       };
     }),
 
+  // Bulk approve all pending social posts and schedule them
+  bulkApproveAndSchedule: protectedProcedure
+    .input(z.object({
+      approvalIds: z.array(z.number()),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      let approved = 0;
+      let scheduled = 0;
+      const errors: string[] = [];
+
+      for (const approvalId of input.approvalIds) {
+        try {
+          // Approve the item
+          await db
+            .update(contentApprovals)
+            .set({ status: "approved", approvedAt: new Date() })
+            .where(eq(contentApprovals.id, approvalId));
+          approved++;
+
+          // Try to schedule if it's a social post
+          const [approval] = await db
+            .select()
+            .from(contentApprovals)
+            .where(eq(contentApprovals.id, approvalId));
+
+          if (!approval) continue;
+
+          const platformLower = (approval.platform || "").toLowerCase();
+          const isSocial = ["facebook", "instagram", "linkedin", "twitter", "tiktok"].some((p) =>
+            platformLower.includes(p)
+          );
+
+          if (isSocial && approval.clientId) {
+            const [client] = await db.select().from(clients).where(eq(clients.id, approval.clientId));
+            if (client) {
+              const seoClientRows = await db
+                .select()
+                .from(seoClients)
+                .where(eq(seoClients.crmClientId, approval.clientId));
+              const seoClient = seoClientRows[0] || null;
+
+              // Stagger publish dates by 1 day per post to avoid clustering
+              const baseDate = computeNextPublishDate(
+                seoClient?.preferredPublishDays || null,
+                seoClient?.preferredPublishTime || null
+              );
+              // Add scheduled offset so posts don't all land on same day
+              baseDate.setDate(baseDate.getDate() + scheduled);
+
+              await createSocialMediaPost({
+                clientId: approval.clientId,
+                agencyId: client.agencyId,
+                platform: mapPlatformToEnum(platformLower),
+                content: approval.content,
+                scheduledDate: baseDate,
+                status: "scheduled",
+                createdBy: ctx.user.id,
+              });
+              scheduled++;
+            }
+          }
+        } catch (err: any) {
+          errors.push(`ID ${approvalId}: ${err.message || "unknown error"}`);
+        }
+      }
+
+      return {
+        success: true,
+        approved,
+        scheduled,
+        errors,
+        message: `Approved ${approved} item${approved !== 1 ? "s" : ""}, scheduled ${scheduled} social post${scheduled !== 1 ? "s" : ""}.`,
+      };
+    }),
+
   // Auto-schedule an approved social post to the Social Media scheduler
   scheduleApprovedToSocial: protectedProcedure
     .input(z.object({
@@ -326,6 +404,36 @@ export const contentApprovalsRouter = router({
         message: `Scheduled to ${approval.platform} for ${scheduledDate.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })} at ${scheduledDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}.`,
         scheduledDate,
       };
+    }),
+
+  // Admin: approve any content item (cross-client)
+  adminApprove: protectedProcedure
+    .input(z.object({ approvalId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      const isAdmin = (ADMIN_ROLES as readonly string[]).includes(ctx.user.role);
+      if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN", message: "Admin only" });
+      await db
+        .update(contentApprovals)
+        .set({ status: "approved", approvedAt: new Date() })
+        .where(eq(contentApprovals.id, input.approvalId));
+      return { success: true };
+    }),
+
+  // Admin: reject any content item (cross-client)
+  adminReject: protectedProcedure
+    .input(z.object({ approvalId: z.number(), feedback: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      const isAdmin = (ADMIN_ROLES as readonly string[]).includes(ctx.user.role);
+      if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN", message: "Admin only" });
+      await db
+        .update(contentApprovals)
+        .set({ status: "rejected", feedback: input.feedback })
+        .where(eq(contentApprovals.id, input.approvalId));
+      return { success: true };
     }),
 });
 

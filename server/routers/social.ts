@@ -8,11 +8,14 @@ import {
   getSocialMediaPostById,
   updateSocialMediaPost,
   deleteSocialMediaPost,
+  getDb,
 } from "../db";
+import { socialMediaPosts } from "../../drizzle/schema";
+import { desc } from "drizzle-orm";
 
 export const socialRouter = router({
   // ============= POST MANAGEMENT =============
-  
+
   listPosts: protectedProcedure.query(async ({ ctx }) => {
     const client = await getClientByUserId(ctx.user.id);
     if (!client) {
@@ -31,6 +34,17 @@ export const socialRouter = router({
     }
 
     return await getSocialMediaPostsByClientId(client.id);
+  }),
+
+  // Admin: list all posts across all clients (for oversight tab)
+  listAllPosts: protectedProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+    return await db
+      .select()
+      .from(socialMediaPosts)
+      .orderBy(desc(socialMediaPosts.scheduledDate))
+      .limit(300);
   }),
 
   getPost: protectedProcedure
@@ -76,7 +90,7 @@ export const socialRouter = router({
       if (client.accessMode !== "full") {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: client.accessMode === "limited" 
+          message: client.accessMode === "limited"
             ? "Limited access mode. Please complete your strategy call to unlock full access."
             : "Read-only access. Contact your agency administrator.",
         });
@@ -135,6 +149,25 @@ export const socialRouter = router({
         mediaUrls: updates.mediaUrls ? JSON.stringify(updates.mediaUrls) : undefined,
       });
 
+      return { success: true };
+    }),
+
+  // Reschedule a post (used by drag-and-drop calendar)
+  reschedulePost: protectedProcedure
+    .input(z.object({
+      postId: z.number(),
+      scheduledDate: z.date(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const client = await getClientByUserId(ctx.user.id);
+      if (!client) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+      }
+      const post = await getSocialMediaPostById(input.postId);
+      if (!post || post.clientId !== client.id) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Post not found" });
+      }
+      await updateSocialMediaPost(input.postId, { scheduledDate: input.scheduledDate });
       return { success: true };
     }),
 

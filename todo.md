@@ -204,3 +204,8 @@
 - [x] Remove "Client Dashboard" from admin sidebar Overview section
 - [x] Add "Regenerate" button to Content Approvals — lets client request new batch with AI guidance note
 - [x] Connect approved social posts to Social Media scheduler — auto-queue with suggested publish date from Publishing Prefs
+
+## Round 17: Bulk Approve, Calendar Preview, Admin Oversight
+- [x] Bulk approve & schedule — "Approve All Social Posts" button in Content Approvals pending list
+- [x] Social Media calendar view — mini calendar showing queued posts with drag-and-drop rescheduling
+- [x] Admin content oversight tab — pending approvals across all clients on Admin Dashboard with approve/reject
