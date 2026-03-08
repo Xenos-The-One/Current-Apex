@@ -138,3 +138,11 @@
 - [x] Launchpad: client info collection form — 5 steps: contact, business, social/ads, brand/SEO, automation
 - [x] Launchpad: automated provisioning checklist — provisions client record, seeds templates, sends welcome email+SMS
 - [x] Launchpad: snapshot apply/preview for admin — success screen with full setup log
+
+## Round 7: Client Login + SEO Scroll + Follow-ups
+- [x] Fix AI SEO portal sidebar scroll cutoff — added min-h-0 to flex column and h-0 to ScrollArea
+- [x] Add visible client login explanation — empty state now shows how to create accounts and use Client View / Admin Mode buttons
+- [x] Add client account switcher explanation — empty state card with Create First Client Account CTA
+- [x] Stripe webhook registration — already built in Settings → Webhooks tab with URL + 4-step guide
+- [x] Vapi server URL config — already built in Settings → Webhooks tab with Vapi webhook URL
+- [x] SendGrid sender domain verification — already built in Settings → Integrations tab with DNS steps

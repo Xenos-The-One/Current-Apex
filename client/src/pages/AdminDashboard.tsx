@@ -624,8 +624,18 @@ export default function AdminDashboard() {
             ) : (
               <div className="text-center py-10 text-muted-foreground">
                 <Building2 className="w-8 h-8 mx-auto mb-3 opacity-40" />
-                <p className="text-sm">No clients yet</p>
-                <p className="text-xs mt-1">New clients will appear here after subscribing</p>
+                <p className="text-sm font-medium text-foreground">No client accounts yet</p>
+                <p className="text-xs mt-1 max-w-xs mx-auto">
+                  Click <strong>New Sub-Account</strong> above to create a client account. Once created, each row will have <strong>Client View</strong> and <strong>Admin Mode</strong> buttons to log in as that client.
+                </p>
+                <Button
+                  size="sm"
+                  className="mt-4 gap-1.5"
+                  onClick={() => setShowCreateModal(true)}
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                  Create First Client Account
+                </Button>
               </div>
             )}
           </CardContent>

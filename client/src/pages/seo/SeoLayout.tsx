@@ -147,7 +147,7 @@ export default function SeoLayout({ children }: { children: React.ReactNode }) {
       {/* SEO Sidebar — full height, standalone */}
       <div
         className={cn(
-          "border-r border-border/60 bg-sidebar flex flex-col transition-all duration-200 shrink-0",
+          "border-r border-border/60 bg-sidebar flex flex-col transition-all duration-200 shrink-0 min-h-0",
           collapsed ? "w-14" : "w-64"
         )}
       >
@@ -192,7 +192,7 @@ export default function SeoLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Navigation */}
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 h-0">
           <nav className="p-2 space-y-4">
             {NAV_GROUPS.map((group) => (
               <div key={group.label}>
