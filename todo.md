@@ -146,3 +146,8 @@
 - [x] Stripe webhook registration — already built in Settings → Webhooks tab with URL + 4-step guide
 - [x] Vapi server URL config — already built in Settings → Webhooks tab with Vapi webhook URL
 - [x] SendGrid sender domain verification — already built in Settings → Integrations tab with DNS steps
+
+## Round 8: Stripe Webhook + Test Account
+- [x] Stripe webhook endpoint registered at /api/stripe/webhook with express.raw() — instructions in Settings → Webhooks
+- [x] Created test client account: Kyle Realty Group (kyle@kylerealty.com) with 5 sample leads; listAgencies now falls back to agency_id lookup so Client View button works
+- [x] Client onboarding process explained in delivery message

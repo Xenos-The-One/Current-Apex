@@ -1,0 +1,9 @@
+{
+  "query": "\nINSERT INTO clients (agency_id, name, email, subscription_tier, subscription_status, is_active, onboarding_completed, createdAt, updatedAt)\nSELECT id, 'Kyle Thompson', 'kyle@kylerealty.com', 'pro', 'active', 1, 0, NOW(), NOW()\nFROM agencies WHERE slug = 'kyle-realty-group' LIMIT 1;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nINSERT INTO clients (agency_id, name, email, subscription_tier, subscription_status, is_active, onboarding_completed, createdAt, updatedAt)\nSELECT id, 'Kyle Thompson', 'kyle@kylerealty.com', 'pro', 'active', 1, 0, NOW(), NOW()\nFROM agencies WHERE slug = 'kyle-realty-group' LIMIT 1;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 80
+}

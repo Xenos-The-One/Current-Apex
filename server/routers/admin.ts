@@ -19,7 +19,10 @@ import {
   createLeadSourceMapping,
   updateLeadSourceMapping,
   deleteLeadSourceMapping,
+  getDb,
 } from "../db";
+import { clients as clientsTable } from "../../drizzle/schema";
+import { eq } from "drizzle-orm";
 import { ensureLinkedSeoClient, upsertUser as upsertSeoUser, getUserByOpenId } from "../seo-db";
 
 // Middleware to check if user is admin or super_admin
@@ -39,10 +42,18 @@ export const adminRouter = router({
   listAgencies: adminProcedure.query(async () => {
     const agencyList = await getAllAgencies();
     // Enrich each agency with the CRM client record linked to the agency owner
-    // This allows super_admin to impersonate any agency's client account
+    // Falls back to agency_id lookup for accounts without a Manus user yet
     const enriched = await Promise.all(
       agencyList.map(async (agency) => {
-        const client = await getClientByUserId(agency.ownerId);
+        let client = agency.ownerId ? await getClientByUserId(agency.ownerId) : undefined;
+        // Fallback: find client by agency_id if no user-linked client found
+        if (!client) {
+          const db = await getDb();
+          if (db) {
+            const rows = await db.select().from(clientsTable).where(eq(clientsTable.agencyId, agency.id)).limit(1);
+            client = rows[0];
+          }
+        }
         return {
           ...agency,
           clientId: client?.id ?? null,

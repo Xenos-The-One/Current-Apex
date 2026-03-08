@@ -1,0 +1,20 @@
+{
+  "query": "\n-- Get the client ID and link it back to the agency\nUPDATE agencies a\nJOIN clients c ON c.agency_id = a.id\nSET a.owner_id = c.id\nWHERE a.slug = 'kyle-realty-group';\n\n-- Verify the test account\nSELECT a.id AS agency_id, a.name AS agency_name, a.status, c.id AS client_id, c.name AS client_name, c.email, c.subscription_tier, c.subscription_status\nFROM agencies a\nLEFT JOIN clients c ON c.agency_id = a.id\nWHERE a.slug = 'kyle-realty-group';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \n-- Get the client ID and link it back to the agency\nUPDATE agencies a\nJOIN clients c ON c.agency_id = a.id\nSET a.owner_id = c.id\nWHERE a.slug = 'kyle-realty-group';\n\n-- Verify the test account\nSELECT a.id AS agency_id, a.name AS agency_name, a.status, c.id AS client_id, c.name AS client_name, c.email, c.subscription_tier, c.subscription_status\nFROM agencies a\nLEFT JOIN clients c ON c.agency_id = a.id\nWHERE a.slug = 'kyle-realty-group';\n",
+  "rows": [
+    {
+      "agency_id": "1",
+      "agency_name": "Kyle Realty Group",
+      "status": "active",
+      "client_id": "1",
+      "client_name": "Kyle Thompson",
+      "email": "kyle@kylerealty.com",
+      "subscription_tier": "pro",
+      "subscription_status": "active"
+    }
+  ],
+  "messages": [],
+  "stdout": "agency_id\tagency_name\tstatus\tclient_id\tclient_name\temail\tsubscription_tier\tsubscription_status\n1\tKyle Realty Group\tactive\t1\tKyle Thompson\tkyle@kylerealty.com\tpro\tactive\n",
+  "stderr": "",
+  "execution_time_ms": 74
+}
