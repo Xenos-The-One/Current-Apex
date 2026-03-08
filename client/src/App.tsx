@@ -69,6 +69,7 @@ import PartnerPortal from "./pages/PartnerPortal";
 import AdvancedReports from "./pages/AdvancedReports";
 import ActivateAccount from "./pages/ActivateAccount";
 import Launchpad from "./pages/Launchpad";
+import OnboardingSnapshot from "./pages/OnboardingSnapshot";
 import ContactsHub from "./pages/ContactsHub";
 import ActivityHub from "./pages/ActivityHub";
 import MarketingHub from "./pages/MarketingHub";
@@ -177,6 +178,7 @@ function Router() {
       <Route path="/workflows/:id/builder" component={WorkflowBuilder} />
       <Route path="/activate-account" component={ActivateAccount} />
       <Route path="/launchpad" component={Launchpad} />
+      <Route path="/onboarding-snapshot" component={OnboardingSnapshot} />
       <Route path="/book/:slug" component={PublicBooking} />
       <Route path="/partner-portal" component={PartnerPortal} />
       <Route path="/seo/:rest*" component={SeoRouter} />

@@ -17,6 +17,7 @@ import { pushNewLead, pushLeadStatusChange } from "../push-triggers";
 import { TRPCError } from "@trpc/server";
 import { tagLeadAsRefiProspect, untagLeadAsRefiProspect, getRefiDripStatus } from "../refi-drip";
 import { sendSMS } from "../twilio";
+import { sendEmail } from "../sendgrid";
 import { isTestLead } from "../test-lead-utils";
 
 export const leadsRouter = router({
@@ -91,9 +92,48 @@ export const leadsRouter = router({
           console.error("[Lead Capture] ❌ Exception sending welcome SMS:", smsErr);
         }
       }
-      // Auto Vapi calls disabled - Tim handles calls manually now
-      // Push notification above alerts Tim to call the lead himself
-      console.log(`[Lead Capture] ✅ Lead #${lead.id} created for ${input.firstName} - Tim will call manually`);
+
+      // Send instant welcome email to the lead (if email provided)
+      if (input.email && !isTestLead({ email: input.email, phone: input.phone })) {
+        try {
+          const bookingUrl = `${process.env.VITE_APP_URL || 'https://lockinloans.manus.space'}/book`;
+          const emailResult = await sendEmail({
+            to: [input.email],
+            from: process.env.SENDGRID_FROM_EMAIL || 'noreply@lockinloans.com',
+            subject: `Welcome, ${input.firstName}! Your mortgage consultation is almost ready`,
+            html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+  <h2 style="color:#1a56db;">Hi ${input.firstName},</h2>
+  <p>Thank you for your interest in a home loan with Premier Mortgage Resources!</p>
+  <p><strong>Tim Haskins (NMLS #1116876)</strong> will be reaching out to you shortly to discuss your options.</p>
+  <p>In the meantime, you can book a consultation at your convenience:</p>
+  <p style="text-align:center;margin:24px 0;">
+    <a href="${bookingUrl}" style="background:#1a56db;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:bold;">Book My Consultation</a>
+  </p>
+  <p style="color:#666;font-size:13px;">Premier Mortgage Resources &bull; NMLS #1116876<br/>Reply to this email if you have any questions.</p>
+</div>`,
+            text: `Hi ${input.firstName},\n\nThank you for your interest in a home loan with Premier Mortgage Resources!\n\nTim Haskins (NMLS #1116876) will be reaching out to you shortly.\n\nBook your consultation: ${bookingUrl}\n\nPremier Mortgage Resources`,
+          });
+          if (emailResult.success) {
+            console.log(`[Lead Capture] ✅ Welcome email sent to ${input.email}`);
+          } else {
+            console.error(`[Lead Capture] ❌ Welcome email failed: ${emailResult.error}`);
+          }
+        } catch (emailErr) {
+          console.error("[Lead Capture] ❌ Exception sending welcome email:", emailErr);
+        }
+      }
+
+      // Schedule Vapi auto-call (5 minutes during business hours, next 9 AM otherwise)
+      if (input.phone && !isTestLead({ email: input.email, phone: input.phone })) {
+        try {
+          await scheduleLeadFollowUp(lead.id, input.phone, input.firstName, input.source, input.clientId);
+          console.log(`[Lead Capture] ✅ Vapi call scheduled for ${input.firstName}`);
+        } catch (vapiErr) {
+          console.error("[Lead Capture] ❌ Exception scheduling Vapi call:", vapiErr);
+        }
+      }
+
+      console.log(`[Lead Capture] ✅ Lead #${lead.id} created for ${input.firstName} — SMS + email sent, Vapi call scheduled`);
       return { success: true, leadId: lead.id };
     }),
 

@@ -39,6 +39,8 @@ import { milestonesTasksRouter } from "./routers/milestones-tasks";
 import { publicFeaturesRouter } from "./routers/public-features";
 import { onboardingRouter } from "./routers/onboarding";
 import { launchpadRouter } from "./routers/launchpad";
+import { seedTemplatesRouter } from "./routers/seed-templates";
+import { onboardingSnapshotRouter } from "./routers/onboarding-snapshot";
 // Additional routers used by client pages
 import { automationsRouter } from "./routers/automations";
 import { billingRouter } from "./routers/billing";
@@ -87,6 +89,8 @@ export const appRouter = router({
   publicFeatures: publicFeaturesRouter,
   onboarding: onboardingRouter,
   launchpad: launchpadRouter,
+  seedTemplates: seedTemplatesRouter,
+  onboardingSnapshot: onboardingSnapshotRouter,
   // Top-level aliases for client pages
   automations: automationsRouter,
   billing: billingRouter,

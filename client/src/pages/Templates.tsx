@@ -9,13 +9,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Mail, MessageSquare, Plus, Eye, Copy, Trash2 } from "lucide-react";
+import { Mail, MessageSquare, Plus, Eye, Copy, Trash2, RefreshCw } from "lucide-react";
+import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 
 export default function Templates() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
   const [selectedType, setSelectedType] = useState<"email" | "sms">("email");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<any>(null);
+
+  const seedTemplates = trpc.seedTemplates.seedDefaults.useMutation({
+    onSuccess: (data) => {
+      toast.success(`${data.message} Refreshing list...`);
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to seed templates");
+    },
+  });
 
   const { data: templates, isLoading, refetch } = trpc.templates.list.useQuery({
     type: selectedType,
@@ -87,7 +100,18 @@ export default function Templates() {
               Pre-written templates for your email and SMS campaigns
             </p>
           </div>
-          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Button
+                variant="outline"
+                onClick={() => seedTemplates.mutate()}
+                disabled={seedTemplates.isPending}
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${seedTemplates.isPending ? 'animate-spin' : ''}`} />
+                {seedTemplates.isPending ? "Seeding..." : "Seed Default Templates"}
+              </Button>
+            )}
+            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
@@ -164,7 +188,8 @@ export default function Templates() {
                 </div>
               </form>
             </DialogContent>
-          </Dialog>
+              </Dialog>
+          </div>
         </div>
 
         <Tabs value={selectedType} onValueChange={(v) => setSelectedType(v as "email" | "sms")}>

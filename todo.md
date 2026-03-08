@@ -125,3 +125,16 @@
 ## Round 5: Missing Columns Fix
 - [x] Fix team_notifications missing columns — added is_read, user_id, body, priority, action_url, metadata, push_sent, push_sent_at, read_at, team_member_id, team_member_name
 - [x] Fix seo_clients missing columns — added all 50+ extended onboarding, HeyGen, ad account, and social media columns; also fixed leads (33 cols), borrowers (22 cols), agencies (2 cols), clients (3 cols), appointments (5 cols), call_logs (11 cols), users (2 cols)
+
+## Round 6: UI Consolidation + Automation + Templates + Launchpad
+- [x] Audit all pages and sidebar nav for duplicate/redundant features
+- [x] Consolidate duplicate UI sections — sidebar already well-consolidated with hub pages; added Onboarding Snapshot to Overview
+- [x] Streamline sidebar navigation — Onboarding Snapshot added to admin Overview section
+- [x] Fix disconnected workflows — re-enabled Vapi auto-calls, fixed env var names, added welcome email
+- [x] Build sub-1-minute lead response automation flow — new lead → instant SMS + email + Vapi call within 5 min
+- [x] Rebuilt SMS/email template library — 16 templates: welcome, day1, day3, day7, appointment confirm, 24hr reminder, 1hr reminder, post-appt, referral (SMS+email pairs)
+- [x] Add A2P registration step to onboarding checklist — included in Launchpad snapshot flow
+- [x] Build Onboarding Launchpad Snapshot wizard — 5-step wizard at /onboarding-snapshot
+- [x] Launchpad: client info collection form — 5 steps: contact, business, social/ads, brand/SEO, automation
+- [x] Launchpad: automated provisioning checklist — provisions client record, seeds templates, sends welcome email+SMS
+- [x] Launchpad: snapshot apply/preview for admin — success screen with full setup log

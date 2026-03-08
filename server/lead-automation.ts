@@ -8,6 +8,7 @@ import { leads, clients } from "../drizzle/schema";
 import { eq, and, isNull, lt, inArray } from "drizzle-orm";
 import { makeVapiCall } from "./vapi";
 import { sendSMS } from "./twilio";
+import { sendEmail } from "./sendgrid";
 import { pushVapiCallInitiated } from "./push-triggers";
 
 const BUSINESS_HOURS_START = 9; // 9 AM PST
@@ -148,10 +149,10 @@ export async function processScheduledCall(leadId: number) {
   // Get assistant ID based on source
   const source = lead.source?.toLowerCase() || '';
   const assistantId = source.includes('facebook') || source.includes('fb')
-    ? process.env.VAPI_FACEBOOK_ASSISTANT_ID 
+    ? process.env.VAPI_FACEBOOK_LEAD_ASSISTANT_ID 
     : source.includes('instagram') || source.includes('ig')
-    ? process.env.VAPI_INSTAGRAM_ASSISTANT_ID
-    : process.env.VAPI_REFERRAL_ASSISTANT_ID;
+    ? process.env.VAPI_IG_LEAD_ASSISTANT_ID
+    : process.env.VAPI_REFERRAL_LEAD_ASSISTANT_ID;
   
   if (!assistantId) {
     console.error(`[Lead Automation] No assistant ID configured for source: ${lead.source}`);

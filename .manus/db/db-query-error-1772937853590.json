@@ -1,0 +1,8 @@
+{
+  "query": "ALTER TABLE `users` CHANGE COLUMN `login_method` `loginMethod` varchar(64) DEFAULT 'google';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute ALTER TABLE `users` CHANGE COLUMN `login_method` `loginMethod` varchar(64) DEFAULT 'google';",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1060 (42S21) at line 1: Duplicate column name 'loginMethod'"
+  ]
+}
