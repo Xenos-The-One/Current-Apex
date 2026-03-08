@@ -121,3 +121,7 @@
 - [x] Create team_members table in database
 - [x] Create account_invitations table in database
 - [x] Create contentAnalytics table in database
+
+## Round 5: Missing Columns Fix
+- [x] Fix team_notifications missing columns — added is_read, user_id, body, priority, action_url, metadata, push_sent, push_sent_at, read_at, team_member_id, team_member_name
+- [x] Fix seo_clients missing columns — added all 50+ extended onboarding, HeyGen, ad account, and social media columns; also fixed leads (33 cols), borrowers (22 cols), agencies (2 cols), clients (3 cols), appointments (5 cols), call_logs (11 cols), users (2 cols)

@@ -1,0 +1,9 @@
+{
+  "query": "\nALTER TABLE `team_notifications`\n  ADD COLUMN IF NOT EXISTS `user_id` int DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `team_member_id` int DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `team_member_name` varchar(255) DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `is_read` tinyint(1) NOT NULL DEFAULT 0,\n  ADD COLUMN IF NOT EXISTS `read_at` timestamp DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `push_sent` tinyint(1) NOT NULL DEFAULT 0,\n  ADD COLUMN IF NOT EXISTS `push_sent_at` timestamp DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `action_url` varchar(500) DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `metadata` text DEFAULT NULL;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nALTER TABLE `team_notifications`\n  ADD COLUMN IF NOT EXISTS `user_id` int DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `team_member_id` int DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `team_member_name` varchar(255) DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `is_read` tinyint(1) NOT NULL DEFAULT 0,\n  ADD COLUMN IF NOT EXISTS `read_at` timestamp DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `push_sent` tinyint(1) NOT NULL DEFAULT 0,\n  ADD COLUMN IF NOT EXISTS `push_sent_at` timestamp DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `action_url` varchar(500) DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `metadata` text DEFAULT NULL;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1417
+}
