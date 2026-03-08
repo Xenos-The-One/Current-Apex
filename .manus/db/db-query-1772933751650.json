@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `notification_logs` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `type` varchar(100) NOT NULL,\n  `channel` enum('email','sms','push','in_app') NOT NULL,\n  `recipient` varchar(320) NOT NULL,\n  `subject` varchar(500) DEFAULT NULL,\n  `body` text,\n  `status` enum('sent','failed','suppressed') NOT NULL DEFAULT 'sent',\n  `suppressed` tinyint(1) NOT NULL DEFAULT '0',\n  `suppression_reason` varchar(255) DEFAULT NULL,\n  `lead_id` int DEFAULT NULL,\n  `metadata` text,\n  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute CREATE TABLE IF NOT EXISTS `notification_logs` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `type` varchar(100) NOT NULL,\n  `channel` enum('email','sms','push','in_app') NOT NULL,\n  `recipient` varchar(320) NOT NULL,\n  `subject` varchar(500) DEFAULT NULL,\n  `body` text,\n  `status` enum('sent','failed','suppressed') NOT NULL DEFAULT 'sent',\n  `suppressed` tinyint(1) NOT NULL DEFAULT '0',\n  `suppression_reason` varchar(255) DEFAULT NULL,\n  `lead_id` int DEFAULT NULL,\n  `metadata` text,\n  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 128
+}

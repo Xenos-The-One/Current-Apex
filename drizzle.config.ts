@@ -6,7 +6,8 @@ if (!connectionString) {
 }
 
 export default defineConfig({
-  schema: "./drizzle/schema.ts",
+  // Include both schema files so all tables are managed by drizzle-kit
+  schema: ["./drizzle/schema.ts", "./drizzle/seo-schema.ts"],
   out: "./drizzle",
   dialect: "mysql",
   dbCredentials: {

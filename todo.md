@@ -79,9 +79,9 @@
 - [x] Document upload and storage (S3)
 - [x] Document type filtering and sharing
 - [x] Borrower document portal
-- [ ] SendGrid email integration (requires SENDGRID_API_KEY)
-- [ ] Twilio SMS integration (requires TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-- [ ] Vapi AI calling integration (requires VAPI_API_KEY)
+- [x] SendGrid email integration — API key added, live (✅ confirmed in test)
+- [x] Twilio SMS integration — credentials added, live
+- [x] Vapi AI calling integration — API key + phone number ID + 3 assistant IDs added, live
 - [ ] Stripe webhook handler (requires STRIPE_WEBHOOK_SECRET)
 
 ## Phase 8: Polish & Delivery
