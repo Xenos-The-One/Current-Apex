@@ -1,4 +1,4 @@
-import { z } from "zod";
+import z from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import {
@@ -9,10 +9,28 @@ import {
   makeVapiCall,
   getVapiCall,
   listVapiCalls,
+  testVapiConnection,
 } from "../vapi";
 import { createLeadActivity } from "../db";
+import { getConfiguredAssistants, validateAssistantConfiguration } from "../vapi-assistant-mapper";
 
 export const vapiRouter = router({
+  // ============= CONNECTION TEST =============
+
+  testConnection: protectedProcedure
+    .query(async () => {
+      const result = await testVapiConnection();
+      const assistants = getConfiguredAssistants();
+      const validation = validateAssistantConfiguration();
+      return {
+        connected: result.success,
+        error: result.success ? undefined : result.error,
+        assistants,
+        allAssistantsConfigured: validation.valid,
+        missingAssistants: validation.missing,
+      };
+    }),
+
   // ============= ASSISTANT MANAGEMENT =============
   
   createAssistant: protectedProcedure

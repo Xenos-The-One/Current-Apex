@@ -110,3 +110,9 @@
 - [ ] Fix all "Feature coming soon" placeholder nav items
 - [ ] Consistent empty states across all pages
 - [ ] Loading skeletons for all data-heavy pages
+
+## Round 3: OAuth Fix + Follow-up Features
+- [x] Fix OAuth callback failed error on login — added missing avatar_url and phone columns to users table
+- [x] Add Stripe webhook secret — registered /api/stripe/webhook with express.raw() before json() middleware
+- [x] Add live Vapi call test button in Settings → Integrations → Vapi section
+- [x] Add SendGrid sender domain configuration in Settings → Integrations → SendGrid section

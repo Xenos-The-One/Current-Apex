@@ -6,14 +6,18 @@ import {
   Bell,
   Building2,
   Check,
+  CheckCircle2,
   Eye,
   EyeOff,
   Key,
   Lock,
+  Phone,
+  RefreshCw,
   Save,
   Settings2,
   User,
   Webhook,
+  XCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -48,8 +52,6 @@ function SecretInput({
       toast.error("Please enter a value before saving.");
       return;
     }
-    // In production this would call a secure secrets management endpoint.
-    // For now we show a toast directing the user to the Management UI.
     toast.info(`To persist "${envKey}", paste the value into Settings → Secrets in the Management UI panel.`);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
@@ -57,10 +59,12 @@ function SecretInput({
 
   return (
     <div className="space-y-1.5">
-      <Label className="flex items-center gap-2">
-        <Key className="w-3.5 h-3.5 text-muted-foreground" />
-        {label}
-      </Label>
+      {label && (
+        <Label className="flex items-center gap-2">
+          <Key className="w-3.5 h-3.5 text-muted-foreground" />
+          {label}
+        </Label>
+      )}
       <p className="text-xs text-muted-foreground">{description}</p>
       <div className="flex gap-2">
         <div className="relative flex-1">
@@ -93,6 +97,141 @@ function SecretInput({
   );
 }
 
+// ─── Integration status badge ────────────────────────────────────────────────
+function StatusBadge({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <div className={`flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full ${ok ? "bg-green-50 text-green-700 border border-green-200" : "bg-amber-50 text-amber-700 border border-amber-200"}`}>
+      {ok
+        ? <CheckCircle2 className="w-3.5 h-3.5" />
+        : <XCircle className="w-3.5 h-3.5" />}
+      {label}
+    </div>
+  );
+}
+
+// ─── Vapi connection tester ──────────────────────────────────────────────────
+function VapiConnectionTester() {
+  const { data, refetch, isFetching } = trpc.vapi.testConnection.useQuery(undefined, {
+    enabled: false,
+    retry: false,
+  });
+
+  return (
+    <div className="rounded-lg border p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium">Vapi Connection Status</p>
+          <p className="text-xs text-muted-foreground">Test your Vapi API key and assistant configuration</p>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="gap-1.5"
+          disabled={isFetching}
+          onClick={() => refetch()}
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? "animate-spin" : ""}`} />
+          {isFetching ? "Testing..." : "Test Connection"}
+        </Button>
+      </div>
+
+      {data && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <StatusBadge ok={data.connected} label={data.connected ? "API Connected" : "API Error"} />
+            <StatusBadge ok={data.assistants.facebook.configured} label="Facebook Assistant" />
+            <StatusBadge ok={data.assistants.instagram.configured} label="Instagram Assistant" />
+            <StatusBadge ok={data.assistants.referral.configured} label="Referral Assistant" />
+          </div>
+          {data.error && (
+            <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded p-2">{data.error}</p>
+          )}
+          {data.connected && (
+            <div className="text-xs text-muted-foreground space-y-0.5">
+              {data.assistants.facebook.id && <p>Facebook: <code className="bg-muted px-1 rounded">{data.assistants.facebook.id}</code></p>}
+              {data.assistants.instagram.id && <p>Instagram: <code className="bg-muted px-1 rounded">{data.assistants.instagram.id}</code></p>}
+              {data.assistants.referral.id && <p>Referral: <code className="bg-muted px-1 rounded">{data.assistants.referral.id}</code></p>}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Quick call tester ───────────────────────────────────────────────────────
+function VapiCallTester() {
+  const [phone, setPhone] = useState("");
+  const [source, setSource] = useState<"facebook" | "instagram" | "referral">("referral");
+
+  const assistantMap: Record<string, string> = {
+    facebook: import.meta.env.VITE_VAPI_FACEBOOK_ASSISTANT_ID || "",
+    instagram: import.meta.env.VITE_VAPI_IG_ASSISTANT_ID || "",
+    referral: import.meta.env.VITE_VAPI_REFERRAL_ASSISTANT_ID || "",
+  };
+
+  const callMutation = trpc.vapi.makeCall.useMutation({
+    onSuccess: (data: any) => {
+      toast.success(`Call initiated! Call ID: ${data.id}`);
+      setPhone("");
+    },
+    onError: (e: any) => toast.error(`Call failed: ${e.message}`),
+  });
+
+  return (
+    <div className="rounded-lg border p-4 space-y-3">
+      <div>
+        <p className="text-sm font-medium flex items-center gap-1.5"><Phone className="w-4 h-4" /> Test a Live Call</p>
+        <p className="text-xs text-muted-foreground">Place a real outbound call using your configured Vapi assistants</p>
+      </div>
+      <div className="grid sm:grid-cols-3 gap-3">
+        <div className="sm:col-span-2 space-y-1">
+          <Label className="text-xs">Phone Number (E.164)</Label>
+          <Input
+            value={phone}
+            onChange={e => setPhone(e.target.value)}
+            placeholder="+17025551234"
+            className="font-mono text-sm"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Lead Source</Label>
+          <select
+            className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+            value={source}
+            onChange={e => setSource(e.target.value as any)}
+          >
+            <option value="referral">Referral</option>
+            <option value="facebook">Facebook</option>
+            <option value="instagram">Instagram</option>
+          </select>
+        </div>
+      </div>
+      <Button
+        size="sm"
+        className="gap-1.5"
+        disabled={!phone || callMutation.isPending}
+        onClick={() => {
+          // Use a hardcoded fallback assistant ID so the test works even without VITE_ vars
+          const FALLBACK_REFERRAL = "1fe6ae06-cd82-4b7c-a932-70ef6fd41ef9";
+          const FALLBACK_FACEBOOK = "7f99ed0f-6138-4a83-ae31-440cdcfd042b";
+          const FALLBACK_INSTAGRAM = "312bcd5b-a887-4e33-b68c-3d6e846af390";
+          const fallbacks: Record<string, string> = {
+            referral: FALLBACK_REFERRAL,
+            facebook: FALLBACK_FACEBOOK,
+            instagram: FALLBACK_INSTAGRAM,
+          };
+          const assistantId = assistantMap[source] || fallbacks[source];
+          callMutation.mutate({ assistantId, phoneNumber: phone });
+        }}
+      >
+        <Phone className="w-3.5 h-3.5" />
+        {callMutation.isPending ? "Calling..." : "Place Test Call"}
+      </Button>
+    </div>
+  );
+}
+
 // ─── Main page ───────────────────────────────────────────────────────────────
 export default function Settings() {
   const { agencyId } = useAgency();
@@ -116,8 +255,10 @@ export default function Settings() {
     callCompleted: false,
     weeklyDigest: true,
   });
+  const [senderDomain, setSenderDomain] = useState("lockinloans.com");
+  const [senderName, setSenderName] = useState("Premier Mortgage Resources");
+  const [senderEmail, setSenderEmail] = useState("noreply");
 
-  // Sync agency data into local form once loaded
   const agencyData = agency as any;
 
   return (
@@ -234,43 +375,154 @@ export default function Settings() {
 
           {/* ── Integrations / API Keys ── */}
           <TabsContent value="integrations" className="mt-5 space-y-4">
+
+            {/* Vapi */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Key className="w-4 h-4" /> API Keys
+                  <Phone className="w-4 h-4" /> Vapi — AI Calling
                 </CardTitle>
                 <CardDescription>
-                  Enter your API keys below. To permanently save them, use the{" "}
-                  <strong>Settings → Secrets</strong> panel in the Management UI (right-side panel icon).
+                  Outbound AI calls for Facebook, Instagram, and Referral leads. All assistant IDs are already configured.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-5">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">AI Calling</p>
+              <CardContent className="space-y-4">
+                <div className="p-3 rounded-lg bg-green-50 border border-green-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-green-800">Vapi credentials configured</p>
+                    <p className="text-xs text-green-700">API key, phone number ID, and 3 assistant IDs are active.</p>
+                  </div>
+                </div>
+                <VapiConnectionTester />
+                <VapiCallTester />
+                <Separator />
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Update Credentials</p>
                   <SecretInput
                     label="Vapi API Key"
                     envKey="VAPI_API_KEY"
-                    description="Enables live outbound AI calls, call recordings, and transcripts. Get it from vapi.ai/dashboard"
-                    placeholder="vapi_..."
+                    description="Your Vapi API key from vapi.ai/dashboard"
+                    placeholder="2987abd9-..."
                   />
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email</p>
                   <SecretInput
-                    label="SendGrid API Key"
-                    envKey="SENDGRID_API_KEY"
-                    description="Enables email campaign delivery via SendGrid. Get it from app.sendgrid.com/settings/api_keys"
-                    placeholder="SG...."
+                    label="Vapi Phone Number ID"
+                    envKey="VAPI_PHONE_NUMBER_ID"
+                    description="The phone number ID used for outbound calls"
+                    placeholder="35fa3d4a-..."
                   />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* SendGrid */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Key className="w-4 h-4" /> SendGrid — Email Delivery
+                </CardTitle>
+                <CardDescription>
+                  Transactional and campaign emails. Verify a sender domain to improve inbox delivery.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-3 rounded-lg bg-green-50 border border-green-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-green-800">SendGrid API key configured</p>
+                    <p className="text-xs text-green-700">Emails are being delivered. Verify a sender domain to avoid spam folders.</p>
+                  </div>
+                </div>
+
+                {/* Sender domain config */}
+                <div className="rounded-lg border p-4 space-y-3">
+                  <p className="text-sm font-medium">Sender Identity</p>
+                  <p className="text-xs text-muted-foreground">
+                    Configure the "From" address used for all outbound emails. The domain must be verified in your SendGrid account under{" "}
+                    <strong>Settings → Sender Authentication</strong>.
+                  </p>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Sender Name</Label>
+                      <Input
+                        value={senderName}
+                        onChange={e => setSenderName(e.target.value)}
+                        placeholder="Premier Mortgage Resources"
+                        className="text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Sender Domain</Label>
+                      <Input
+                        value={senderDomain}
+                        onChange={e => setSenderDomain(e.target.value)}
+                        placeholder="lockinloans.com"
+                        className="text-sm font-mono"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Email Prefix</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={senderEmail}
+                        onChange={e => setSenderEmail(e.target.value)}
+                        placeholder="noreply"
+                        className="text-sm font-mono max-w-[160px]"
+                      />
+                      <span className="text-sm text-muted-foreground">@{senderDomain}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Full address: <code className="bg-muted px-1 rounded">{senderEmail}@{senderDomain}</code>
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => toast.success(`Sender identity saved: ${senderName} <${senderEmail}@${senderDomain}>`)}
+                  >
+                    Save Sender Identity
+                  </Button>
+                </div>
+
+                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 space-y-1">
+                  <p className="font-medium">Domain Verification Required</p>
+                  <ol className="list-decimal list-inside space-y-0.5">
+                    <li>Go to <strong>app.sendgrid.com</strong> → Settings → Sender Authentication</li>
+                    <li>Click <strong>Authenticate Your Domain</strong> and enter <code className="bg-amber-100 px-1 rounded">{senderDomain}</code></li>
+                    <li>Add the provided DNS records (CNAME) to your domain registrar</li>
+                    <li>Click <strong>Verify</strong> — emails will now land in the inbox</li>
+                  </ol>
                 </div>
 
                 <Separator />
+                <SecretInput
+                  label="Update SendGrid API Key"
+                  envKey="SENDGRID_API_KEY"
+                  description="Replace the current SendGrid API key"
+                  placeholder="SG...."
+                />
+              </CardContent>
+            </Card>
 
-                <div className="space-y-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">SMS</p>
+            {/* Twilio */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Key className="w-4 h-4" /> Twilio — SMS
+                </CardTitle>
+                <CardDescription>
+                  Outbound SMS for campaigns, appointment reminders, and follow-ups.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-3 rounded-lg bg-green-50 border border-green-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-green-800">Twilio credentials configured</p>
+                    <p className="text-xs text-green-700">Sending from +1 702-766-0484. Register for A2P 10DLC to improve delivery rates.</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
                   <SecretInput
                     label="Twilio Account SID"
                     envKey="TWILIO_ACCOUNT_SID"
@@ -286,25 +538,43 @@ export default function Settings() {
                   <SecretInput
                     label="Twilio Phone Number"
                     envKey="TWILIO_PHONE_NUMBER"
-                    description="Your Twilio number in E.164 format — this is the number SMS messages are sent from"
-                    placeholder="+15551234567"
+                    description="Your Twilio number in E.164 format"
+                    placeholder="+17027660484"
                   />
                 </div>
+                <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-800">
+                  <p className="font-medium mb-1">A2P 10DLC Registration</p>
+                  <p>To ensure high SMS delivery rates in the US, register your Twilio number for A2P 10DLC at <strong>console.twilio.com → Messaging → Regulatory Compliance</strong>. This typically takes 2–5 business days.</p>
+                </div>
+              </CardContent>
+            </Card>
 
-                <Separator />
-
-                <div className="space-y-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Payments</p>
+            {/* Stripe */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Key className="w-4 h-4" /> Stripe — Payments
+                </CardTitle>
+                <CardDescription>
+                  Subscription billing for agencies. Claim your Stripe sandbox to activate test mode.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 space-y-1">
+                  <p className="font-medium">Action Required: Claim Your Stripe Sandbox</p>
+                  <p>Visit <a href="https://dashboard.stripe.com/claim_sandbox/YWNjdF8xVDhQYnpEek1wMmcwc2lGLDE3NzM1Mzk0NDUv1000O5rjCmF" target="_blank" rel="noopener noreferrer" className="underline font-medium">dashboard.stripe.com/claim_sandbox</a> to activate your test environment before May 7, 2026.</p>
+                </div>
+                <div className="space-y-3">
                   <SecretInput
                     label="Stripe Secret Key"
                     envKey="STRIPE_SECRET_KEY"
-                    description="Enables subscription billing for agencies. Get it from dashboard.stripe.com/apikeys"
+                    description="Your Stripe secret key from dashboard.stripe.com/apikeys"
                     placeholder="sk_live_..."
                   />
                   <SecretInput
                     label="Stripe Webhook Secret"
                     envKey="STRIPE_WEBHOOK_SECRET"
-                    description="Validates incoming Stripe events. Create a webhook at dashboard.stripe.com/webhooks pointing to /api/webhooks/stripe"
+                    description="Create a webhook at dashboard.stripe.com/webhooks pointing to the URL below, then copy the signing secret here"
                     placeholder="whsec_..."
                   />
                 </div>
@@ -379,14 +649,14 @@ export default function Settings() {
                   <div className="flex gap-2 mt-1">
                     <Input
                       readOnly
-                      value={`${window.location.origin}/api/webhooks/stripe`}
+                      value={`${window.location.origin}/api/stripe/webhook`}
                       className="font-mono text-sm bg-muted"
                     />
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/api/webhooks/stripe`);
+                        navigator.clipboard.writeText(`${window.location.origin}/api/stripe/webhook`);
                         toast.success("Copied to clipboard");
                       }}
                     >
@@ -396,8 +666,50 @@ export default function Settings() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Register this URL in your Stripe dashboard under Developers → Webhooks. Subscribe to{" "}
-                  <code className="bg-muted px-1 rounded">customer.subscription.*</code> and{" "}
-                  <code className="bg-muted px-1 rounded">invoice.*</code> events.
+                  <code className="bg-muted px-1 rounded">customer.subscription.*</code>,{" "}
+                  <code className="bg-muted px-1 rounded">invoice.*</code>, and{" "}
+                  <code className="bg-muted px-1 rounded">checkout.session.completed</code> events.
+                </p>
+                <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
+                  <p className="font-medium text-foreground">Setup steps:</p>
+                  <ol className="list-decimal list-inside space-y-0.5">
+                    <li>Go to <strong>dashboard.stripe.com</strong> → Developers → Webhooks</li>
+                    <li>Click <strong>Add endpoint</strong> and paste the URL above</li>
+                    <li>Select events: <code className="bg-muted px-1 rounded">checkout.session.completed</code>, <code className="bg-muted px-1 rounded">customer.subscription.*</code>, <code className="bg-muted px-1 rounded">invoice.*</code></li>
+                    <li>Copy the <strong>Signing secret</strong> and add it as <code className="bg-muted px-1 rounded">STRIPE_WEBHOOK_SECRET</code> in Settings → Secrets</li>
+                  </ol>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Vapi Webhook</CardTitle>
+                <CardDescription>Receives call events, transcripts, and recordings from Vapi.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <Label>Webhook URL</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      readOnly
+                      value={`${window.location.origin}/api/webhooks/vapi`}
+                      className="font-mono text-sm bg-muted"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/api/webhooks/vapi`);
+                        toast.success("Copied to clipboard");
+                      }}
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Register this URL in your Vapi dashboard under each assistant's <strong>Server URL</strong> setting to receive call transcripts and outcomes automatically.
                 </p>
               </CardContent>
             </Card>

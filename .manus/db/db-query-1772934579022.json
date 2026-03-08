@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `users` \n  ADD COLUMN IF NOT EXISTS `avatar_url` varchar(500) DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `phone` varchar(20) DEFAULT NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute ALTER TABLE `users` \n  ADD COLUMN IF NOT EXISTS `avatar_url` varchar(500) DEFAULT NULL,\n  ADD COLUMN IF NOT EXISTS `phone` varchar(20) DEFAULT NULL;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 316
+}
