@@ -58,8 +58,16 @@ export const clientRouter = router({
   // ============= DASHBOARD STATS =============
   dashboardStats: protectedProcedure.query(async ({ ctx }) => {
     const client = await resolveClient(ctx);
+    // Admin users without a linked client record — return empty stats
     if (!client) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+      return {
+        totalLeads: 0, newLeads: 0, contacted: 0, qualified: 0, appointmentSet: 0,
+        closedWon: 0, closedLost: 0, hotLeads: 0, warmLeads: 0,
+        totalAppointments: 0, completedAppointments: 0, scheduledAppointments: 0,
+        showRate: 0, conversionRate: 0, estimatedRevenue: 0, estimatedDeals: 0,
+        pendingApprovalsCount: 0, recentLeads: [], leadsThisWeek: 0, leadsThisMonth: 0,
+        successScore: 0, leadSources: [], client: null,
+      };
     }
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
@@ -142,12 +150,8 @@ export const clientRouter = router({
 
   getMyInfo: protectedProcedure.query(async ({ ctx }) => {
     const client = await resolveClient(ctx);
-    if (!client) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "Client profile not found",
-      });
-    }
+    // Admin users without a linked client record — return null gracefully
+    if (!client) return null;
 
     const agency = await getAgencyById(client.agencyId);
     
@@ -516,7 +520,7 @@ export const clientRouter = router({
 
   getSlaAlerts: protectedProcedure.query(async ({ ctx }) => {
     const client = await resolveClient(ctx);
-    if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+    if (!client) return { newNotContacted: 0, noActivityIn7Days: 0, coldLeads: 0, newNotContactedLeads: [] };
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
 
@@ -562,7 +566,7 @@ export const clientRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       const client = await resolveClient(ctx);
-      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+      if (!client) return { totalLeads: 0, newLeads: 0, contacted: 0, qualified: 0, appointmentSet: 0, closedWon: 0, closedLost: 0, conversionRate: 0, range: input.range };
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
 
@@ -690,14 +694,13 @@ export const clientRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       const client = await resolveClient(ctx);
-      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+      if (!client) return [];
       if (!isAdminUser(ctx.user.role) && client.accessMode === "limited") {
         throw new TRPCError({ code: "FORBIDDEN", message: "Limited access mode." });
       }
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-
-      let allLeads = await db.select().from(leads).where(eq(leads.clientId, client.id));
+      let allLeads = await db.select().from(leads).where(eq(leads.clientId, client.id));;
 
       // Filter by pipeline type
       allLeads = allLeads.filter(l => (l.pipelineType || "loan") === input.pipelineType);
@@ -716,7 +719,7 @@ export const clientRouter = router({
     .input(z.object({ query: z.string().min(1).max(100) }))
     .query(async ({ ctx, input }) => {
       const client = await resolveClient(ctx);
-      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+      if (!client) return { leads: [], appointments: [], total: 0 };
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
       const q = `%${input.query.trim()}%`;
@@ -827,7 +830,7 @@ export const clientRouter = router({
   getContactTypeCounts: protectedProcedure
     .query(async ({ ctx }) => {
       const client = await resolveClient(ctx);
-      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+      if (!client) return { byType: {}, total: 0 };
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
       const rows = await db.select({

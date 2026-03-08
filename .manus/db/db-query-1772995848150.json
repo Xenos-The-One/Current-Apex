@@ -1,0 +1,9 @@
+{
+  "query": "\nCREATE TABLE IF NOT EXISTS `contentQualityScores` (\n  `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,\n  `contentId` int NOT NULL,\n  `overallScore` decimal(5,2) DEFAULT 0,\n  `readabilityScore` decimal(5,2) DEFAULT 0,\n  `seoScore` decimal(5,2) DEFAULT 0,\n  `engagementScore` decimal(5,2) DEFAULT 0,\n  `originalityScore` decimal(5,2) DEFAULT 0,\n  `toneScore` decimal(5,2) DEFAULT 0,\n  `feedback` text,\n  `scoredAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP\n);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nCREATE TABLE IF NOT EXISTS `contentQualityScores` (\n  `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,\n  `contentId` int NOT NULL,\n  `overallScore` decimal(5,2) DEFAULT 0,\n  `readabilityScore` decimal(5,2) DEFAULT 0,\n  `seoScore` decimal(5,2) DEFAULT 0,\n  `engagementScore` decimal(5,2) DEFAULT 0,\n  `originalityScore` decimal(5,2) DEFAULT 0,\n  `toneScore` decimal(5,2) DEFAULT 0,\n  `feedback` text,\n  `scoredAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP\n);\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 54
+}

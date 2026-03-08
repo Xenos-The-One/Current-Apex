@@ -1,0 +1,22 @@
+{
+  "query": "\nCREATE TABLE IF NOT EXISTS `contentQualityScores` (\n  `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,\n  `contentId` int NOT NULL,\n  `overallScore` int NOT NULL DEFAULT 0,\n  `readabilityScore` int NOT NULL DEFAULT 0,\n  `seoScore` int NOT NULL DEFAULT 0,\n  `toneScore` int NOT NULL DEFAULT 0,\n  `engagementScore` int NOT NULL DEFAULT 0,\n  `readabilityDetails` text,\n  `seoDetails` text,\n  `toneDetails` text,\n  `engagementDetails` text,\n  `suggestions` text,\n  `analyzedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP\n);\n\nSHOW TABLES LIKE 'content%';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nCREATE TABLE IF NOT EXISTS `contentQualityScores` (\n  `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,\n  `contentId` int NOT NULL,\n  `overallScore` int NOT NULL DEFAULT 0,\n  `readabilityScore` int NOT NULL DEFAULT 0,\n  `seoScore` int NOT NULL DEFAULT 0,\n  `toneScore` int NOT NULL DEFAULT 0,\n  `engagementScore` int NOT NULL DEFAULT 0,\n  `readabilityDetails` text,\n  `seoDetails` text,\n  `toneDetails` text,\n  `engagementDetails` text,\n  `suggestions` text,\n  `analyzedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP\n);\n\nSHOW TABLES LIKE 'content%';\n",
+  "rows": [
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj (content%)": "contentAnalytics"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj (content%)": "contentQualityScores"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj (content%)": "contentRevisions"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj (content%)": "content_approvals"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_Rus3EtBPxB9CmZuwDUFVXj (content%)\ncontentAnalytics\ncontentQualityScores\ncontentRevisions\ncontent_approvals\n",
+  "stderr": "",
+  "execution_time_ms": 211
+}

@@ -160,3 +160,8 @@
 - [x] Wire generated content into Content Approval tab — all generated content inserted as pending approvals
 - [x] Notify client when content is ready — "Your first content batch is ready!" banner shown in Content Approvals
 - [x] Admin can monitor onboarding completion — clientOnboarding.getStatus procedure available; DB connection ECONNRESET auto-reconnect fixed
+
+## Round 10: Dashboard Error Fixes
+- [x] Fix admin user lookup errors — getMyInfo, dashboardStats, getSlaAlerts, dashboardStatsByRange, globalSearch, getContactTypeCounts, getSuggested, getAllSuggested, getCompletionStats all return empty/null gracefully for admin users without client profiles
+- [x] Create contentQualityScores table in database
+- [x] Create all 25 missing seo-schema tables (seoUsers, clientPortalUsers, portalBranding, contentTemplates, contentComments, contentRepurposed, webhookConfigs, publishLogs, contentBriefs, agencySettings, recurringPlans, abTests, googleAnalyticsConnections, wordpressConnections, wordpressPublishHistory, manusWebsites, manusPublishHistory, designStandards, publishingSchedules, publishingAnalytics, clientPublishingPermissions, searchConsoleCredentials, searchConsoleMetrics, appNotifications, pipelineCards)

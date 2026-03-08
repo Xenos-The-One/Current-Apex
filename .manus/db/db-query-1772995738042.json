@@ -1,0 +1,85 @@
+{
+  "query": "\nSELECT 'seoUsers' as tbl WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='seoUsers')\nUNION SELECT 'clientPortalUsers' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='clientPortalUsers')\nUNION SELECT 'portalBranding' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='portalBranding')\nUNION SELECT 'contentTemplates' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='contentTemplates')\nUNION SELECT 'contentComments' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='contentComments')\nUNION SELECT 'contentRepurposed' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='contentRepurposed')\nUNION SELECT 'webhookConfigs' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='webhookConfigs')\nUNION SELECT 'publishLogs' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='publishLogs')\nUNION SELECT 'contentBriefs' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='contentBriefs')\nUNION SELECT 'agencySettings' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='agencySettings')\nUNION SELECT 'recurringPlans' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='recurringPlans')\nUNION SELECT 'abTests' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='abTests')\nUNION SELECT 'googleAnalyticsConnections' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='googleAnalyticsConnections')\nUNION SELECT 'wordpressConnections' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='wordpressConnections')\nUNION SELECT 'wordpressPublishHistory' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='wordpressPublishHistory')\nUNION SELECT 'manusWebsites' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='manusWebsites')\nUNION SELECT 'manusPublishHistory' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='manusPublishHistory')\nUNION SELECT 'designStandards' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='designStandards')\nUNION SELECT 'publishingSchedules' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='publishingSchedules')\nUNION SELECT 'publishingAnalytics' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='publishingAnalytics')\nUNION SELECT 'clientPublishingPermissions' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='clientPublishingPermissions')\nUNION SELECT 'searchConsoleCredentials' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='searchConsoleCredentials')\nUNION SELECT 'searchConsoleMetrics' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='searchConsoleMetrics')\nUNION SELECT 'appNotifications' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='appNotifications')\nUNION SELECT 'pipelineCards' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='pipelineCards');\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nSELECT 'seoUsers' as tbl WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='seoUsers')\nUNION SELECT 'clientPortalUsers' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='clientPortalUsers')\nUNION SELECT 'portalBranding' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='portalBranding')\nUNION SELECT 'contentTemplates' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='contentTemplates')\nUNION SELECT 'contentComments' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='contentComments')\nUNION SELECT 'contentRepurposed' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='contentRepurposed')\nUNION SELECT 'webhookConfigs' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='webhookConfigs')\nUNION SELECT 'publishLogs' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='publishLogs')\nUNION SELECT 'contentBriefs' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='contentBriefs')\nUNION SELECT 'agencySettings' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='agencySettings')\nUNION SELECT 'recurringPlans' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='recurringPlans')\nUNION SELECT 'abTests' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='abTests')\nUNION SELECT 'googleAnalyticsConnections' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='googleAnalyticsConnections')\nUNION SELECT 'wordpressConnections' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='wordpressConnections')\nUNION SELECT 'wordpressPublishHistory' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='wordpressPublishHistory')\nUNION SELECT 'manusWebsites' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='manusWebsites')\nUNION SELECT 'manusPublishHistory' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='manusPublishHistory')\nUNION SELECT 'designStandards' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='designStandards')\nUNION SELECT 'publishingSchedules' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='publishingSchedules')\nUNION SELECT 'publishingAnalytics' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='publishingAnalytics')\nUNION SELECT 'clientPublishingPermissions' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='clientPublishingPermissions')\nUNION SELECT 'searchConsoleCredentials' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='searchConsoleCredentials')\nUNION SELECT 'searchConsoleMetrics' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='searchConsoleMetrics')\nUNION SELECT 'appNotifications' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='appNotifications')\nUNION SELECT 'pipelineCards' WHERE NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='pipelineCards');\n",
+  "rows": [
+    {
+      "tbl": "designStandards"
+    },
+    {
+      "tbl": "manusWebsites"
+    },
+    {
+      "tbl": "clientPortalUsers"
+    },
+    {
+      "tbl": "googleAnalyticsConnections"
+    },
+    {
+      "tbl": "clientPublishingPermissions"
+    },
+    {
+      "tbl": "publishingSchedules"
+    },
+    {
+      "tbl": "wordpressPublishHistory"
+    },
+    {
+      "tbl": "contentBriefs"
+    },
+    {
+      "tbl": "portalBranding"
+    },
+    {
+      "tbl": "appNotifications"
+    },
+    {
+      "tbl": "searchConsoleMetrics"
+    },
+    {
+      "tbl": "contentTemplates"
+    },
+    {
+      "tbl": "recurringPlans"
+    },
+    {
+      "tbl": "contentComments"
+    },
+    {
+      "tbl": "abTests"
+    },
+    {
+      "tbl": "contentRepurposed"
+    },
+    {
+      "tbl": "searchConsoleCredentials"
+    },
+    {
+      "tbl": "manusPublishHistory"
+    },
+    {
+      "tbl": "seoUsers"
+    },
+    {
+      "tbl": "pipelineCards"
+    },
+    {
+      "tbl": "webhookConfigs"
+    },
+    {
+      "tbl": "publishLogs"
+    },
+    {
+      "tbl": "wordpressConnections"
+    },
+    {
+      "tbl": "publishingAnalytics"
+    },
+    {
+      "tbl": "agencySettings"
+    }
+  ],
+  "messages": [],
+  "stdout": "tbl\ndesignStandards\nmanusWebsites\nclientPortalUsers\ngoogleAnalyticsConnections\nclientPublishingPermissions\npublishingSchedules\nwordpressPublishHistory\ncontentBriefs\nportalBranding\nappNotifications\nsearchConsoleMetrics\ncontentTemplates\nrecurringPlans\ncontentComments\nabTests\ncontentRepurposed\nsearchConsoleCredentials\nmanusPublishHistory\nseoUsers\npipelineCards\nwebhookConfigs\npublishLogs\nwordpressConnections\npublishingAnalytics\nagencySettings\n",
+  "stderr": "",
+  "execution_time_ms": 154
+}

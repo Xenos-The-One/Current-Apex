@@ -198,8 +198,9 @@ export const followUpsRouter = router({
   // ─── Dashboard widget: top 10 suggestions ────────────────────────────────
   getSuggested: protectedProcedure.query(async ({ ctx }) => {
     const client = await resolveClientForFollowUps(ctx);
+    // Admin users without a linked client record — return empty gracefully
     if (!client) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+      return { suggestions: [], summary: "No client profile linked. Use Admin Dashboard to manage leads." };
     }
 
     const db = await getDb();
@@ -247,7 +248,7 @@ export const followUpsRouter = router({
     .query(async ({ ctx, input }) => {
       const client = await resolveClientForFollowUps(ctx);
       if (!client) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+        return { suggestions: [], summary: "No client profile linked.", counts: { high: 0, medium: 0, low: 0, total: 0 }, completionRate: 0, snoozedCount: 0 };
       }
 
       const db = await getDb();
@@ -324,18 +325,13 @@ export const followUpsRouter = router({
         channel: z.enum(["sms", "email", "call_script"]).default("sms"),
       })
     )
-    .mutation(async ({ ctx, input }) => {
+     .mutation(async ({ ctx, input }) => {
       const client = await resolveClientForFollowUps(ctx);
-      if (!client) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
-      }
-
+      if (!client) throw new TRPCError({ code: "FORBIDDEN", message: "No client profile linked. Select a client to manage." });
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-
       const [lead] = await db.select().from(leads).where(eq(leads.id, input.leadId)).limit(1);
       if (!lead) throw new TRPCError({ code: "NOT_FOUND", message: "Lead not found" });
-
       const activities = await db
         .select()
         .from(leadActivities)
@@ -397,16 +393,13 @@ ${activitySummary || "No recent activity"}`,
         note: z.string().optional(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
+     .mutation(async ({ ctx, input }) => {
       const client = await resolveClientForFollowUps(ctx);
-      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
-
+      if (!client) throw new TRPCError({ code: "FORBIDDEN", message: "No client profile linked. Select a client to manage." });
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-
       const [lead] = await db.select().from(leads).where(eq(leads.id, input.leadId)).limit(1);
       if (!lead) throw new TRPCError({ code: "NOT_FOUND", message: "Lead not found" });
-
       // Update lastContactDate; promote "new" → "contacted"
       const updateData: any = { lastContactDate: new Date() };
       if (lead.status === "new") updateData.status = "contacted";
@@ -433,11 +426,9 @@ ${activitySummary || "No recent activity"}`,
     )
     .mutation(async ({ ctx, input }) => {
       const client = await resolveClientForFollowUps(ctx);
-      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
-
+      if (!client) throw new TRPCError({ code: "FORBIDDEN", message: "No client profile linked. Select a client to manage." });
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-
       let updated = 0;
       for (const leadId of input.leadIds) {
         const [lead] = await db.select().from(leads).where(
@@ -470,11 +461,9 @@ ${activitySummary || "No recent activity"}`,
     )
     .mutation(async ({ ctx, input }) => {
       const client = await resolveClientForFollowUps(ctx);
-      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
-
+      if (!client) throw new TRPCError({ code: "FORBIDDEN", message: "No client profile linked. Select a client to manage." });
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-
       const [lead] = await db.select().from(leads).where(
         and(eq(leads.id, input.leadId), eq(leads.clientId, client.id))
       ).limit(1);
@@ -501,13 +490,11 @@ ${activitySummary || "No recent activity"}`,
         days: z.number().min(1).max(30),
       })
     )
-    .mutation(async ({ ctx, input }) => {
+      .mutation(async ({ ctx, input }) => {
       const client = await resolveClientForFollowUps(ctx);
-      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
-
+      if (!client) throw new TRPCError({ code: "FORBIDDEN", message: "No client profile linked. Select a client to manage." });
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-
       const snoozedUntil = new Date(Date.now() + input.days * 24 * 60 * 60 * 1000);
       let updated = 0;
       for (const leadId of input.leadIds) {
@@ -525,7 +512,7 @@ ${activitySummary || "No recent activity"}`,
   // ─── Get completion stats ─────────────────────────────────────────────────
   getCompletionStats: protectedProcedure.query(async ({ ctx }) => {
     const client = await resolveClientForFollowUps(ctx);
-    if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+    if (!client) return { weeklyRate: 0, monthlyRate: 0, contactedThisWeek: 0, contactedThisMonth: 0, totalActive: 0, snoozedCount: 0 };
 
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
@@ -583,7 +570,7 @@ ${activitySummary || "No recent activity"}`,
     )
     .mutation(async ({ ctx, input }) => {
       const client = await resolveClientForFollowUps(ctx);
-      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+      if (!client) throw new TRPCError({ code: "FORBIDDEN", message: "No client profile linked. Select a client to manage." });
 
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
