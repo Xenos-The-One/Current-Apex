@@ -41,6 +41,13 @@ export async function getDb() {
   return _db;
 }
 
+// Reset the DB singleton so the next call to getDb() creates a fresh connection.
+// Call this whenever a query fails with ECONNRESET or similar network errors.
+export function resetDbConnection() {
+  console.log("[Database] Resetting connection due to network error — will reconnect on next query");
+  _db = null;
+}
+
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) {
     throw new Error("User openId is required for upsert");
@@ -94,8 +101,13 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     await db.insert(users).values(values).onDuplicateKeyUpdate({
       set: updateSet,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("[Database] Failed to upsert user:", error);
+    // Reset stale connection on network errors so next request reconnects
+    const code = error?.cause?.code || error?.code;
+    if (code === 'ECONNRESET' || code === 'ECONNREFUSED' || code === 'ETIMEDOUT') {
+      resetDbConnection();
+    }
     throw error;
   }
 }

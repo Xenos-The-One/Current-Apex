@@ -151,3 +151,12 @@
 - [x] Stripe webhook endpoint registered at /api/stripe/webhook with express.raw() — instructions in Settings → Webhooks
 - [x] Created test client account: Kyle Realty Group (kyle@kylerealty.com) with 5 sample leads; listAgencies now falls back to agency_id lookup so Client View button works
 - [x] Client onboarding process explained in delivery message
+
+## Round 9: Client-Facing Onboarding + Auto Content Generation
+- [x] Audit current onboarding wizard, client dashboard, and content approval tab
+- [x] Build client-facing onboarding wizard — 4-step form at /client-onboarding (business info, brand voice, target audience, social/website connections)
+- [x] Add onboarding progress indicator — "Setup Incomplete" banner in client sidebar links to wizard
+- [x] Build server-side content auto-generation pipeline — triggers on onboarding submit: 4 FB posts, 4 IG posts, 2 LinkedIn posts, 2 blog drafts
+- [x] Wire generated content into Content Approval tab — all generated content inserted as pending approvals
+- [x] Notify client when content is ready — "Your first content batch is ready!" banner shown in Content Approvals
+- [x] Admin can monitor onboarding completion — clientOnboarding.getStatus procedure available; DB connection ECONNRESET auto-reconnect fixed

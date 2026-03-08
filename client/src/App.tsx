@@ -9,6 +9,7 @@ import Home from "./pages/Home";
 import Info from "./pages/Info";
 import GetStarted from "./pages/GetStarted";
 import OnboardingSuccess from "./pages/OnboardingSuccess";
+import ClientOnboarding from "./pages/ClientOnboarding";
 import AdminDashboard from "./pages/AdminDashboard";
 import AgencyDetail from "./pages/AgencyDetail";
 import ClientDashboard from "./pages/ClientDashboard";
@@ -178,6 +179,7 @@ function Router() {
       <Route path="/workflows/:id/builder" component={WorkflowBuilder} />
       <Route path="/activate-account" component={ActivateAccount} />
       <Route path="/launchpad" component={Launchpad} />
+      <Route path="/client-onboarding" component={ClientOnboarding} />
       <Route path="/onboarding-snapshot" component={OnboardingSnapshot} />
       <Route path="/book/:slug" component={PublicBooking} />
       <Route path="/partner-portal" component={PartnerPortal} />

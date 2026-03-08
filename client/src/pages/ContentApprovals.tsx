@@ -6,17 +6,23 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, CheckCircle, XCircle, Clock, Send, Eye } from "lucide-react";
-
+import { Loader2, CheckCircle, XCircle, Clock, Send, Eye, Sparkles } from "lucide-react";
+import { useLocation } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
 export default function ContentApprovals() {
   const [selectedApproval, setSelectedApproval] = useState<any>(null);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectFeedback, setRejectFeedback] = useState("");
 
+  const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
   const { data: pendingApprovals, isLoading } = trpc.contentApprovals.listPending.useQuery({});
   const { data: allApprovals } = trpc.contentApprovals.list.useQuery({});
+  const { data: onboardingStatus } = trpc.clientOnboarding.getStatus.useQuery(undefined, {
+    retry: false,
+    staleTime: 60_000,
+  });
+  const showContentReadyBanner = onboardingStatus?.completed && pendingApprovals && pendingApprovals.length > 0;
 
   const approveMutation = trpc.contentApprovals.approve.useMutation({
     onSuccess: () => {
@@ -101,6 +107,25 @@ export default function ContentApprovals() {
   return (
     <DashboardLayout>
       <div className="container py-8">
+      {showContentReadyBanner && (
+        <div className="mb-6 rounded-xl bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-400/30 p-4 flex items-start gap-3">
+          <Sparkles className="h-5 w-5 text-cyan-500 mt-0.5 shrink-0" />
+          <div>
+            <p className="font-semibold text-cyan-700 dark:text-cyan-300">Your first content batch is ready!</p>
+            <p className="text-sm text-muted-foreground mt-0.5">We've generated social media posts and website content based on your business profile. Review and approve them below to get started.</p>
+          </div>
+        </div>
+      )}
+      {onboardingStatus && !onboardingStatus.completed && (
+        <div className="mb-6 rounded-xl bg-amber-500/10 border border-amber-400/30 p-4 flex items-start gap-3">
+          <Clock className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
+          <div className="flex-1">
+            <p className="font-semibold text-amber-700 dark:text-amber-300">Complete your setup to generate content</p>
+            <p className="text-sm text-muted-foreground mt-0.5">Fill in your business profile and we'll automatically generate your first batch of social media posts and website content.</p>
+            <button onClick={() => setLocation("/client-onboarding")} className="mt-2 text-sm font-semibold text-amber-600 dark:text-amber-400 hover:underline">Complete Setup →</button>
+          </div>
+        </div>
+      )}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Content Approvals</h1>
         <p className="text-muted-foreground">

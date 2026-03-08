@@ -87,6 +87,35 @@ import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { useIsEmbedded } from "@/contexts/EmbeddedContext";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import { GlobalSearch, useGlobalSearch } from "./GlobalSearch";
+import { AlertCircle } from "lucide-react";
+
+// ─── Client Onboarding Banner ─────────────────────────────────────────────────
+function ClientOnboardingBanner({ setLocation }: { setLocation: (path: string) => void }) {
+  const { data: onboardingStatus } = trpc.clientOnboarding.getStatus.useQuery(undefined, {
+    retry: false,
+    staleTime: 60_000,
+  });
+
+  if (!onboardingStatus || onboardingStatus.completed) return null;
+
+  return (
+    <div className="mx-2 mt-2 mb-1 rounded-lg bg-cyan-500/15 border border-cyan-400/30 p-2.5">
+      <div className="flex items-start gap-2">
+        <AlertCircle className="h-3.5 w-3.5 text-cyan-300 mt-0.5 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-[11px] font-semibold text-cyan-200 leading-tight">Setup Incomplete</p>
+          <p className="text-[10px] text-cyan-300/70 mt-0.5 leading-tight">Complete your business profile to unlock content generation.</p>
+          <button
+            onClick={() => setLocation("/client-onboarding")}
+            className="mt-1.5 text-[10px] font-semibold text-cyan-300 hover:text-cyan-100 underline underline-offset-2 transition-colors"
+          >
+            Complete Setup →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 type MenuItem = {
   icon: any;
@@ -954,6 +983,7 @@ function DashboardLayoutContent({
           </SidebarHeader>
 
           <SidebarContent className="gap-0 overflow-y-auto">
+            {isClient && !isCollapsed && <ClientOnboardingBanner setLocation={setLocation} />}
             <GroupedSidebarNav
               sections={menuSections}
               location={location}

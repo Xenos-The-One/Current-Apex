@@ -41,6 +41,7 @@ import { onboardingRouter } from "./routers/onboarding";
 import { launchpadRouter } from "./routers/launchpad";
 import { seedTemplatesRouter } from "./routers/seed-templates";
 import { onboardingSnapshotRouter } from "./routers/onboarding-snapshot";
+import { clientOnboardingRouter } from "./routers/client-onboarding";
 // Additional routers used by client pages
 import { automationsRouter } from "./routers/automations";
 import { billingRouter } from "./routers/billing";
@@ -91,6 +92,7 @@ export const appRouter = router({
   launchpad: launchpadRouter,
   seedTemplates: seedTemplatesRouter,
   onboardingSnapshot: onboardingSnapshotRouter,
+  clientOnboarding: clientOnboardingRouter,
   // Top-level aliases for client pages
   automations: automationsRouter,
   billing: billingRouter,
