@@ -90,21 +90,29 @@ Service Areas: ${seoClient.serviceAreas || "local area"}
 Website: ${seoClient.websiteUrl || ""}
 `.trim();
 
-  const prompt = `You are a social media content strategist for a mortgage and real estate marketing agency.
+  const prompt = `You are an expert SEO content strategist and social media manager for a mortgage and real estate marketing agency.
 
-Generate 10 pieces of content for this client:
+Generate 12 pieces of SEO-optimized content for this client:
 ${businessContext}
 
 Create exactly:
-- 3 Facebook posts (engaging, educational, with a clear CTA)
-- 3 Instagram posts (visual-friendly, hashtag-ready, punchy)
-- 2 LinkedIn posts (professional, thought leadership)
-- 2 blog post titles + opening paragraphs for their website
+- 3 Facebook posts (engaging, educational, with a clear CTA; include 2-3 relevant hashtags)
+- 3 Instagram posts (visual-friendly, punchy, 5-7 hashtags including local area tags)
+- 2 LinkedIn posts (professional thought leadership; include industry keywords naturally)
+- 2 SEO-optimized blog posts (include: H1 title with primary keyword, 150-word opening paragraph, meta description under 160 chars, 3 suggested H2 subheadings)
+- 2 website page copy pieces (one homepage hero section with headline + subheadline + CTA, one services page description)
+
+SEO requirements for all content:
+- Include primary keywords naturally (e.g. "[city] mortgage broker", "home loans [service area]", "refinance [city]")
+- Write for the target audience: ${seoClient.targetAudience || "homebuyers and homeowners"}
+- Use the brand voice: ${seoClient.brandVoice || "professional, trustworthy, approachable"}
+- Include location-specific terms from their service areas: ${seoClient.serviceAreas || "local area"}
+- Every piece should have a clear call-to-action
 
 For each piece, include:
 - A compelling title
-- The full content
-- A brief reasoning (1-2 sentences) explaining why this content will perform well
+- The full content (complete, ready to publish)
+- A brief reasoning (1-2 sentences) explaining the SEO strategy and why this content will perform well
 
 Return as JSON array with this exact structure:
 [
@@ -117,7 +125,7 @@ Return as JSON array with this exact structure:
   }
 ]
 
-Make the content specific to their business, not generic. Use their brand voice and target audience.`;
+Make every piece specific to their business. Never use generic filler content. Reference their actual services, location, and unique value proposition.`;
 
   try {
     const response = await invokeLLM({

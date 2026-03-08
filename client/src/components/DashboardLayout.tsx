@@ -106,7 +106,7 @@ function ClientOnboardingBanner({ setLocation }: { setLocation: (path: string) =
           <p className="text-[11px] font-semibold text-cyan-200 leading-tight">Setup Incomplete</p>
           <p className="text-[10px] text-cyan-300/70 mt-0.5 leading-tight">Complete your business profile to unlock content generation.</p>
           <button
-            onClick={() => setLocation("/client-onboarding")}
+            onClick={() => setLocation("/account-setup")}
             className="mt-1.5 text-[10px] font-semibold text-cyan-300 hover:text-cyan-100 underline underline-offset-2 transition-colors"
           >
             Complete Setup →
@@ -135,7 +135,6 @@ const adminMenuSections: MenuSection[] = [
     id: "overview", label: "Overview", icon: Home,
     items: [
       { icon: Rocket, label: "Launchpad", path: "/launchpad" },
-      { icon: UserPlus, label: "Onboarding Snapshot", path: "/onboarding-snapshot" },
       { icon: Building2, label: "Admin Dashboard", path: "/admin" },
       { icon: LayoutDashboard, label: "Client Dashboard", path: "/dashboard" },
     ],
@@ -203,6 +202,7 @@ const clientMenuSections: MenuSection[] = [
     items: [
       { icon: Rocket, label: "Launchpad", path: "/launchpad" },
       { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+      { icon: UserPlus, label: "Account Setup", path: "/account-setup" },
     ],
   },
   {

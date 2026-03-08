@@ -189,3 +189,12 @@
 - [x] Fix ensureLinkedSeoClient to include businessName field to avoid NOT NULL error on new client creation
 - [x] Add 4th tab "Referral Partners" to Follow-ups page — sorted by days since last contact, urgency color coding, call/email/navigate actions
 - [x] Write ONBOARDING_GUIDE.md — full step-by-step walkthrough for admin and client onboarding flows (3 parts: Admin setup, Client Launchpad, Client deep-dive wizard)
+
+## Round 15: Onboarding Rebuild
+- [x] Sub-account creation: createSubAccount now returns clientId; AdminDashboard auto-switches to Client View after invite sent
+- [x] Add "Account Setup" tab to client sidebar Home section → links to /account-setup (4-step wizard)
+- [x] /account-setup route added to App.tsx → maps to ClientOnboarding wizard (Business Info → Services & Brand → Social & Website → Publishing Prefs)
+- [x] On Account Setup completion: generates 12 SEO-optimized pieces (3 FB, 3 IG, 2 LinkedIn, 2 blog posts with H1/meta/H2, 2 website copy pieces) — all inserted as pending Content Approvals
+- [x] Onboarding banner in sidebar updated to link to /account-setup
+- [x] Removed "Onboarding Snapshot" from admin sidebar Overview section
+- [x] Removed /onboarding-snapshot route from App.tsx

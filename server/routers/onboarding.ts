@@ -147,6 +147,7 @@ export const onboardingRouter = router({
       console.log(`[Onboarding] Sub-account created for ${input.email} (userId: ${newUserId}), email sent: ${emailResult.success}`);
 
       // Auto-provision a CRM client record and linked SEO client for client-level roles
+      let provisionedClientId: number | null = null;
       if (input.role === "client_user" || input.role === "agency_owner") {
         try {
           let crmClientId: number | undefined = input.clientId;
@@ -168,6 +169,7 @@ export const onboardingRouter = router({
             crmClientId = (clientInsert as any)[0]?.insertId ?? (clientInsert as any).insertId;
           }
           if (crmClientId) {
+            provisionedClientId = crmClientId;
             // Ensure the creating admin exists in seo_users
             await upsertSeoUser({
               openId: ctx.user.openId,
@@ -195,6 +197,8 @@ export const onboardingRouter = router({
       return {
         success: true,
         userId: newUserId,
+        clientId: provisionedClientId,
+        clientName: input.company || fullName,
         emailSent: emailResult.success,
         message: `Account created and activation email sent to ${input.email}`,
       };

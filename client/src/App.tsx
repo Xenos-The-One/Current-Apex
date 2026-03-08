@@ -180,7 +180,7 @@ function Router() {
       <Route path="/activate-account" component={ActivateAccount} />
       <Route path="/launchpad" component={Launchpad} />
       <Route path="/client-onboarding" component={ClientOnboarding} />
-      <Route path="/onboarding-snapshot" component={OnboardingSnapshot} />
+      <Route path="/account-setup" component={ClientOnboarding} />
       <Route path="/book/:slug" component={PublicBooking} />
       <Route path="/partner-portal" component={PartnerPortal} />
       <Route path="/seo/:rest*" component={SeoRouter} />

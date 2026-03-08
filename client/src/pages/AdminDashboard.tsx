@@ -93,11 +93,23 @@ export default function AdminDashboard() {
 
   const createSubAccount = trpc.onboarding.createSubAccount.useMutation({
     onSuccess: (data) => {
+      const clientName = createForm.company || `${createForm.firstName} ${createForm.lastName}`;
       toast.success(data.emailSent
         ? `Account created! Activation email sent to ${createForm.email}`
         : `Account created, but email failed to send. Please resend manually.`);
       setShowCreateModal(false);
       setCreateForm({ firstName: "", lastName: "", email: "", phone: "", company: "", role: "client_user" });
+      // Auto-switch to Client View so admin can help with onboarding call
+      if (data.clientId && createForm.role === "client_user") {
+        setTimeout(() => {
+          startImpersonatingAsClient(data.clientId!, clientName);
+          toast.success(`Switched to ${clientName}'s client view`, {
+            description: "You're now in Client View — help them complete Account Setup. Click 'Exit to Admin' to return.",
+          });
+          utils.invalidate();
+          setLocation("/account-setup");
+        }, 1200);
+      }
     },
     onError: (err) => {
       toast.error(err.message || "Failed to create account");

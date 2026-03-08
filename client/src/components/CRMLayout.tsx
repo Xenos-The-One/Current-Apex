@@ -10,6 +10,7 @@ import {
   Calendar,
   ChevronDown,
   ChevronRight,
+  ClipboardList,
   CreditCard,
   FileText,
   Folder,
@@ -70,6 +71,7 @@ function getAdminNav(): NavItem[] {
 function getClientNav(): NavItem[] {
   return [
     { label: "Dashboard", href: "/dashboard", icon: Home },
+    { label: "Account Setup", href: "/account-setup", icon: ClipboardList },
     { label: "Pipeline", href: "/pipeline", icon: Users },
     { label: "Borrower Database", href: "/borrowers", icon: BookOpen },
     { label: "Referral Partners", href: "/referral-partners", icon: Users },
