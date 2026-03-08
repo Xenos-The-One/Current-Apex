@@ -1,0 +1,199 @@
+{
+  "query": "\nSELECT COLUMN_NAME FROM information_schema.COLUMNS \nWHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'seo_clients'\nORDER BY ORDINAL_POSITION;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nSELECT COLUMN_NAME FROM information_schema.COLUMNS \nWHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'seo_clients'\nORDER BY ORDINAL_POSITION;\n",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "agency_id"
+    },
+    {
+      "COLUMN_NAME": "crm_client_id"
+    },
+    {
+      "COLUMN_NAME": "business_name"
+    },
+    {
+      "COLUMN_NAME": "website_url"
+    },
+    {
+      "COLUMN_NAME": "niche"
+    },
+    {
+      "COLUMN_NAME": "target_keywords"
+    },
+    {
+      "COLUMN_NAME": "google_search_console_token"
+    },
+    {
+      "COLUMN_NAME": "google_analytics_token"
+    },
+    {
+      "COLUMN_NAME": "status"
+    },
+    {
+      "COLUMN_NAME": "created_at"
+    },
+    {
+      "COLUMN_NAME": "updated_at"
+    },
+    {
+      "COLUMN_NAME": "monthlyBudget"
+    },
+    {
+      "COLUMN_NAME": "budgetAlertThreshold"
+    },
+    {
+      "COLUMN_NAME": "phone"
+    },
+    {
+      "COLUMN_NAME": "address"
+    },
+    {
+      "COLUMN_NAME": "city"
+    },
+    {
+      "COLUMN_NAME": "state"
+    },
+    {
+      "COLUMN_NAME": "zipCode"
+    },
+    {
+      "COLUMN_NAME": "country"
+    },
+    {
+      "COLUMN_NAME": "businessName"
+    },
+    {
+      "COLUMN_NAME": "businessType"
+    },
+    {
+      "COLUMN_NAME": "industry"
+    },
+    {
+      "COLUMN_NAME": "businessPhone"
+    },
+    {
+      "COLUMN_NAME": "businessEmail"
+    },
+    {
+      "COLUMN_NAME": "businessWebsite"
+    },
+    {
+      "COLUMN_NAME": "businessAddress"
+    },
+    {
+      "COLUMN_NAME": "websiteUrl"
+    },
+    {
+      "COLUMN_NAME": "websitePlatform"
+    },
+    {
+      "COLUMN_NAME": "websiteLoginUrl"
+    },
+    {
+      "COLUMN_NAME": "websiteUsername"
+    },
+    {
+      "COLUMN_NAME": "websitePassword"
+    },
+    {
+      "COLUMN_NAME": "websiteNotes"
+    },
+    {
+      "COLUMN_NAME": "socialFacebook"
+    },
+    {
+      "COLUMN_NAME": "socialInstagram"
+    },
+    {
+      "COLUMN_NAME": "socialLinkedin"
+    },
+    {
+      "COLUMN_NAME": "socialTwitter"
+    },
+    {
+      "COLUMN_NAME": "isActive"
+    },
+    {
+      "COLUMN_NAME": "gscPropertyUrl"
+    },
+    {
+      "COLUMN_NAME": "gscHasAccess"
+    },
+    {
+      "COLUMN_NAME": "brandVoice"
+    },
+    {
+      "COLUMN_NAME": "targetAudience"
+    },
+    {
+      "COLUMN_NAME": "competitorUrls"
+    },
+    {
+      "COLUMN_NAME": "preferredPublishDays"
+    },
+    {
+      "COLUMN_NAME": "preferredPublishTime"
+    },
+    {
+      "COLUMN_NAME": "primaryServices"
+    },
+    {
+      "COLUMN_NAME": "uniqueSellingProp"
+    },
+    {
+      "COLUMN_NAME": "serviceAreas"
+    },
+    {
+      "COLUMN_NAME": "reportingKpis"
+    },
+    {
+      "COLUMN_NAME": "reportingFrequency"
+    },
+    {
+      "COLUMN_NAME": "googleAdsCustomerId"
+    },
+    {
+      "COLUMN_NAME": "facebookAdAccountId"
+    },
+    {
+      "COLUMN_NAME": "googleAdsCampaignId"
+    },
+    {
+      "COLUMN_NAME": "facebookPageId"
+    },
+    {
+      "COLUMN_NAME": "companyColors"
+    },
+    {
+      "COLUMN_NAME": "contentHubEnabled"
+    },
+    {
+      "COLUMN_NAME": "heygenAvatarId"
+    },
+    {
+      "COLUMN_NAME": "heygenVoiceId"
+    },
+    {
+      "COLUMN_NAME": "heygenVideoFormat"
+    },
+    {
+      "COLUMN_NAME": "heygenBrandSystemName"
+    },
+    {
+      "COLUMN_NAME": "name"
+    },
+    {
+      "COLUMN_NAME": "email"
+    },
+    {
+      "COLUMN_NAME": "company"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\nagency_id\ncrm_client_id\nbusiness_name\nwebsite_url\nniche\ntarget_keywords\ngoogle_search_console_token\ngoogle_analytics_token\nstatus\ncreated_at\nupdated_at\nmonthlyBudget\nbudgetAlertThreshold\nphone\naddress\ncity\nstate\nzipCode\ncountry\nbusinessName\nbusinessType\nindustry\nbusinessPhone\nbusinessEmail\nbusinessWebsite\nbusinessAddress\nwebsiteUrl\nwebsitePlatform\nwebsiteLoginUrl\nwebsiteUsername\nwebsitePassword\nwebsiteNotes\nsocialFacebook\nsocialInstagram\nsocialLinkedin\nsocialTwitter\nisActive\ngscPropertyUrl\ngscHasAccess\nbrandVoice\ntargetAudience\ncompetitorUrls\npreferredPublishDays\npreferredPublishTime\nprimaryServices\nuniqueSellingProp\nserviceAreas\nreportingKpis\nreportingFrequency\ngoogleAdsCustomerId\nfacebookAdAccountId\ngoogleAdsCampaignId\nfacebookPageId\ncompanyColors\ncontentHubEnabled\nheygenAvatarId\nheygenVoiceId\nheygenVideoFormat\nheygenBrandSystemName\nname\nemail\ncompany\n",
+  "stderr": "",
+  "execution_time_ms": 108
+}

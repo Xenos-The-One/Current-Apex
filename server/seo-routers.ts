@@ -706,12 +706,22 @@ Return JSON: { "headline1": "max 40 chars", "primaryText": "max 125 chars", "des
       const db = await getDb();
       if (!db) return null;
 
-      const [allContent, allClients, allScores, allAnalytics] = await Promise.all([
-        db.select().from(content),
-        db.select().from(clients),
-        db.select().from(contentQualityScores),
-        db.select().from(contentAnalytics),
-      ]);
+      let allContent: Awaited<ReturnType<typeof db.select>>[] = [];
+      let allClients: Awaited<ReturnType<typeof db.select>>[] = [];
+      let allScores: Awaited<ReturnType<typeof db.select>>[] = [];
+      let allAnalytics: Awaited<ReturnType<typeof db.select>>[] = [];
+      try {
+        [allContent, allClients, allScores, allAnalytics] = await Promise.all([
+          db.select().from(content) as Promise<typeof allContent>,
+          db.select().from(clients) as Promise<typeof allClients>,
+          db.select().from(contentQualityScores) as Promise<typeof allScores>,
+          db.select().from(contentAnalytics) as Promise<typeof allAnalytics>,
+        ]);
+      } catch (e) {
+        // DB connection may have dropped (ECONNRESET) — return null instead of throwing
+        console.error('[seo.reports.getSummary] DB error:', (e as Error).message);
+        return null;
+      }
 
       // Content by status
       const statusCounts = allContent.reduce((acc: Record<string, number>, c) => {

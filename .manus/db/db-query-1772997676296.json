@@ -1,0 +1,9 @@
+{
+  "query": "\nALTER TABLE seo_clients\n  ADD COLUMN IF NOT EXISTS `notes` TEXT,\n  ADD COLUMN IF NOT EXISTS `createdBy` INT,\n  ADD COLUMN IF NOT EXISTS `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,\n  ADD COLUMN IF NOT EXISTS `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nALTER TABLE seo_clients\n  ADD COLUMN IF NOT EXISTS `notes` TEXT,\n  ADD COLUMN IF NOT EXISTS `createdBy` INT,\n  ADD COLUMN IF NOT EXISTS `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,\n  ADD COLUMN IF NOT EXISTS `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1022
+}

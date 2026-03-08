@@ -168,3 +168,7 @@
 - [x] Fix admin user lookup errors — getMyInfo, dashboardStats, getSlaAlerts, dashboardStatsByRange, globalSearch, getContactTypeCounts, getSuggested, getAllSuggested, getCompletionStats all return empty/null gracefully for admin users without client profiles
 - [x] Create contentQualityScores table in database
 - [x] Create all 25 missing seo-schema tables (seoUsers, clientPortalUsers, portalBranding, contentTemplates, contentComments, contentRepurposed, webhookConfigs, publishLogs, contentBriefs, agencySettings, recurringPlans, abTests, googleAnalyticsConnections, wordpressConnections, wordpressPublishHistory, manusWebsites, manusPublishHistory, designStandards, publishingSchedules, publishingAnalytics, clientPublishingPermissions, searchConsoleCredentials, searchConsoleMetrics, appNotifications, pipelineCards)
+
+## Round 12: seo_clients Missing Columns Fix
+- [x] Added 4 missing columns to seo_clients table: `notes`, `createdBy`, `createdAt`, `updatedAt` (the table was originally created from an older schema that predated these fields)
+- [x] Wrapped seo.reports.getSummary in try/catch to return null gracefully on DB errors instead of throwing to the client
