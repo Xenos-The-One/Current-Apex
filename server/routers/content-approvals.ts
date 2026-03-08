@@ -2,9 +2,10 @@ import { z } from "zod";
 import { router, protectedProcedure } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { getDb, getClientByUserId, createSocialMediaPost } from "../db";
-import { contentApprovals, clients } from "../../drizzle/schema";
+import { contentApprovals, clients, users } from "../../drizzle/schema";
 import { seoClients } from "../../drizzle/seo-schema";
 import { sendSMS } from "../twilio";
+import { sendEmail } from "../email-service";
 import { eq, and, desc } from "drizzle-orm";
 
 // Roles that can see ALL approvals (not just their own)
@@ -414,10 +415,39 @@ export const contentApprovalsRouter = router({
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
       const isAdmin = (ADMIN_ROLES as readonly string[]).includes(ctx.user.role);
       if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN", message: "Admin only" });
+      // Fetch approval + client info before updating so we have email details
+      const [approval] = await db.select().from(contentApprovals).where(eq(contentApprovals.id, input.approvalId)).limit(1);
+      if (!approval) throw new TRPCError({ code: "NOT_FOUND", message: "Approval not found" });
       await db
         .update(contentApprovals)
         .set({ status: "approved", approvedAt: new Date() })
         .where(eq(contentApprovals.id, input.approvalId));
+      // Send email notification to the client
+      try {
+        const clientRow = approval.clientId
+          ? (await db.select().from(clients).where(eq(clients.id, approval.clientId)).limit(1))[0]
+          : null;
+        const clientEmail = clientRow?.email;
+        if (clientEmail) {
+          await sendEmail({
+            to: clientEmail,
+            subject: `\u2705 Your content has been approved: "${approval.title}"`,
+            html: `
+              <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+                <h2 style="color:#16a34a;">Content Approved!</h2>
+                <p>Great news! Your content piece has been reviewed and approved by the team.</p>
+                <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+                  <tr><td style="padding:8px;background:#f9fafb;font-weight:bold;width:140px;">Title</td><td style="padding:8px;">${approval.title}</td></tr>
+                  <tr><td style="padding:8px;background:#f9fafb;font-weight:bold;">Type</td><td style="padding:8px;">${approval.contentType}</td></tr>
+                  ${approval.platform ? `<tr><td style="padding:8px;background:#f9fafb;font-weight:bold;">Platform</td><td style="padding:8px;">${approval.platform}</td></tr>` : ""}
+                </table>
+                <p>Log in to your portal to view and schedule this content.</p>
+              </div>`,
+          });
+        }
+      } catch (emailErr) {
+        console.warn("[adminApprove] Email notification failed:", emailErr);
+      }
       return { success: true };
     }),
 
@@ -429,10 +459,42 @@ export const contentApprovalsRouter = router({
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
       const isAdmin = (ADMIN_ROLES as readonly string[]).includes(ctx.user.role);
       if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN", message: "Admin only" });
+      // Fetch approval before updating
+      const [approval] = await db.select().from(contentApprovals).where(eq(contentApprovals.id, input.approvalId)).limit(1);
+      if (!approval) throw new TRPCError({ code: "NOT_FOUND", message: "Approval not found" });
       await db
         .update(contentApprovals)
         .set({ status: "rejected", feedback: input.feedback })
         .where(eq(contentApprovals.id, input.approvalId));
+      // Send email notification to the client
+      try {
+        const clientRow = approval.clientId
+          ? (await db.select().from(clients).where(eq(clients.id, approval.clientId)).limit(1))[0]
+          : null;
+        const clientEmail = clientRow?.email;
+        if (clientEmail) {
+          await sendEmail({
+            to: clientEmail,
+            subject: `\u26a0\ufe0f Content needs revision: "${approval.title}"`,
+            html: `
+              <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+                <h2 style="color:#dc2626;">Content Needs Revision</h2>
+                <p>Your content piece has been reviewed and requires some changes before it can be published.</p>
+                <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+                  <tr><td style="padding:8px;background:#f9fafb;font-weight:bold;width:140px;">Title</td><td style="padding:8px;">${approval.title}</td></tr>
+                  <tr><td style="padding:8px;background:#f9fafb;font-weight:bold;">Type</td><td style="padding:8px;">${approval.contentType}</td></tr>
+                </table>
+                <div style="background:#fef2f2;border-left:4px solid #dc2626;padding:12px 16px;margin:16px 0;border-radius:4px;">
+                  <p style="margin:0;font-weight:bold;">Feedback from the team:</p>
+                  <p style="margin:8px 0 0 0;">${input.feedback}</p>
+                </div>
+                <p>Log in to your portal to request a new content batch with these notes in mind.</p>
+              </div>`,
+          });
+        }
+      } catch (emailErr) {
+        console.warn("[adminReject] Email notification failed:", emailErr);
+      }
       return { success: true };
     }),
 });

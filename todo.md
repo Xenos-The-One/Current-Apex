@@ -209,3 +209,9 @@
 - [x] Bulk approve & schedule — "Approve All Social Posts" button in Content Approvals pending list
 - [x] Social Media calendar view — mini calendar showing queued posts with drag-and-drop rescheduling
 - [x] Admin content oversight tab — pending approvals across all clients on Admin Dashboard with approve/reject
+
+## Round 18: Email Notifications, Client AI SEO Access, Calendar Stats, Oversight Filters
+- [x] Email notification on admin approve/reject — send client email when admin approves or rejects their content
+- [x] Client access to AI SEO portal — add AI SEO link/view to client sidebar so clients can create their own content
+- [x] Calendar month-level stats — show "X posts this month" counter above the Social Media calendar
+- [x] Content Oversight filter — add platform/client filter to Admin Content Oversight section

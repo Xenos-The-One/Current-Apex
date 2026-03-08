@@ -66,6 +66,8 @@ export default function AdminDashboard() {
   const [showRejectOversightDialog, setShowRejectOversightDialog] = useState(false);
   const [oversightRejectId, setOversightRejectId] = useState<number | null>(null);
   const [oversightRejectFeedback, setOversightRejectFeedback] = useState("");
+  const [oversightPlatformFilter, setOversightPlatformFilter] = useState<string>("all");
+  const [oversightClientFilter, setOversightClientFilter] = useState<string>("all");
 
   /** Admin-context mode: click the row name — keep admin sidebar, filter data to this client */
   const handleViewAsAdmin = (clientId: number | null | undefined, clientName: string) => {
@@ -689,7 +691,7 @@ export default function AdminDashboard() {
         {/* Content Oversight */}
         <Card>
           <CardHeader className="py-3 px-4 border-b">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <ClipboardList className="w-4 h-4 text-primary" />
                 <CardTitle className="text-sm font-semibold">Content Oversight</CardTitle>
@@ -697,6 +699,39 @@ export default function AdminDashboard() {
               <span className="text-xs text-muted-foreground">
                 {allPendingApprovals?.length || 0} pending across all clients
               </span>
+            </div>
+            {/* Filters */}
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              <select
+                className="text-xs border rounded px-2 py-1 bg-background text-foreground"
+                value={oversightPlatformFilter}
+                onChange={e => setOversightPlatformFilter(e.target.value)}
+              >
+                <option value="all">All Platforms</option>
+                <option value="facebook">Facebook</option>
+                <option value="instagram">Instagram</option>
+                <option value="linkedin">LinkedIn</option>
+                <option value="blog">Blog</option>
+                <option value="website">Website</option>
+              </select>
+              <select
+                className="text-xs border rounded px-2 py-1 bg-background text-foreground"
+                value={oversightClientFilter}
+                onChange={e => setOversightClientFilter(e.target.value)}
+              >
+                <option value="all">All Clients</option>
+                {Array.from(new Set((allPendingApprovals || []).map((a: any) => a.brand).filter(Boolean))).map((brand: any) => (
+                  <option key={brand} value={brand}>{brand}</option>
+                ))}
+              </select>
+              {(oversightPlatformFilter !== "all" || oversightClientFilter !== "all") && (
+                <button
+                  className="text-xs text-primary underline"
+                  onClick={() => { setOversightPlatformFilter("all"); setOversightClientFilter("all"); }}
+                >
+                  Clear filters
+                </button>
+              )}
             </div>
           </CardHeader>
           <CardContent className="p-0">
@@ -706,7 +741,11 @@ export default function AdminDashboard() {
               </div>
             ) : allPendingApprovals && allPendingApprovals.length > 0 ? (
               <div className="divide-y">
-                {allPendingApprovals.slice(0, 20).map((approval: any) => (
+                {(allPendingApprovals.filter((a: any) => {
+                  if (oversightPlatformFilter !== "all" && a.platform !== oversightPlatformFilter) return false;
+                  if (oversightClientFilter !== "all" && a.brand !== oversightClientFilter) return false;
+                  return true;
+                })).slice(0, 20).map((approval: any) => (
                   <div key={approval.id} className="flex items-start gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -751,11 +790,18 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 ))}
-                {allPendingApprovals.length > 20 && (
-                  <div className="px-4 py-2 text-xs text-muted-foreground text-center">
-                    Showing 20 of {allPendingApprovals.length} pending items
-                  </div>
-                )}
+{(() => {
+                  const filtered = allPendingApprovals.filter((a: any) => {
+                    if (oversightPlatformFilter !== "all" && a.platform !== oversightPlatformFilter) return false;
+                    if (oversightClientFilter !== "all" && a.brand !== oversightClientFilter) return false;
+                    return true;
+                  });
+                  return filtered.length > 20 ? (
+                    <div className="px-4 py-2 text-xs text-muted-foreground text-center">
+                      Showing 20 of {filtered.length} filtered items
+                    </div>
+                  ) : null;
+                })()}
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">

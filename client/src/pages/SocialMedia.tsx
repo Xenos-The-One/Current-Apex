@@ -85,6 +85,20 @@ function CalendarView({ posts, onReschedule, isRescheduling }: CalendarViewProps
     return map;
   }, [posts, year, month]);
 
+  // Month-level stats
+  const monthStats = useMemo(() => {
+    const monthPosts = posts.filter((p: any) => {
+      if (!p.scheduledDate) return false;
+      const d = new Date(p.scheduledDate);
+      return d.getFullYear() === year && d.getMonth() === month;
+    });
+    const byPlatform: Record<string, number> = {};
+    for (const p of monthPosts) {
+      byPlatform[p.platform] = (byPlatform[p.platform] || 0) + 1;
+    }
+    return { total: monthPosts.length, byPlatform };
+  }, [posts, year, month]);
+
   const prevMonth = () => {
     if (month === 0) { setYear(y => y - 1); setMonth(11); }
     else setMonth(m => m - 1);
@@ -107,6 +121,22 @@ function CalendarView({ posts, onReschedule, isRescheduling }: CalendarViewProps
 
   return (
     <div className="select-none">
+      {/* Month-level stats banner */}
+      <div className="flex items-center gap-3 mb-3 px-1 flex-wrap">
+        <div className="flex items-center gap-1.5 bg-muted/60 rounded-lg px-3 py-1.5">
+          <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-sm font-semibold">{monthStats.total}</span>
+          <span className="text-xs text-muted-foreground">posts this month</span>
+        </div>
+        {Object.entries(monthStats.byPlatform).map(([platform, count]) => (
+          <div key={platform} className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-white text-xs font-medium ${getPlatformColor(platform)}`}>
+            {platform === "facebook" && <Facebook className="w-3 h-3" />}
+            {platform === "instagram" && <Instagram className="w-3 h-3" />}
+            {platform === "linkedin" && <Linkedin className="w-3 h-3" />}
+            {count} {platform}
+          </div>
+        ))}
+      </div>
       <div className="flex items-center justify-between mb-4">
         <Button variant="ghost" size="sm" onClick={prevMonth}><ChevronLeft className="w-4 h-4" /></Button>
         <h3 className="font-semibold text-lg">{MONTH_NAMES[month]} {year}</h3>

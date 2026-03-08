@@ -226,6 +226,8 @@ const clientMenuSections: MenuSection[] = [
     items: [
       { icon: TrendingUp, label: "Reports", path: "/reports" },
       { icon: CheckSquare, label: "Content Approvals", path: "/content-approvals" },
+      { icon: Share2, label: "Social Media", path: "/social" },
+      { icon: Search, label: "AI SEO Portal", path: "/seo" },
       { icon: Settings, label: "Settings", path: "/account" },
     ],
   },

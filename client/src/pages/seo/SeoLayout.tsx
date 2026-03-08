@@ -104,11 +104,31 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
+// Client-facing nav: a focused subset of the full SEO portal
+const CLIENT_NAV_GROUPS: NavGroup[] = [
+  {
+    label: "My Content",
+    items: [
+      { icon: FileText, label: "All Content", path: "/seo/content" },
+      { icon: Shield, label: "Approvals", path: "/seo/approvals" },
+      { icon: CalendarDays, label: "Calendar", path: "/seo/calendar" },
+    ],
+  },
+  {
+    label: "Analytics",
+    items: [
+      { icon: BarChart3, label: "Analytics", path: "/seo/analytics" },
+      { icon: Megaphone, label: "Reports", path: "/seo/reports" },
+    ],
+  },
+];
+
 export default function SeoLayout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const { user, logout } = useAuth();
   const isAdmin = user?.role === "super_admin" || user?.role === "admin" || user?.role === "agency_owner";
+  const isClient = user?.role === "client_user";
 
   if (!user) {
     return (
@@ -127,13 +147,13 @@ export default function SeoLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isAdmin) {
+  if (!isAdmin && !isClient) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-6 p-8 max-w-md w-full text-center">
           <div className="text-6xl">🔒</div>
           <h1 className="text-2xl font-semibold tracking-tight">Access Restricted</h1>
-          <p className="text-muted-foreground">The SEO Portal is only available to agency administrators. Your content approvals are available in your dashboard.</p>
+          <p className="text-muted-foreground">The SEO Portal is available to agency administrators and clients. Please contact your agency if you need access.</p>
           <Button variant="outline" onClick={() => window.location.href = "/content-approvals"}>
             View Content Approvals
           </Button>
@@ -141,6 +161,8 @@ export default function SeoLayout({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
+  // Clients see a focused nav; admins see the full nav
+  const activeNavGroups = isClient ? CLIENT_NAV_GROUPS : NAV_GROUPS;
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background">
@@ -175,7 +197,7 @@ export default function SeoLayout({ children }: { children: React.ReactNode }) {
 
         {/* Back to CRM button */}
         <div className={cn("border-b border-border/40 shrink-0", collapsed ? "p-1.5" : "px-3 py-2")}>
-          <Link href="/admin">
+          <Link href={isClient ? "/dashboard" : "/admin"}>
             <Button
               variant="ghost"
               size="sm"
@@ -194,7 +216,7 @@ export default function SeoLayout({ children }: { children: React.ReactNode }) {
         {/* Navigation */}
         <ScrollArea className="flex-1 h-0">
           <nav className="p-2 space-y-4">
-            {NAV_GROUPS.map((group) => (
+            {activeNavGroups.map((group) => (
               <div key={group.label}>
                 {!collapsed && (
                   <p className="px-2 pb-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
