@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, or, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertSeoUser, seoUsers, seoClients, InsertSeoClient, content, InsertContent, contentTemplates, InsertContentTemplate, contentComments, contentRevisions, contentAnalytics, contentRepurposed, contentQualityScores, webhookConfigs, publishLogs, contentBriefs } from "../drizzle/seo-schema";
 import { ENV } from './_core/env';
@@ -100,7 +100,14 @@ export async function createClient(client: InsertSeoClient) {
 export async function getClientsByUser(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(seoClients).where(eq(seoClients.createdBy, userId));
+  // Return clients created by this user OR any client linked from the CRM (crm_client_id set)
+  // This ensures CRM clients automatically appear in the AI SEO Portal
+  return db.select().from(seoClients).where(
+    or(
+      eq(seoClients.createdBy, userId),
+      isNotNull(seoClients.crmClientId)
+    )
+  );
 }
 
 export async function getClientById(id: number) {
@@ -513,6 +520,7 @@ export async function ensureLinkedSeoClient(opts: {
   const { seoClients } = await import("../drizzle/seo-schema");
   const [result] = await db.insert(seoClients).values({
     name: opts.name,
+    businessName: opts.name, // Required NOT NULL field — use client name as business name
     email: opts.email ?? undefined,
     phone: opts.phone ?? undefined,
     businessType: opts.businessType ?? undefined,

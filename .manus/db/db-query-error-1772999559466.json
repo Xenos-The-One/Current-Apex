@@ -1,0 +1,8 @@
+{
+  "query": "\nINSERT INTO `seo_clients` (`name`, `email`, `company`, `businessType`, `industry`, `createdBy`, `crm_client_id`, `isActive`, `createdAt`, `updatedAt`)\nSELECT \n  c.name,\n  c.email,\n  c.name AS company,\n  'real_estate' AS businessType,\n  'Real Estate' AS industry,\n  su.id AS createdBy,\n  c.id AS crm_client_id,\n  1 AS isActive,\n  NOW() AS createdAt,\n  NOW() AS updatedAt\nFROM clients c\nCROSS JOIN seo_users su\nWHERE su.role = 'admin'\nAND NOT EXISTS (\n  SELECT 1 FROM seo_clients sc WHERE sc.crm_client_id = c.id\n)\nLIMIT 10;\n\nSELECT sc.id, sc.name, sc.crm_client_id, sc.isActive FROM seo_clients sc ORDER BY sc.id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nINSERT INTO `seo_clients` (`name`, `email`, `company`, `businessType`, `industry`, `createdBy`, `crm_client_id`, `isActive`, `createdAt`, `updatedAt`)\nSELECT \n  c.name,\n  c.email,\n  c.name AS company,\n  'real_estate' AS businessType,\n  'Real Estate' AS industry,\n  su.id AS createdBy,\n  c.id AS crm_client_id,\n  1 AS isActive,\n  NOW() AS createdAt,\n  NOW() AS updatedAt\nFROM clients c\nCROSS JOIN seo_users su\nWHERE su.role = 'admin'\nAND NOT EXISTS (\n  SELECT 1 FROM seo_clients sc WHERE sc.crm_client_id = c.id\n)\nLIMIT 10;\n\nSELECT sc.id, sc.name, sc.crm_client_id, sc.isActive FROM seo_clients sc ORDER BY sc.id;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1364 (HY000) at line 2: Field 'business_name' doesn't have a default value"
+  ]
+}

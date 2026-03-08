@@ -15,6 +15,7 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
+  ExternalLink,
   Mail,
   MessageSquare,
   Phone,
@@ -25,6 +26,7 @@ import {
   Star,
   TrendingUp,
   User,
+  Users,
   Zap,
 } from "lucide-react";
 import { useState } from "react";
@@ -583,6 +585,108 @@ function CompletionStatsTab() {
   );
 }
 
+// ─── Tab 4: Referral Partners ─────────────────────────────────────────────────
+function ReferralPartnersTab() {
+  const [search, setSearch] = useState("");
+  const { data, isLoading } = trpc.referralPartners.list.useQuery(
+    { search: search || undefined, limit: 50 },
+    { keepPreviousData: true } as any
+  );
+  const partners = (data as any)?.partners ?? [];
+
+  const getDaysSince = (date: Date | string | null | undefined) => {
+    if (!date) return null;
+    return Math.floor((Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24));
+  };
+
+  const getUrgencyBg = (days: number | null) => {
+    if (days === null) return "bg-gray-50 border-gray-200";
+    if (days > 30) return "bg-red-50 border-red-200";
+    if (days > 14) return "bg-yellow-50 border-yellow-200";
+    return "bg-green-50 border-green-200";
+  };
+
+  const getUrgencyLabel = (days: number | null) => {
+    if (days === null) return { label: "Never contacted", color: "text-gray-500" };
+    if (days > 30) return { label: `${days}d overdue`, color: "text-red-600" };
+    if (days > 14) return { label: `${days}d ago`, color: "text-yellow-600" };
+    return { label: `${days}d ago`, color: "text-green-600" };
+  };
+
+  if (isLoading) {
+    return <div className="space-y-3">{[1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}</div>;
+  }
+
+  const overdueCount = partners.filter((p: any) => { const d = getDaysSince(p.lastContactDate); return d === null || d > 30; }).length;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-3">
+        <Card className="border-0 bg-muted/40"><CardContent className="p-4"><div className="text-2xl font-bold">{partners.length}</div><div className="text-xs text-muted-foreground mt-0.5">Total Partners</div></CardContent></Card>
+        <Card className="border-0 bg-red-50"><CardContent className="p-4"><div className="text-2xl font-bold text-red-600">{overdueCount}</div><div className="text-xs text-muted-foreground mt-0.5">Need Follow-Up</div></CardContent></Card>
+        <Card className="border-0 bg-yellow-50"><CardContent className="p-4"><div className="text-2xl font-bold text-yellow-600">{partners.filter((p: any) => p.relationshipStatus === "vip").length}</div><div className="text-xs text-muted-foreground mt-0.5">VIP Partners</div></CardContent></Card>
+      </div>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input placeholder="Search partners..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+      </div>
+      {partners.length === 0 ? (
+        <Card className="border-dashed"><CardContent className="p-12 text-center">
+          <Users className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+          <p className="font-medium">No referral partners yet</p>
+          <p className="text-sm text-muted-foreground mt-1">Add partners in the Referral Partners section to track follow-ups here.</p>
+          <Button variant="outline" className="mt-4" onClick={() => window.location.href = "/referral-partners"}>
+            <ExternalLink className="w-4 h-4 mr-2" /> Go to Referral Partners
+          </Button>
+        </CardContent></Card>
+      ) : (
+        <div className="space-y-2">
+          {[...partners].sort((a: any, b: any) => (getDaysSince(b.lastContactDate) ?? 9999) - (getDaysSince(a.lastContactDate) ?? 9999)).map((partner: any) => {
+            const days = getDaysSince(partner.lastContactDate);
+            const urgency = getUrgencyLabel(days);
+            const nextFollowUp = partner.nextFollowUpDate ? new Date(partner.nextFollowUpDate) : null;
+            const isOverdue = nextFollowUp && nextFollowUp < new Date();
+            return (
+              <Card key={partner.id} className={`border ${getUrgencyBg(days)}`}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <User className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-sm">{partner.firstName} {partner.lastName}</span>
+                          {partner.relationshipStatus === "vip" && <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200 text-xs"><Star className="w-3 h-3 mr-1" />VIP</Badge>}
+                          <Badge variant="outline" className="text-xs capitalize">{(partner.partnerType ?? "").replace(/_/g, " ")}</Badge>
+                        </div>
+                        {partner.company && <p className="text-xs text-muted-foreground mt-0.5">{partner.company}</p>}
+                        <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                          {partner.phone && <a href={`tel:${partner.phone}`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><Phone className="w-3 h-3" />{partner.phone}</a>}
+                          {partner.email && <a href={`mailto:${partner.email}`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><Mail className="w-3 h-3" />{partner.email}</a>}
+                        </div>
+                        {nextFollowUp && <p className={`text-xs mt-1 flex items-center gap-1 ${isOverdue ? "text-red-600 font-medium" : "text-muted-foreground"}`}><Calendar className="w-3 h-3" />{isOverdue ? "Overdue: " : "Follow-up: "}{nextFollowUp.toLocaleDateString()}</p>}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <span className={`text-xs font-medium ${urgency.color}`}><Clock className="w-3 h-3 inline mr-1" />{urgency.label}</span>
+                      <div className="flex gap-1">
+                        {partner.phone && <Button size="sm" variant="outline" className="h-7 px-2" asChild><a href={`tel:${partner.phone}`}><Phone className="w-3 h-3" /></a></Button>}
+                        {partner.email && <Button size="sm" variant="outline" className="h-7 px-2" asChild><a href={`mailto:${partner.email}`}><Mail className="w-3 h-3" /></a></Button>}
+                        <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => window.location.href = `/referral-partners/${partner.id}`}><ExternalLink className="w-3 h-3" /></Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function FollowUps() {
   const { agencyId } = useAgency();
@@ -632,6 +736,9 @@ export default function FollowUps() {
                 </span>
               )}
             </TabsTrigger>
+            <TabsTrigger value="referrals" className="gap-1.5">
+              <Users className="w-4 h-4" /> Referral Partners
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="tasks" className="mt-4">
@@ -642,6 +749,9 @@ export default function FollowUps() {
           </TabsContent>
           <TabsContent value="stats" className="mt-4">
             <CompletionStatsTab />
+          </TabsContent>
+          <TabsContent value="referrals" className="mt-4">
+            <ReferralPartnersTab />
           </TabsContent>
         </Tabs>
       </div>

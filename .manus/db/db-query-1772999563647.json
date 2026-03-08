@@ -1,0 +1,16 @@
+{
+  "query": "\nINSERT INTO `seo_clients` (`name`, `email`, `company`, `business_name`, `businessType`, `industry`, `createdBy`, `crm_client_id`, `isActive`, `createdAt`, `updatedAt`)\nSELECT \n  c.name,\n  c.email,\n  c.name AS company,\n  c.name AS business_name,\n  'real_estate' AS businessType,\n  'Real Estate' AS industry,\n  su.id AS createdBy,\n  c.id AS crm_client_id,\n  1 AS isActive,\n  NOW() AS createdAt,\n  NOW() AS updatedAt\nFROM clients c\nCROSS JOIN seo_users su\nWHERE su.role = 'admin'\nAND NOT EXISTS (\n  SELECT 1 FROM seo_clients sc WHERE sc.crm_client_id = c.id\n)\nLIMIT 10;\n\nSELECT sc.id, sc.name, sc.crm_client_id, sc.isActive FROM seo_clients sc ORDER BY sc.id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nINSERT INTO `seo_clients` (`name`, `email`, `company`, `business_name`, `businessType`, `industry`, `createdBy`, `crm_client_id`, `isActive`, `createdAt`, `updatedAt`)\nSELECT \n  c.name,\n  c.email,\n  c.name AS company,\n  c.name AS business_name,\n  'real_estate' AS businessType,\n  'Real Estate' AS industry,\n  su.id AS createdBy,\n  c.id AS crm_client_id,\n  1 AS isActive,\n  NOW() AS createdAt,\n  NOW() AS updatedAt\nFROM clients c\nCROSS JOIN seo_users su\nWHERE su.role = 'admin'\nAND NOT EXISTS (\n  SELECT 1 FROM seo_clients sc WHERE sc.crm_client_id = c.id\n)\nLIMIT 10;\n\nSELECT sc.id, sc.name, sc.crm_client_id, sc.isActive FROM seo_clients sc ORDER BY sc.id;\n",
+  "rows": [
+    {
+      "id": "2",
+      "name": "Kyle Thompson",
+      "crm_client_id": "1",
+      "isActive": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcrm_client_id\tisActive\n2\tKyle Thompson\t1\t1\n",
+  "stderr": "",
+  "execution_time_ms": 69
+}

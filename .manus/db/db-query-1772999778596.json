@@ -1,0 +1,19 @@
+{
+  "query": "\nSELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS \nWHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'seo_clients'\nAND COLUMN_NAME IN ('heygen_avatar_id','heygen_voice_id','heygen_video_format','heygen_brand_system_name','content_hub_enabled','notes','created_by','created_at','updated_at');\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nSELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS \nWHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'seo_clients'\nAND COLUMN_NAME IN ('heygen_avatar_id','heygen_voice_id','heygen_video_format','heygen_brand_system_name','content_hub_enabled','notes','created_by','created_at','updated_at');\n",
+  "rows": [
+    {
+      "COLUMN_NAME": "created_at"
+    },
+    {
+      "COLUMN_NAME": "updated_at"
+    },
+    {
+      "COLUMN_NAME": "notes"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\ncreated_at\nupdated_at\nnotes\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

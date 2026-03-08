@@ -1,0 +1,17 @@
+{
+  "query": "SELECT c.id, c.name, c.email, c.agency_id, sc.id as seo_client_id FROM clients c LEFT JOIN seo_clients sc ON sc.crm_client_id = c.id WHERE sc.id IS NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT c.id, c.name, c.email, c.agency_id, sc.id as seo_client_id FROM clients c LEFT JOIN seo_clients sc ON sc.crm_client_id = c.id WHERE sc.id IS NULL;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Kyle Thompson",
+      "email": "kyle@kylerealty.com",
+      "agency_id": "1",
+      "seo_client_id": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tagency_id\tseo_client_id\n1\tKyle Thompson\tkyle@kylerealty.com\t1\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 108
+}

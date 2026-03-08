@@ -1,0 +1,16 @@
+{
+  "query": "\nCREATE TABLE IF NOT EXISTS `seo_users` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `openId` varchar(255) NOT NULL,\n  `name` varchar(255) NOT NULL,\n  `email` varchar(320),\n  `role` enum('admin','agency_owner','editor','viewer') NOT NULL DEFAULT 'viewer',\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `seo_users_openId_unique` (`openId`)\n);\n\nINSERT IGNORE INTO `seo_users` (`openId`, `name`, `email`, `role`)\nSELECT u.openId, u.name, u.email, 'admin'\nFROM users u\nWHERE u.role = 'admin'\nLIMIT 1;\n\nSELECT id, openId, name, role FROM seo_users;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nCREATE TABLE IF NOT EXISTS `seo_users` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `openId` varchar(255) NOT NULL,\n  `name` varchar(255) NOT NULL,\n  `email` varchar(320),\n  `role` enum('admin','agency_owner','editor','viewer') NOT NULL DEFAULT 'viewer',\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `seo_users_openId_unique` (`openId`)\n);\n\nINSERT IGNORE INTO `seo_users` (`openId`, `name`, `email`, `role`)\nSELECT u.openId, u.name, u.email, 'admin'\nFROM users u\nWHERE u.role = 'admin'\nLIMIT 1;\n\nSELECT id, openId, name, role FROM seo_users;\n",
+  "rows": [
+    {
+      "id": "1",
+      "openId": "Ppx2agnWW7NoUeDq2JJL87",
+      "name": "Thailer Somerville",
+      "role": "admin"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\topenId\tname\trole\n1\tPpx2agnWW7NoUeDq2JJL87\tThailer Somerville\tadmin\n",
+  "stderr": "",
+  "execution_time_ms": 83
+}

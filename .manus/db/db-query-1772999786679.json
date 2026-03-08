@@ -1,0 +1,9 @@
+{
+  "query": "\nALTER TABLE seo_clients\n  ADD COLUMN IF NOT EXISTS heygen_avatar_id VARCHAR(255) NULL,\n  ADD COLUMN IF NOT EXISTS heygen_voice_id VARCHAR(255) NULL,\n  ADD COLUMN IF NOT EXISTS heygen_video_format VARCHAR(50) NULL DEFAULT 'landscape',\n  ADD COLUMN IF NOT EXISTS heygen_brand_system_name VARCHAR(255) NULL,\n  ADD COLUMN IF NOT EXISTS content_hub_enabled BOOLEAN NOT NULL DEFAULT FALSE;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nALTER TABLE seo_clients\n  ADD COLUMN IF NOT EXISTS heygen_avatar_id VARCHAR(255) NULL,\n  ADD COLUMN IF NOT EXISTS heygen_voice_id VARCHAR(255) NULL,\n  ADD COLUMN IF NOT EXISTS heygen_video_format VARCHAR(50) NULL DEFAULT 'landscape',\n  ADD COLUMN IF NOT EXISTS heygen_brand_system_name VARCHAR(255) NULL,\n  ADD COLUMN IF NOT EXISTS content_hub_enabled BOOLEAN NOT NULL DEFAULT FALSE;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 783
+}

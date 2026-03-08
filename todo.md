@@ -181,3 +181,11 @@
 - [x] Old /seo-portal page: replaced with redirect to full AI SEO Portal at /seo
 - [x] CRMLayout sidebar: updated AI SEO Portal link from /seo-portal to /seo
 - [x] Old /email-campaigns route: already mapped to MarketingHub (no change needed)
+
+## Round 14: Client Sync + Referral Follow-ups + Onboarding Docs
+- [x] Backfill Kyle Realty Group into seo_clients linked to CRM client row (crm_client_id set)
+- [x] Add 5 missing seo_clients columns: heygen_avatar_id, heygen_voice_id, heygen_video_format, heygen_brand_system_name, content_hub_enabled
+- [x] Update getClientsByUser in seo-db.ts to also return clients linked via crm_client_id (not just createdBy)
+- [x] Fix ensureLinkedSeoClient to include businessName field to avoid NOT NULL error on new client creation
+- [x] Add 4th tab "Referral Partners" to Follow-ups page — sorted by days since last contact, urgency color coding, call/email/navigate actions
+- [x] Write ONBOARDING_GUIDE.md — full step-by-step walkthrough for admin and client onboarding flows (3 parts: Admin setup, Client Launchpad, Client deep-dive wizard)
