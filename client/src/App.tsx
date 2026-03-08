@@ -70,7 +70,7 @@ import PartnerPortal from "./pages/PartnerPortal";
 import AdvancedReports from "./pages/AdvancedReports";
 import ActivateAccount from "./pages/ActivateAccount";
 import Launchpad from "./pages/Launchpad";
-import OnboardingSnapshot from "./pages/OnboardingSnapshot";
+// OnboardingSnapshot removed — /onboarding-snapshot now redirects to /admin
 import ContactsHub from "./pages/ContactsHub";
 import ActivityHub from "./pages/ActivityHub";
 import MarketingHub from "./pages/MarketingHub";
@@ -181,6 +181,7 @@ function Router() {
       <Route path="/launchpad" component={Launchpad} />
       <Route path="/client-onboarding" component={ClientOnboarding} />
       <Route path="/account-setup" component={ClientOnboarding} />
+      <Route path="/onboarding-snapshot" component={() => { if (typeof window !== 'undefined') window.location.replace('/admin'); return null; }} />
       <Route path="/book/:slug" component={PublicBooking} />
       <Route path="/partner-portal" component={PartnerPortal} />
       <Route path="/seo/:rest*" component={SeoRouter} />

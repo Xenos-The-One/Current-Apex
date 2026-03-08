@@ -341,6 +341,39 @@ export const clientOnboardingRouter = router({
       };
     }),
 
+  // Request a fresh content batch with optional guidance notes
+  requestRegenerate: protectedProcedure
+    .input(z.object({
+      guidanceNotes: z.string().optional(), // e.g. "more formal tone", "focus on refinancing"
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const [client] = await db.select().from(clients).where(eq(clients.userId, ctx.user.id));
+      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client account not found" });
+
+      const seoClientRows = await db.select().from(seoClients).where(eq(seoClients.crmClientId, client.id));
+      if (!seoClientRows.length) throw new TRPCError({ code: "NOT_FOUND", message: "Please complete Account Setup first" });
+
+      const seoClient = seoClientRows[0];
+
+      // Merge guidance notes into the seoClient context for the LLM
+      const enrichedSeoClient = input.guidanceNotes
+        ? { ...seoClient, brandVoice: `${seoClient.brandVoice || ""} [Client guidance: ${input.guidanceNotes}]`.trim() }
+        : seoClient;
+
+      // Kick off generation in the background
+      generateAndQueueContent(db, client, enrichedSeoClient, ctx.user.id).catch((err) => {
+        console.error("[ClientOnboarding] Regenerate content generation failed:", err);
+      });
+
+      return {
+        success: true,
+        message: "Your new content batch is being generated. It will appear in Content Approvals within 60 seconds.",
+      };
+    }),
+
   // Check content generation status
   getContentCount: protectedProcedure.query(async ({ ctx }) => {
     const db = await getDb();

@@ -136,7 +136,6 @@ const adminMenuSections: MenuSection[] = [
     items: [
       { icon: Rocket, label: "Launchpad", path: "/launchpad" },
       { icon: Building2, label: "Admin Dashboard", path: "/admin" },
-      { icon: LayoutDashboard, label: "Client Dashboard", path: "/dashboard" },
     ],
   },
   {

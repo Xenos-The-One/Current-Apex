@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
-import { getDb, getClientByUserId } from "../db";
+import { getDb, getClientByUserId, createSocialMediaPost } from "../db";
 import { contentApprovals, clients } from "../../drizzle/schema";
+import { seoClients } from "../../drizzle/seo-schema";
 import { sendSMS } from "../twilio";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -259,6 +260,73 @@ export const contentApprovalsRouter = router({
         approvalIds,
       };
     }),
+
+  // Auto-schedule an approved social post to the Social Media scheduler
+  scheduleApprovedToSocial: protectedProcedure
+    .input(z.object({
+      approvalId: z.number(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      // Fetch the approval
+      const [approval] = await db
+        .select()
+        .from(contentApprovals)
+        .where(eq(contentApprovals.id, input.approvalId));
+
+      if (!approval) throw new TRPCError({ code: "NOT_FOUND", message: "Content approval not found" });
+
+      // Only schedule social posts
+      const platformLower = (approval.platform || "").toLowerCase();
+      const isSocial = ["facebook", "instagram", "linkedin", "twitter", "tiktok"].some((p) =>
+        platformLower.includes(p)
+      );
+      if (!isSocial) {
+        return { success: false, message: "Only social posts can be scheduled" };
+      }
+
+      // Determine the client
+      const clientId = approval.clientId;
+      if (!clientId) throw new TRPCError({ code: "BAD_REQUEST", message: "No client associated with this approval" });
+
+      const [client] = await db.select().from(clients).where(eq(clients.id, clientId));
+      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client not found" });
+
+      // Get publishing preferences from seo_clients
+      const seoClientRows = await db
+        .select()
+        .from(seoClients)
+        .where(eq(seoClients.crmClientId, clientId));
+      const seoClient = seoClientRows[0] || null;
+
+      // Calculate suggested publish date based on preferences
+      const scheduledDate = computeNextPublishDate(
+        seoClient?.preferredPublishDays || null,
+        seoClient?.preferredPublishTime || null
+      );
+
+      // Map platform string to enum value
+      const platformEnum = mapPlatformToEnum(platformLower);
+
+      // Create the social media post in the scheduler
+      await createSocialMediaPost({
+        clientId,
+        agencyId: client.agencyId,
+        platform: platformEnum,
+        content: approval.content,
+        scheduledDate,
+        status: "scheduled",
+        createdBy: ctx.user.id,
+      });
+
+      return {
+        success: true,
+        message: `Scheduled to ${approval.platform} for ${scheduledDate.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })} at ${scheduledDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}.`,
+        scheduledDate,
+      };
+    }),
 });
 
 // Helper function to send SMS approval request
@@ -349,4 +417,104 @@ async function sendBatchApprovalSMS(approvalIds: number[], approverName: string,
       })
       .where(eq(contentApprovals.id, id));
   }
+}
+
+// ─── Scheduling helpers ───────────────────────────────────────────────────────
+
+/**
+ * Map a free-form platform string to the socialMediaPosts enum value.
+ * Defaults to "facebook" if unrecognised.
+ */
+function mapPlatformToEnum(platform: string): "facebook" | "instagram" | "linkedin" | "twitter" {
+  if (platform.includes("instagram")) return "instagram";
+  if (platform.includes("linkedin")) return "linkedin";
+  if (platform.includes("twitter")) return "twitter";
+  return "facebook";
+}
+
+/**
+ * Compute the next suitable publish date based on the client's preferences.
+ *
+ * @param preferredDays  JSON array string like '["Monday","Wednesday","Friday"]'
+ *                       or comma-separated like "Mon,Wed,Fri"
+ * @param preferredTime  "9:00 AM" or "09:00" style string
+ */
+function computeNextPublishDate(
+  preferredDays: string | null,
+  preferredTime: string | null
+): Date {
+  const DAY_MAP: Record<string, number> = {
+    sunday: 0, sun: 0,
+    monday: 1, mon: 1,
+    tuesday: 2, tue: 2,
+    wednesday: 3, wed: 3,
+    thursday: 4, thu: 4,
+    friday: 5, fri: 5,
+    saturday: 6, sat: 6,
+  };
+
+  // Parse preferred days
+  let targetDays: number[] = [];
+  if (preferredDays) {
+    try {
+      const parsed = JSON.parse(preferredDays);
+      if (Array.isArray(parsed)) {
+        targetDays = parsed
+          .map((d: string) => DAY_MAP[d.toLowerCase().trim()])
+          .filter((n) => n !== undefined);
+      }
+    } catch {
+      // comma-separated fallback
+      targetDays = preferredDays
+        .split(",")
+        .map((d) => DAY_MAP[d.toLowerCase().trim()])
+        .filter((n) => n !== undefined);
+    }
+  }
+
+  // Parse preferred time (default 9 AM)
+  let hour = 9;
+  let minute = 0;
+  if (preferredTime) {
+    const match = preferredTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (match) {
+      hour = parseInt(match[1], 10);
+      minute = parseInt(match[2], 10);
+      if (match[3]?.toUpperCase() === "PM" && hour < 12) hour += 12;
+      if (match[3]?.toUpperCase() === "AM" && hour === 12) hour = 0;
+    }
+  }
+
+  const now = new Date();
+  const candidate = new Date(now);
+  candidate.setHours(hour, minute, 0, 0);
+
+  // If no preferred days, default to next weekday
+  if (targetDays.length === 0) {
+    // Move to tomorrow if we're past the preferred time today
+    if (candidate <= now) {
+      candidate.setDate(candidate.getDate() + 1);
+    }
+    // Skip weekends
+    while (candidate.getDay() === 0 || candidate.getDay() === 6) {
+      candidate.setDate(candidate.getDate() + 1);
+    }
+    return candidate;
+  }
+
+  // Find the next occurrence of a preferred day
+  for (let i = 0; i <= 7; i++) {
+    const check = new Date(now);
+    check.setDate(now.getDate() + i);
+    check.setHours(hour, minute, 0, 0);
+    if (targetDays.includes(check.getDay()) && check > now) {
+      return check;
+    }
+  }
+
+  // Fallback: 3 days from now at preferred time
+  const fallback = new Date(now);
+  fallback.setDate(now.getDate() + 3);
+  fallback.setHours(hour, minute, 0, 0);
+  return fallback;
 }

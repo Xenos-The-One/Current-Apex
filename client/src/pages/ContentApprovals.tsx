@@ -4,15 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, CheckCircle, XCircle, Clock, Send, Eye, Sparkles } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Clock, Send, Eye, Sparkles, RefreshCw, CalendarPlus } from "lucide-react";
 import { useLocation } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
+
 export default function ContentApprovals() {
   const [selectedApproval, setSelectedApproval] = useState<any>(null);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectFeedback, setRejectFeedback] = useState("");
+
+  // Regenerate dialog state
+  const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
+  const [guidanceNotes, setGuidanceNotes] = useState("");
 
   const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
@@ -59,8 +65,56 @@ export default function ContentApprovals() {
     },
   });
 
+  // Regenerate mutation
+  const regenerateMutation = trpc.clientOnboarding.requestRegenerate.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.message || "New content batch is being generated!");
+      setShowRegenerateDialog(false);
+      setGuidanceNotes("");
+      // Refresh after a short delay to pick up new content
+      setTimeout(() => {
+        utils.contentApprovals.listPending.invalidate();
+        utils.contentApprovals.list.invalidate();
+      }, 5000);
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to regenerate: ${error.message}`);
+    },
+  });
+
+  // Auto-schedule to Social Media mutation
+  const scheduleToSocialMutation = trpc.contentApprovals.scheduleApprovedToSocial.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.message || "Scheduled to Social Media!");
+      utils.contentApprovals.listPending.invalidate();
+      utils.contentApprovals.list.invalidate();
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to schedule: ${error.message}`);
+    },
+  });
+
   const handleApprove = (approvalId: number) => {
     approveMutation.mutate({ approvalId });
+  };
+
+  const handleApproveAndSchedule = (approval: any) => {
+    // First approve, then schedule
+    approveMutation.mutate(
+      { approvalId: approval.id },
+      {
+        onSuccess: () => {
+          // Only schedule social posts (not blog posts or website copy)
+          const platform = (approval.platform || "").toLowerCase();
+          const isSocialPost = ["facebook", "instagram", "linkedin", "twitter", "tiktok"].some((p) =>
+            platform.includes(p)
+          );
+          if (isSocialPost) {
+            scheduleToSocialMutation.mutate({ approvalId: approval.id });
+          }
+        },
+      }
+    );
   };
 
   const handleReject = () => {
@@ -78,6 +132,10 @@ export default function ContentApprovals() {
 
   const handleSendSMS = (approvalId: number) => {
     sendSmsMutation.mutate({ approvalId });
+  };
+
+  const handleRegenerate = () => {
+    regenerateMutation.mutate({ guidanceNotes: guidanceNotes.trim() || undefined });
   };
 
   const getStatusBadge = (status: string) => {
@@ -104,6 +162,13 @@ export default function ContentApprovals() {
     }
   };
 
+  const isSocialPlatform = (platform: string | null) => {
+    if (!platform) return false;
+    return ["facebook", "instagram", "linkedin", "twitter", "tiktok"].some((p) =>
+      platform.toLowerCase().includes(p)
+    );
+  };
+
   return (
     <DashboardLayout>
       <div className="container py-8">
@@ -122,15 +187,27 @@ export default function ContentApprovals() {
           <div className="flex-1">
             <p className="font-semibold text-amber-700 dark:text-amber-300">Complete your setup to generate content</p>
             <p className="text-sm text-muted-foreground mt-0.5">Fill in your business profile and we'll automatically generate your first batch of social media posts and website content.</p>
-            <button onClick={() => setLocation("/client-onboarding")} className="mt-2 text-sm font-semibold text-amber-600 dark:text-amber-400 hover:underline">Complete Setup →</button>
+            <button onClick={() => setLocation("/account-setup")} className="mt-2 text-sm font-semibold text-amber-600 dark:text-amber-400 hover:underline">Complete Setup →</button>
           </div>
         </div>
       )}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Content Approvals</h1>
-        <p className="text-muted-foreground">
-          Review and approve content before it goes live
-        </p>
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Content Approvals</h1>
+          <p className="text-muted-foreground">
+            Review and approve content before it goes live
+          </p>
+        </div>
+        {onboardingStatus?.completed && (
+          <Button
+            onClick={() => setShowRegenerateDialog(true)}
+            variant="outline"
+            className="shrink-0 gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Regenerate Batch
+          </Button>
+        )}
       </div>
 
       {/* Pending Approvals */}
@@ -200,7 +277,7 @@ export default function ContentApprovals() {
                     )}
 
                     {/* Actions */}
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button
                         onClick={() => setSelectedApproval(approval)}
                         variant="outline"
@@ -209,19 +286,35 @@ export default function ContentApprovals() {
                         <Eye className="w-4 h-4 mr-2" />
                         View Full
                       </Button>
-                      <Button
-                        onClick={() => handleApprove(approval.id)}
-                        disabled={approveMutation.isPending}
-                        size="sm"
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        {approveMutation.isPending ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                        )}
-                        Approve
-                      </Button>
+                      {isSocialPlatform(approval.platform) ? (
+                        <Button
+                          onClick={() => handleApproveAndSchedule(approval)}
+                          disabled={approveMutation.isPending || scheduleToSocialMutation.isPending}
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          {(approveMutation.isPending || scheduleToSocialMutation.isPending) ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <CalendarPlus className="w-4 h-4 mr-2" />
+                          )}
+                          Approve & Schedule
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => handleApprove(approval.id)}
+                          disabled={approveMutation.isPending}
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          {approveMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                          )}
+                          Approve
+                        </Button>
+                      )}
                       <Button
                         onClick={() => {
                           setSelectedApproval(approval);
@@ -258,6 +351,17 @@ export default function ContentApprovals() {
               <CheckCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
               <p>No pending approvals</p>
               <p className="text-sm">All content has been reviewed</p>
+              {onboardingStatus?.completed && (
+                <Button
+                  onClick={() => setShowRegenerateDialog(true)}
+                  variant="outline"
+                  size="sm"
+                  className="mt-4 gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Generate New Batch
+                </Button>
+              )}
             </div>
           )}
         </CardContent>
@@ -349,14 +453,28 @@ export default function ContentApprovals() {
             <DialogFooter>
               {selectedApproval.status === "pending" && (
                 <>
-                  <Button
-                    onClick={() => handleApprove(selectedApproval.id)}
-                    disabled={approveMutation.isPending}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Approve
-                  </Button>
+                  {isSocialPlatform(selectedApproval.platform) ? (
+                    <Button
+                      onClick={() => {
+                        handleApproveAndSchedule(selectedApproval);
+                        setSelectedApproval(null);
+                      }}
+                      disabled={approveMutation.isPending || scheduleToSocialMutation.isPending}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <CalendarPlus className="w-4 h-4 mr-2" />
+                      Approve & Schedule
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => handleApprove(selectedApproval.id)}
+                      disabled={approveMutation.isPending}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Approve
+                    </Button>
+                  )}
                   <Button
                     onClick={() => setShowRejectDialog(true)}
                     variant="destructive"
@@ -411,6 +529,66 @@ export default function ContentApprovals() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Regenerate Dialog */}
+      <Dialog open={showRegenerateDialog} onOpenChange={setShowRegenerateDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="w-5 h-5 text-primary" />
+              Generate New Content Batch
+            </DialogTitle>
+            <DialogDescription>
+              We'll create 12 fresh SEO-optimized pieces (Facebook, Instagram, LinkedIn, blog posts, and website copy) tailored to your business.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="guidance">Guidance Notes (optional)</Label>
+              <Textarea
+                id="guidance"
+                placeholder="e.g., Use a more formal tone, focus on refinancing, highlight our low rates, target first-time homebuyers..."
+                value={guidanceNotes}
+                onChange={(e) => setGuidanceNotes(e.target.value)}
+                rows={4}
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave blank to regenerate with the same style, or add notes to guide the AI in a new direction.
+              </p>
+            </div>
+
+            <div className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground mb-1">What you'll get:</p>
+              <ul className="space-y-0.5 list-disc list-inside">
+                <li>3 Facebook posts with CTAs and hashtags</li>
+                <li>3 Instagram posts with visual-friendly copy</li>
+                <li>2 LinkedIn thought leadership posts</li>
+                <li>2 SEO blog post drafts with H1/meta/H2</li>
+                <li>2 website copy pieces (hero + services)</li>
+              </ul>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRegenerateDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRegenerate}
+              disabled={regenerateMutation.isPending}
+              className="gap-2"
+            >
+              {regenerateMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+              {regenerateMutation.isPending ? "Generating..." : "Generate New Batch"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
     </DashboardLayout>
   );

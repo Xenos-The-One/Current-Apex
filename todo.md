@@ -198,3 +198,9 @@
 - [x] Onboarding banner in sidebar updated to link to /account-setup
 - [x] Removed "Onboarding Snapshot" from admin sidebar Overview section
 - [x] Removed /onboarding-snapshot route from App.tsx
+
+## Round 16: 404 Fix + Admin Sidebar Cleanup + Content Approvals Features
+- [x] Fix /onboarding-snapshot 404 — add redirect to /admin in App.tsx
+- [x] Remove "Client Dashboard" from admin sidebar Overview section
+- [x] Add "Regenerate" button to Content Approvals — lets client request new batch with AI guidance note
+- [x] Connect approved social posts to Social Media scheduler — auto-queue with suggested publish date from Publishing Prefs
