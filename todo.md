@@ -251,3 +251,8 @@
 - [x] Update SeoLayout CLIENT_NAV_GROUPS — client nav now routes to /seo/portal/* pages instead of admin pages
 - [x] Update SeoLayout fallback button — redirects to /seo/portal/approvals instead of old /content-approvals
 - [x] Update ClientDashboard action item link — pending approvals now link to /seo/portal/approvals
+
+## Round 25: Fix 404 on Portal Routes
+- [x] Fix /seo/portal/content 404 — portal routes moved outside SeoLayout in SeoRouter.tsx
+- [x] Fix /seo/portal/approvals 404 — portal routes now render directly with their own PortalLayout
+- [x] Restructure SeoRouter.tsx — portal routes matched first (before SeoLayout catch-all), admin SEO routes use SeoLayout catch-all

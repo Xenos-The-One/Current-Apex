@@ -19,6 +19,7 @@ import {
   ArrowLeft, LogOut, PanelLeft,
 } from "lucide-react";
 import { useState } from "react";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 
 type NavItem = {
   icon: React.ElementType;
@@ -127,8 +128,12 @@ export default function SeoLayout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const { user, logout } = useAuth();
-  const isAdmin = user?.role === "super_admin" || user?.role === "admin" || user?.role === "agency_owner";
-  const isClient = user?.role === "client_user";
+  const { isClientViewMode } = useImpersonation();
+  const isAdminRole = user?.role === "super_admin" || user?.role === "admin" || user?.role === "agency_owner";
+  // isClient is true for actual client users OR admin users in Client View Mode
+  const isClient = user?.role === "client_user" || isClientViewMode;
+  // isAdmin is true only when admin is NOT in client view mode
+  const isAdmin = isAdminRole && !isClientViewMode;
 
   if (!user) {
     return (
