@@ -12,6 +12,7 @@ import { Loader2, CheckCircle, XCircle, Clock, Send, Eye, Sparkles, RefreshCw, C
 import { FeedbackThread } from "@/components/FeedbackThread";
 import { useLocation } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
+import PortalLayout from "@/components/PortalLayout";
 
 export default function ContentApprovals() {
   const [selectedApproval, setSelectedApproval] = useState<any>(null);
@@ -25,7 +26,7 @@ export default function ContentApprovals() {
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
-  const [, setLocation] = useLocation();
+  const [currentPath, setLocation] = useLocation();
   const utils = trpc.useUtils();
   const { data: pendingApprovals, isLoading } = trpc.contentApprovals.listPending.useQuery({});
   const { data: allApprovals } = trpc.contentApprovals.list.useQuery({});
@@ -214,9 +215,9 @@ export default function ContentApprovals() {
     );
   }
 
-  return (
-    <DashboardLayout>
-      <div className="container py-8">
+  const isPortal = currentPath.startsWith("/seo/portal");
+  const content = (
+    <div className="container py-8">
         {showContentReadyBanner && (
           <div className="mb-6 rounded-xl bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-400/30 p-4 flex items-start gap-3">
             <Sparkles className="h-5 w-5 text-cyan-500 mt-0.5 shrink-0" />
@@ -638,6 +639,10 @@ export default function ContentApprovals() {
           </DialogContent>
         </Dialog>
       </div>
-    </DashboardLayout>
   );
+
+  if (isPortal) {
+    return <PortalLayout activePath="/seo/portal/approvals">{content}</PortalLayout>;
+  }
+  return <DashboardLayout>{content}</DashboardLayout>;
 }

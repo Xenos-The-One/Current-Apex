@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -210,6 +211,8 @@ export default function SocialMedia() {
   const { data: clientInfo } = trpc.crm.getMyInfo.useQuery();
   const { data: posts, isLoading } = trpc.social.listPosts.useQuery();
   const utils = trpc.useUtils();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin" || user?.role === "agency_owner";
   const isReadOnly = clientInfo?.client.accessMode === "read_only";
 
   const rescheduleMutation = trpc.social.reschedulePost.useMutation({
@@ -262,7 +265,7 @@ export default function SocialMedia() {
                 <LayoutGrid className="w-4 h-4 mr-1" /> Calendar
               </Button>
             </div>
-            {!isReadOnly && (
+            {!isReadOnly && isAdmin && (
               <Link href="/seo/content">
                 <Button size="sm">
                   <Plus className="w-4 h-4 mr-2" />
@@ -375,7 +378,7 @@ export default function SocialMedia() {
                   <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p className="font-medium">No posts yet</p>
                   <p className="text-sm mt-1">Create your first social media post to get started</p>
-                  {!isReadOnly && (
+                  {!isReadOnly && isAdmin && (
                     <Link href="/seo/content">
                       <Button className="mt-4">
                         <Plus className="w-4 h-4 mr-2" />

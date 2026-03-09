@@ -1,0 +1,13 @@
+{
+  "query": "SHOW TABLES LIKE 'content';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SHOW TABLES LIKE 'content';",
+  "rows": [
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj (content)": "content"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_Rus3EtBPxB9CmZuwDUFVXj (content)\ncontent\n",
+  "stderr": "",
+  "execution_time_ms": 164
+}

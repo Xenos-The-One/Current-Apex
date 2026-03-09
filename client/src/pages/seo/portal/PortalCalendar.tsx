@@ -13,15 +13,13 @@ export default function PortalCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<"month" | "week">("month");
 
-  const { data: contentList } = trpc.seo.content.list.useQuery(
+  const { data: contentList } = trpc.seo.content.listForPortal.useQuery(
     undefined,
     { enabled: !!user }
   );
 
-  // Filter content by client and with scheduled dates
-  const clientContent = contentList?.filter((item: any) =>
-    item.clientId === (user as any)?.clientId && item.scheduledPublishDate
-  ) || [];
+  // listForPortal already returns only content for this user's client
+  const clientContent = contentList?.filter((item: any) => item.scheduledPublishDate) || [];
 
   // Calendar logic
   const year = currentDate.getFullYear();

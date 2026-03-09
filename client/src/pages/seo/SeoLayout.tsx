@@ -109,16 +109,16 @@ const CLIENT_NAV_GROUPS: NavGroup[] = [
   {
     label: "My Content",
     items: [
-      { icon: FileText, label: "All Content", path: "/seo/content" },
-      { icon: Shield, label: "Approvals", path: "/seo/approvals" },
-      { icon: CalendarDays, label: "Calendar", path: "/seo/calendar" },
+      { icon: FileText, label: "All Content", path: "/seo/portal/content" },
+      { icon: Shield, label: "Approvals", path: "/seo/portal/approvals" },
+      { icon: CalendarDays, label: "Calendar", path: "/seo/portal/calendar" },
     ],
   },
   {
     label: "Analytics",
     items: [
-      { icon: BarChart3, label: "Analytics", path: "/seo/analytics" },
-      { icon: Megaphone, label: "Reports", path: "/seo/reports" },
+      { icon: BarChart3, label: "Performance", path: "/seo/portal/performance" },
+      { icon: Megaphone, label: "Publishing", path: "/seo/portal/publishing" },
     ],
   },
 ];
@@ -154,7 +154,7 @@ export default function SeoLayout({ children }: { children: React.ReactNode }) {
           <div className="text-6xl">🔒</div>
           <h1 className="text-2xl font-semibold tracking-tight">Access Restricted</h1>
           <p className="text-muted-foreground">The SEO Portal is available to agency administrators and clients. Please contact your agency if you need access.</p>
-          <Button variant="outline" onClick={() => window.location.href = "/content-approvals"}>
+          <Button variant="outline" onClick={() => window.location.href = "/seo/portal/approvals"}>
             View Content Approvals
           </Button>
         </div>

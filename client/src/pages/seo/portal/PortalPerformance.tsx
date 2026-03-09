@@ -14,34 +14,34 @@ export default function PortalPerformance() {
   const [dataSource, setDataSource] = useState<"internal" | "ga">("internal");
 
 
-  const { data: contentList } = trpc.seo.content.list.useQuery(
+  const { data: contentList } = trpc.seo.content.listForPortal.useQuery(
     undefined,
     { enabled: !!user }
   );
   
-  // Google Analytics data
+  // Google Analytics data (disabled for now since clientId is not on user object)
   const { data: gaMetrics } = trpc.seo.googleAnalytics.getMetrics.useQuery(
     {
-      clientId: (user as any)?.clientId,
+      clientId: 0,
       startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       endDate: new Date().toISOString().split('T')[0],
     },
-    { enabled: dataSource === "ga" && !!user?.clientId }
+    { enabled: false }
   );
   
   const { data: gaPages } = trpc.seo.googleAnalytics.getPageMetrics.useQuery(
     {
-      clientId: (user as any)?.clientId,
+      clientId: 0,
       startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       endDate: new Date().toISOString().split('T')[0],
       limit: 10,
     },
-    { enabled: dataSource === "ga" && !!user?.clientId }
+    { enabled: false }
   );
 
 
-  // Filter content by client
-  const clientContent = contentList?.filter((item: any) => item.clientId === (user as any)?.clientId) || [];
+  // listForPortal already returns only content for this user's client
+  const clientContent = contentList || [];
 
   // Calculate performance data from content list
   const performanceData = clientContent.reduce(

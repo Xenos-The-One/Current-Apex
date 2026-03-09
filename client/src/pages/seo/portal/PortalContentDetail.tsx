@@ -69,7 +69,7 @@ export default function PortalContentDetail() {
     );
   }
 
-  if (!content || content.clientId !== user.clientId) {
+  if (!content) {
     return (
       <PortalLayout activePath="/seo/portal/content">
         <div className="flex items-center justify-center py-32">
@@ -131,7 +131,7 @@ export default function PortalContentDetail() {
             </CardContent>
           </Card>
 
-          {canApprove && user.role === "client_admin" && (
+          {canApprove && (
             <Card>
               <CardHeader>
                 <CardTitle>Approval Actions</CardTitle>

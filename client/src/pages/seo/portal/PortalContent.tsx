@@ -14,13 +14,13 @@ export default function PortalContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const { data: contentList, isLoading } = trpc.seo.content.list.useQuery(
+  const { data: contentList, isLoading } = trpc.seo.content.listForPortal.useQuery(
     undefined,
     { enabled: !!user }
   );
 
-  // Filter content by client
-  const clientContent = contentList?.filter((item: any) => item.clientId === (user as any)?.clientId) || [];
+  // listForPortal already returns only content for this user's client
+  const clientContent = contentList || [];
 
   // Apply search and status filters
   const filteredContent = clientContent.filter((item: any) => {

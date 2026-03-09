@@ -945,6 +945,29 @@ Return JSON: { "headline1": "max 40 chars", "primaryText": "max 125 chars", "des
         const allContent = await getContentWithClient(ctx.user.id);
         return allContent.filter((item) => item.content.clientId === input.clientId).map((item) => item.content);
       }),
+    // Portal endpoint: returns flat content items for the logged-in client user
+    listForPortal: protectedProcedure.query(async ({ ctx }) => {
+      const ADMIN_ROLES_SEO = ["admin", "super_admin", "agency_owner"];
+      // For admin users, return all content they created (flat)
+      if (ADMIN_ROLES_SEO.includes(ctx.user.role)) {
+        const items = await getContentWithClient(ctx.user.id);
+        return items.map(i => i.content);
+      }
+      // For client users: find CRM client → SEO client → content
+      const { getDb: getMainDb } = await import("./db");
+      const { clients: crmClientsTable } = await import("../drizzle/schema");
+      const { seoClients: seoClientsTable, content: contentTable } = await import("../drizzle/seo-schema");
+      const { eq } = await import("drizzle-orm");
+      const mainDb = await getMainDb();
+      if (!mainDb) return [];
+      const [crmClient] = await mainDb.select().from(crmClientsTable).where(eq(crmClientsTable.userId, ctx.user.id));
+      if (!crmClient) return [];
+      const seoDb = await getDb();
+      if (!seoDb) return [];
+      const [seoClient] = await seoDb.select().from(seoClientsTable).where(eq(seoClientsTable.crmClientId, crmClient.id));
+      if (!seoClient) return [];
+      return await seoDb.select().from(contentTable).where(eq(contentTable.clientId, seoClient.id)).orderBy(contentTable.createdAt);
+    }),
     generate: protectedProcedure
       .input(z.object({
         clientId: z.number(),

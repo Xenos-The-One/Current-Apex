@@ -47,6 +47,7 @@ const PortalContentDetail = lazy(() => import("./portal/PortalContentDetail"));
 const PortalCalendar = lazy(() => import("./portal/PortalCalendar"));
 const PortalPerformance = lazy(() => import("./portal/PortalPerformance"));
 const PortalPublishing = lazy(() => import("./portal/PortalPublishing"));
+const PortalApprovals = lazy(() => import("../../pages/ContentApprovals"));
 
 function LoadingFallback() {
   return (
@@ -104,6 +105,7 @@ export default function SeoRouter() {
           <Route path="/seo/portal/calendar" component={PortalCalendar} />
           <Route path="/seo/portal/performance" component={PortalPerformance} />
           <Route path="/seo/portal/publishing" component={PortalPublishing} />
+          <Route path="/seo/portal/approvals" component={PortalApprovals} />
         </Switch>
       </Suspense>
     </SeoLayout>

@@ -52,11 +52,11 @@ export default function PortalDashboard() {
       {/* Navigation Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[
-          { href: "/portal/content", icon: FileText, label: "My Content", desc: "View all your content, drafts, and published posts" },
-          { href: "/portal/calendar", icon: Calendar, label: "Content Calendar", desc: "See your content schedule and upcoming posts" },
-          { href: "/portal/performance", icon: TrendingUp, label: "Performance", desc: "Track views, engagement, and content performance" },
-          { href: "/portal/approvals", icon: User, label: "Approvals", desc: "Review and approve content awaiting your feedback" },
-          { href: "/portal/publishing", icon: Send, label: "Publishing", desc: "Publish or schedule approved content to your platforms" },
+          { href: "/seo/portal/content", icon: FileText, label: "My Content", desc: "View all your content, drafts, and published posts" },
+          { href: "/seo/portal/approvals", icon: User, label: "Approvals", desc: "Review and approve content awaiting your feedback" },
+          { href: "/seo/portal/calendar", icon: Calendar, label: "Content Calendar", desc: "See your content schedule and upcoming posts" },
+          { href: "/seo/portal/performance", icon: TrendingUp, label: "Performance", desc: "Track views, engagement, and content performance" },
+          { href: "/seo/portal/publishing", icon: Send, label: "Publishing", desc: "Publish or schedule approved content to your platforms" },
         ].map(({ href, icon: Icon, label, desc }) => (
           <Link key={href} href={href}>
             <a className="block group">

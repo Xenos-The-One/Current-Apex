@@ -87,7 +87,7 @@ export default function PortalPublishing() {
     { enabled: !!(user as any)?.clientId }
   );
 
-  const { data: contentList, isLoading: contentLoading } = trpc.seo.content.list.useQuery(
+  const { data: contentList, isLoading: contentLoading } = trpc.seo.content.listForPortal.useQuery(
     undefined,
     { enabled: !!user }
   );
@@ -98,23 +98,21 @@ export default function PortalPublishing() {
   );
 
   const { data: wpConnections } = trpc.seo.wordpress.getConnections.useQuery(
-    { clientId: (user as any)?.clientId || 0 },
-    { enabled: !!(user as any)?.clientId }
+    { clientId: 0 },
+    { enabled: false }
   );
 
   const { data: manusWebsites } = trpc.seo.manusWebsites.getWebsites.useQuery(
-    { clientId: (user as any)?.clientId || 0 },
-    { enabled: !!(user as any)?.clientId }
+    { clientId: 0 },
+    { enabled: false }
   );
 
   // Mutations
   const createSchedule = trpc.seo.publishingScheduler.create.useMutation();
   const cancelSchedule = trpc.seo.publishingScheduler.cancel.useMutation();
 
-  // Filter content for this client
-  const clientContent = contentList?.filter(
-    (c) => c.content.clientId === (user as any)?.clientId
-  ) || [];
+  // listForPortal already returns only content for this user's client (flat format)
+  const clientContent = (contentList || []).map((c: any) => ({ content: c }));
 
   const approvedContent = clientContent.filter(
     (c) => c.content.status === "approved"
@@ -122,8 +120,7 @@ export default function PortalPublishing() {
 
   // Client schedules
   const clientSchedules = schedules?.filter((s) => {
-    const item = contentList?.find((c) => c.content.id === s.contentId);
-    return item?.content.clientId === (user as any)?.clientId;
+    return (contentList || []).some((c: any) => c.id === s.contentId);
   }) || [];
 
   const pendingSchedules = clientSchedules.filter((s) => s.status === "pending");

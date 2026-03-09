@@ -401,7 +401,7 @@ export default function ClientDashboard() {
     actionItems.push({
       icon: <FileText className="h-4 w-4 text-blue-500" />,
       label: `${stats.pendingApprovalsCount} content item${stats.pendingApprovalsCount > 1 ? "s" : ""} awaiting your approval`,
-      href: "/content-approvals",
+      href: "/seo/portal/approvals",
       priority: "medium" as const,
     });
   }

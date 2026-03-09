@@ -238,3 +238,16 @@
 - [x] Remove localStorage token checks from all portal pages — use useAuth() instead
 - [x] Update PortalLayout to use main app user (useAuth) instead of client_portal_token
 - [x] Update sidebar "My Content" link to point to /seo/portal/dashboard
+
+## Round 24: Client Portal Fixes
+- [x] Fix My Content sidebar link — now correctly navigates to /seo/portal/content
+- [x] Fix Content Approvals sidebar link — now navigates to /seo/portal/approvals (PortalLayout experience)
+- [x] Add /seo/portal/approvals route — ContentApprovals page wrapped in PortalLayout for client users
+- [x] Add listForPortal tRPC endpoint — returns only the logged-in client's content (flat format)
+- [x] Fix social.listPosts — admin users without a client profile now return all posts instead of throwing
+- [x] Fix PortalContentDetail — removed broken clientId check that blocked all client access
+- [x] Fix PortalDashboard quick-links — all links now use correct /seo/portal/* paths
+- [x] Remove admin AI SEO access from client Social Media tab — isAdmin check hides admin-only tools
+- [x] Update SeoLayout CLIENT_NAV_GROUPS — client nav now routes to /seo/portal/* pages instead of admin pages
+- [x] Update SeoLayout fallback button — redirects to /seo/portal/approvals instead of old /content-approvals
+- [x] Update ClientDashboard action item link — pending approvals now link to /seo/portal/approvals

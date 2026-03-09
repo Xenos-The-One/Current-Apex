@@ -13,12 +13,24 @@ import {
 import { socialMediaPosts } from "../../drizzle/schema";
 import { desc } from "drizzle-orm";
 
+const ADMIN_ROLES = ["admin", "super_admin", "agency_owner"];
+
 export const socialRouter = router({
   // ============= POST MANAGEMENT =============
 
   listPosts: protectedProcedure.query(async ({ ctx }) => {
     const client = await getClientByUserId(ctx.user.id);
     if (!client) {
+      // Admin users without a linked client profile — return all posts
+      if (ADMIN_ROLES.includes(ctx.user.role)) {
+        const db = await getDb();
+        if (!db) return [];
+        return await db
+          .select()
+          .from(socialMediaPosts)
+          .orderBy(desc(socialMediaPosts.scheduledDate))
+          .limit(300);
+      }
       throw new TRPCError({
         code: "NOT_FOUND",
         message: "Client profile not found",
