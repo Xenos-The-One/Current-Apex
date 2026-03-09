@@ -63,13 +63,39 @@ export const contentApprovalsRouter = router({
         createdBy: ctx.user.id,
       });
 
-      const approvalId = Number((result as any).insertId);
-
+       const approvalId = Number((result as any).insertId);
       // Send SMS approval request if requested
       if (input.sendSmsNow) {
         await sendApprovalSMS(approvalId);
       }
-
+      // Send email notification to the client when admin creates content for their queue
+      const isAdmin = (ADMIN_ROLES as readonly string[]).includes(ctx.user.role);
+      if (isAdmin && input.clientId) {
+        try {
+          const [clientRow] = await db.select().from(clients).where(eq(clients.id, input.clientId)).limit(1);
+          if (clientRow?.email) {
+            await sendEmail({
+              to: clientRow.email,
+              subject: `📢 New content is ready for your review: "${input.title}"`,
+              html: `
+                <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+                  <h2 style="color:#0891b2;">New Content Ready for Review</h2>
+                  <p>Hi ${clientRow.name},</p>
+                  <p>Your agency has created a new piece of content that needs your approval before it goes live.</p>
+                  <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+                    <tr><td style="padding:8px;background:#f9fafb;font-weight:bold;width:140px;">Title</td><td style="padding:8px;">${input.title}</td></tr>
+                    <tr><td style="padding:8px;background:#f9fafb;font-weight:bold;">Type</td><td style="padding:8px;">${input.contentType.replace('_', ' ')}</td></tr>
+                    ${input.platform ? `<tr><td style="padding:8px;background:#f9fafb;font-weight:bold;">Platform</td><td style="padding:8px;">${input.platform}</td></tr>` : ''}
+                  </table>
+                  <p>Log in to your portal to review and approve this content.</p>
+                  <a href="${process.env.VITE_OAUTH_PORTAL_URL || 'https://app.lockinloans.com'}/seo/portal/apex-content" style="display:inline-block;background:#0891b2;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold;margin-top:8px;">Review Content &rarr;</a>
+                </div>`,
+            });
+          }
+        } catch (emailErr) {
+          console.warn("[contentApprovals.create] Email notification failed:", emailErr);
+        }
+      }
       return {
         success: true,
         approvalId,

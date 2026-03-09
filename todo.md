@@ -264,3 +264,12 @@
 - [x] Add Follow-Ups nav item to PortalLayout (desktop + mobile)
 - [x] Add Follow-Ups to client sidebar Grow section in DashboardLayout
 - [x] Register /seo/portal/follow-ups route in App.tsx
+
+## Round 27: Apex Content Tab + Approval Notifications
+- [x] Create /seo/portal/apex-content page — unified tab with My Content + Approvals sub-tabs
+- [x] Remove separate Content Approvals and My Content sidebar entries, replace with single "Apex Content" entry
+- [x] Update PortalLayout nav — replace Content + Approvals with single Apex Content item
+- [x] Add approval notification email — trigger SendGrid email to client when admin adds content to approval queue
+- [x] Update PortalDashboard quick-links — Apex Content replaces My Content + Approvals cards
+- [x] Wire live stats on PortalDashboard — Total Content and Pending Approval show real counts
+- [x] Add Follow-Ups quick-link card to PortalDashboard

@@ -14,8 +14,7 @@ interface PortalLayoutProps {
 
 const NAV_ITEMS = [
   { label: "Dashboard", path: "/seo/portal/dashboard", icon: LayoutDashboard },
-  { label: "Content", path: "/seo/portal/content", icon: FileText },
-  { label: "Approvals", path: "/seo/portal/approvals", icon: CheckSquare },
+  { label: "Apex Content", path: "/seo/portal/apex-content", icon: CheckSquare },
   { label: "Calendar", path: "/seo/portal/calendar", icon: Calendar },
   { label: "Performance", path: "/seo/portal/performance", icon: TrendingUp },
   { label: "Publishing", path: "/seo/portal/publishing", icon: Send },

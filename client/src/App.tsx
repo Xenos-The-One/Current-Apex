@@ -88,6 +88,7 @@ const PortalCalendar = lazy(() => import("./pages/seo/portal/PortalCalendar"));
 const PortalPerformance = lazy(() => import("./pages/seo/portal/PortalPerformance"));
 const PortalPublishing = lazy(() => import("./pages/seo/portal/PortalPublishing"));
 const PortalFollowUps = lazy(() => import("./pages/seo/portal/PortalFollowUps"));
+const PortalApexContent = lazy(() => import("./pages/seo/portal/PortalApexContent"));
 function PortalFallback() {
   return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 }
@@ -203,12 +204,14 @@ function Router() {
       {/* ── Portal routes: registered BEFORE /seo/:rest* to avoid SeoLayout wrapping ── */}
       <Route path="/seo/portal/login"><Suspense fallback={<PortalFallback />}><PortalLogin /></Suspense></Route>
       <Route path="/seo/portal/content/:id"><Suspense fallback={<PortalFallback />}><PortalContentDetail /></Suspense></Route>
+      <Route path="/seo/portal/apex-content"><Suspense fallback={<PortalFallback />}><PortalApexContent /></Suspense></Route>
       <Route path="/seo/portal/content"><Suspense fallback={<PortalFallback />}><PortalContent /></Suspense></Route>
       <Route path="/seo/portal/calendar"><Suspense fallback={<PortalFallback />}><PortalCalendar /></Suspense></Route>
       <Route path="/seo/portal/performance"><Suspense fallback={<PortalFallback />}><PortalPerformance /></Suspense></Route>
       <Route path="/seo/portal/publishing"><Suspense fallback={<PortalFallback />}><PortalPublishing /></Suspense></Route>
       <Route path="/seo/portal/follow-ups"><Suspense fallback={<PortalFallback />}><PortalFollowUps /></Suspense></Route>
-      <Route path="/seo/portal/approvals"><Suspense fallback={<PortalFallback />}><ContentApprovals /></Suspense></Route>
+      {/* /seo/portal/approvals kept for backward compat — redirects to apex-content */}
+      <Route path="/seo/portal/approvals"><Suspense fallback={<PortalFallback />}><PortalApexContent /></Suspense></Route>
       <Route path="/seo/portal/dashboard"><Suspense fallback={<PortalFallback />}><PortalDashboard /></Suspense></Route>
       <Route path="/seo/:rest*" component={SeoRouter} />
       <Route path="/seo" component={SeoRouter} />

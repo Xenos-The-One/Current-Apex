@@ -225,9 +225,8 @@ const clientMenuSections: MenuSection[] = [
     id: "grow", label: "Grow", icon: TrendingUp,
     items: [
       { icon: TrendingUp, label: "Reports", path: "/reports" },
-      { icon: CheckSquare, label: "Content Approvals", path: "/seo/portal/approvals" },
+      { icon: CheckSquare, label: "Apex Content", path: "/seo/portal/apex-content" },
       { icon: Share2, label: "Social Media", path: "/social" },
-      { icon: FileText, label: "My Content", path: "/seo/portal/content" },
       { icon: Sparkles, label: "Follow-Ups", path: "/seo/portal/follow-ups" },
       { icon: Settings, label: "Settings", path: "/account" },
     ],

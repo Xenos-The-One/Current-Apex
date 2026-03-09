@@ -1,11 +1,16 @@
 import { Link } from "wouter";
 import { Card } from "@/components/ui/card";
-import { FileText, Calendar, TrendingUp, User, Send } from "lucide-react";
+import { FileText, Calendar, TrendingUp, CheckSquare, Send, Sparkles } from "lucide-react";
 import PortalLayout from "@/components/PortalLayout";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
 
 export default function PortalDashboard() {
   const { user } = useAuth();
+  const { data: contentList } = trpc.seo.content.listForPortal.useQuery(undefined, { enabled: !!user });
+  const { data: pendingApprovals } = trpc.contentApprovals.listPending.useQuery({}, { enabled: !!user });
+  const totalContent = contentList?.length ?? 0;
+  const pendingCount = pendingApprovals?.length ?? 0;
 
   return (
     <PortalLayout activePath="/seo/portal/dashboard">
@@ -22,7 +27,7 @@ export default function PortalDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Total Content</p>
-              <p className="text-3xl font-bold mt-2 text-white">0</p>
+              <p className="text-3xl font-bold mt-2 text-white">{totalContent}</p>
             </div>
             <FileText className="h-12 w-12" style={{ color: "#00FFFF" }} />
           </div>
@@ -32,7 +37,7 @@ export default function PortalDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Pending Approval</p>
-              <p className="text-3xl font-bold mt-2 text-white">0</p>
+              <p className="text-3xl font-bold mt-2 text-white">{pendingCount}</p>
             </div>
             <Calendar className="h-12 w-12 text-orange-400" />
           </div>
@@ -52,11 +57,11 @@ export default function PortalDashboard() {
       {/* Navigation Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[
-          { href: "/seo/portal/content", icon: FileText, label: "My Content", desc: "View all your content, drafts, and published posts" },
-          { href: "/seo/portal/approvals", icon: User, label: "Approvals", desc: "Review and approve content awaiting your feedback" },
+          { href: "/seo/portal/apex-content", icon: CheckSquare, label: "Apex Content", desc: "Review approvals and manage all your published content" },
           { href: "/seo/portal/calendar", icon: Calendar, label: "Content Calendar", desc: "See your content schedule and upcoming posts" },
           { href: "/seo/portal/performance", icon: TrendingUp, label: "Performance", desc: "Track views, engagement, and content performance" },
           { href: "/seo/portal/publishing", icon: Send, label: "Publishing", desc: "Publish or schedule approved content to your platforms" },
+          { href: "/seo/portal/follow-ups", icon: Sparkles, label: "Follow-Ups", desc: "AI-prioritized leads that need your attention today" },
         ].map(({ href, icon: Icon, label, desc }) => (
           <Link key={href} href={href}>
             <a className="block group">
