@@ -6,7 +6,7 @@ import { contentApprovals, clients, users, teamNotifications, contentComments } 
 import { seoClients } from "../../drizzle/seo-schema";
 import { sendSMS } from "../twilio";
 import { sendEmail } from "../email-service";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql, gt, ne, inArray } from "drizzle-orm";
 
 // Roles that can see ALL approvals (not just their own)
 const ADMIN_ROLES = ["super_admin", "admin", "agency_owner"] as const;
@@ -519,17 +519,21 @@ export const contentApprovalsRouter = router({
 
   // ─── Feedback Thread ──────────────────────────────────────────────────────
 
-  // List all comments for a content item
+  // List all comments for a content item (also marks them as read for the current user's role)
   listComments: protectedProcedure
     .input(z.object({ contentApprovalId: z.number() }))
     .query(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      const isAdmin = (ADMIN_ROLES as readonly string[]).includes(ctx.user.role);
       const rows = await db
         .select({
           id: contentComments.id,
           message: contentComments.message,
           authorRole: contentComments.authorRole,
+          mentionedRole: contentComments.mentionedRole,
+          isReadByAdmin: contentComments.isReadByAdmin,
+          isReadByClient: contentComments.isReadByClient,
           createdAt: contentComments.createdAt,
           authorName: users.name,
         })
@@ -537,7 +541,50 @@ export const contentApprovalsRouter = router({
         .innerJoin(users, eq(contentComments.authorId, users.id))
         .where(eq(contentComments.contentApprovalId, input.contentApprovalId))
         .orderBy(contentComments.createdAt);
+      // Mark unread comments as read for the viewer's role
+      try {
+        if (isAdmin) {
+          await db.update(contentComments)
+            .set({ isReadByAdmin: true })
+            .where(and(
+              eq(contentComments.contentApprovalId, input.contentApprovalId),
+              eq(contentComments.isReadByAdmin, false),
+              ne(contentComments.authorRole, "admin"),
+            ));
+        } else {
+          await db.update(contentComments)
+            .set({ isReadByClient: true })
+            .where(and(
+              eq(contentComments.contentApprovalId, input.contentApprovalId),
+              eq(contentComments.isReadByClient, false),
+              ne(contentComments.authorRole, "client"),
+            ));
+        }
+      } catch (_) { /* non-critical */ }
       return rows;
+    }),
+
+  // Get unread comment counts per content item for the current user's role
+  unreadCommentCounts: protectedProcedure
+    .query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return {};
+      const isAdmin = (ADMIN_ROLES as readonly string[]).includes(ctx.user.role);
+      // Count unread comments per contentApprovalId for the current viewer
+      const rows = await db
+        .select({
+          contentApprovalId: contentComments.contentApprovalId,
+          unread: sql<number>`count(*)`,
+        })
+        .from(contentComments)
+        .where(
+          isAdmin
+            ? and(eq(contentComments.isReadByAdmin, false), ne(contentComments.authorRole, "admin"))
+            : and(eq(contentComments.isReadByClient, false), ne(contentComments.authorRole, "client"))
+        )
+        .groupBy(contentComments.contentApprovalId);
+      // Return as a map { [contentApprovalId]: count }
+      return Object.fromEntries(rows.map(r => [r.contentApprovalId, Number(r.unread)]));
     }),
 
   // Add a comment to a content item
@@ -545,6 +592,7 @@ export const contentApprovalsRouter = router({
     .input(z.object({
       contentApprovalId: z.number(),
       message: z.string().min(1).max(2000),
+      mentionedRole: z.enum(["admin", "client"]).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
@@ -560,24 +608,39 @@ export const contentApprovalsRouter = router({
       const isAdmin = (ADMIN_ROLES as readonly string[]).includes(ctx.user.role);
       const authorRole = isAdmin ? "admin" : "client";
 
+      // Detect @mention in message if not explicitly provided
+      let mentionedRole = input.mentionedRole ?? null;
+      if (!mentionedRole) {
+        if (/@admin/i.test(input.message)) mentionedRole = "admin";
+        else if (/@client/i.test(input.message)) mentionedRole = "client";
+      }
+
+      // When admin writes, mark as read by admin; when client writes, mark as read by client
       await db.insert(contentComments).values({
         contentApprovalId: input.contentApprovalId,
         agencyId: item.agencyId,
         authorId: ctx.user.id,
         authorRole,
         message: input.message,
+        mentionedRole: mentionedRole ?? undefined,
+        isReadByAdmin: isAdmin ? true : false,
+        isReadByClient: isAdmin ? false : true,
       });
 
-      // Notify the other party
+      // Notify the other party (or the mentioned role)
+      const notifyRole = mentionedRole ?? (isAdmin ? "client" : "admin");
+      const notifTitle = mentionedRole
+        ? `You were mentioned in a content comment`
+        : isAdmin ? "Admin replied to your content" : "Client left feedback";
       try {
         await db.insert(teamNotifications).values({
           userId: ctx.user.id,
           type: "content_comment",
-          title: isAdmin ? "Admin replied to your content" : "Client left feedback",
-          body: `New comment on "${item.title}": ${input.message.slice(0, 100)}${input.message.length > 100 ? "..." : ""}`,
-          priority: "normal",
-          actionUrl: "/content-approvals",
-          metadata: JSON.stringify({ contentApprovalId: input.contentApprovalId }),
+          title: notifTitle,
+          body: `${mentionedRole ? `@${notifyRole} ` : ""}New comment on "${item.title}": ${input.message.slice(0, 100)}${input.message.length > 100 ? "..." : ""}`,
+          priority: mentionedRole ? "high" : "normal",
+          actionUrl: isAdmin ? "/content-approvals" : "/my-content",
+          metadata: JSON.stringify({ contentApprovalId: input.contentApprovalId, mentionedRole }),
         });
       } catch (notifErr) {
         console.warn("[addComment] Notification failed:", notifErr);

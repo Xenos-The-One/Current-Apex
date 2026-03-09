@@ -227,3 +227,8 @@
 ## Round 21: Bell Badge, Feedback Thread
 - [x] Notification bell badge — red dot on bell icon in admin header for unread notifications (already implemented)
 - [x] Client feedback thread — multi-round threaded comments on content items with revision history
+
+## Round 22: Unread Badge, Digest Email, @Mentions
+- [x] Unread comment badge on content cards — red dot on cards with unread comments in Content Approvals and My Content
+- [x] Daily approval digest email — scheduled daily summary email to admins listing pending approvals and new comments
+- [x] @mention in comments — allow @admin or @client in comment thread to route and notify the right person

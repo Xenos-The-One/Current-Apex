@@ -1248,6 +1248,11 @@ export const contentComments = mysqlTable("content_comments", {
   authorId: int("author_id").notNull().references(() => users.id),
   authorRole: mysqlEnum("author_role", ["admin", "client"]).notNull(),
   message: text("message").notNull(),
+  // Track read status per role so each party knows when the other has replied
+  isReadByAdmin: boolean("is_read_by_admin").default(false).notNull(),
+  isReadByClient: boolean("is_read_by_client").default(false).notNull(),
+  // @mention support — notify a specific role
+  mentionedRole: mysqlEnum("mentioned_role", ["admin", "client"]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 export type ContentComment = typeof contentComments.$inferSelect;

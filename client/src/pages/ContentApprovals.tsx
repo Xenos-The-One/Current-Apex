@@ -29,6 +29,9 @@ export default function ContentApprovals() {
   const utils = trpc.useUtils();
   const { data: pendingApprovals, isLoading } = trpc.contentApprovals.listPending.useQuery({});
   const { data: allApprovals } = trpc.contentApprovals.list.useQuery({});
+  const { data: unreadCounts = {} } = trpc.contentApprovals.unreadCommentCounts.useQuery(undefined, {
+    refetchInterval: 30_000,
+  });
   const { data: onboardingStatus } = trpc.clientOnboarding.getStatus.useQuery(undefined, {
     retry: false,
     staleTime: 60_000,
@@ -320,7 +323,14 @@ export default function ContentApprovals() {
                                 <Badge variant="secondary">{approval.contentType}</Badge>
                                 {approval.platform && <Badge variant="secondary">{approval.platform}</Badge>}
                               </div>
-                              <h3 className="text-lg font-semibold mb-2">{approval.title}</h3>
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="text-lg font-semibold">{approval.title}</h3>
+                                {(unreadCounts as Record<number, number>)[approval.id] > 0 && (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5">
+                                    {(unreadCounts as Record<number, number>)[approval.id]} new
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-sm text-muted-foreground mb-2">
                                 For: {approval.approverName} • Created {new Date(approval.createdAt).toLocaleDateString()}
                               </p>
@@ -514,7 +524,10 @@ export default function ContentApprovals() {
                   </div>
                 )}
                 {/* Feedback Thread */}
-                <FeedbackThread contentApprovalId={selectedApproval.id} />
+                <FeedbackThread
+                  contentApprovalId={selectedApproval.id}
+                  unreadCount={(unreadCounts as Record<number, number>)[selectedApproval.id] ?? 0}
+                />
               </div>
               <DialogFooter>
                 {selectedApproval.status === "pending" && (

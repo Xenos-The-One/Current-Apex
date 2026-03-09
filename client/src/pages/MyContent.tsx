@@ -43,7 +43,7 @@ function getStatusBadge(status: string) {
 }
 
 // ─── Content Card ─────────────────────────────────────────────────────────────
-function ContentCard({ item, onFeedback }: { item: any; onFeedback: (id: number, currentFeedback: string) => void }) {
+function ContentCard({ item, onFeedback, unreadCount = 0 }: { item: any; onFeedback: (id: number, currentFeedback: string) => void; unreadCount?: number }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -61,7 +61,14 @@ function ContentCard({ item, onFeedback }: { item: any; onFeedback: (id: number,
               <Badge variant="outline" className="text-xs capitalize">{item.contentType?.replace("_", " ")}</Badge>
               {getStatusBadge(item.status)}
             </div>
-            <p className="text-sm font-semibold leading-snug">{item.title}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold leading-snug">{item.title}</p>
+              {unreadCount > 0 && (
+                <span className="inline-flex items-center rounded-full bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 shrink-0">
+                  {unreadCount} new
+                </span>
+              )}
+            </div>
           </div>
           <button
             onClick={() => setExpanded(e => !e)}
@@ -92,7 +99,7 @@ function ContentCard({ item, onFeedback }: { item: any; onFeedback: (id: number,
           )}
 
           {/* Threaded feedback — replaces the single Leave Feedback button */}
-          <FeedbackThread contentApprovalId={item.id} compact />
+          <FeedbackThread contentApprovalId={item.id} compact unreadCount={unreadCount} />
 
           <div className="flex items-center pt-1">
             <span className="text-xs text-muted-foreground ml-auto">
@@ -112,6 +119,9 @@ export default function MyContent() {
   // Data queries
   const { data: allContent, isLoading } = trpc.contentApprovals.list.useQuery({});
   const { data: contentCount } = trpc.clientOnboarding.getContentCount.useQuery();
+  const { data: unreadCounts = {} } = trpc.contentApprovals.unreadCommentCounts.useQuery(undefined, {
+    refetchInterval: 30_000,
+  });
 
   // Regenerate dialog
   const [showRegenDialog, setShowRegenDialog] = useState(false);
@@ -239,7 +249,7 @@ export default function MyContent() {
                   No content awaiting review.
                 </div>
               ) : pending.map((item: any) => (
-                <ContentCard key={item.id} item={item} onFeedback={openFeedback} />
+                <ContentCard key={item.id} item={item} onFeedback={openFeedback} unreadCount={(unreadCounts as Record<number, number>)[item.id] ?? 0} />
               ))}
             </TabsContent>
 
@@ -249,7 +259,7 @@ export default function MyContent() {
                   No approved content yet.
                 </div>
               ) : approved.map((item: any) => (
-                <ContentCard key={item.id} item={item} onFeedback={openFeedback} />
+                <ContentCard key={item.id} item={item} onFeedback={openFeedback} unreadCount={(unreadCounts as Record<number, number>)[item.id] ?? 0} />
               ))}
             </TabsContent>
 
@@ -259,7 +269,7 @@ export default function MyContent() {
                   No content needs revision.
                 </div>
               ) : rejected.map((item: any) => (
-                <ContentCard key={item.id} item={item} onFeedback={openFeedback} />
+                <ContentCard key={item.id} item={item} onFeedback={openFeedback} unreadCount={(unreadCounts as Record<number, number>)[item.id] ?? 0} />
               ))}
             </TabsContent>
 

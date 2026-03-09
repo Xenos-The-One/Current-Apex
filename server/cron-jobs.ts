@@ -23,6 +23,7 @@ import { pollHeyGenVideos } from './jobs/heygen-video-poller';
 import { processRefiDrip } from './refi-drip';
 import { buildWeeklyContentCalendar } from './agents/viral-topic-agent';
 import { processApprovedPackages, fireScheduledPosts } from './agents/social-posting-agent';
+import { sendDailyContentDigest } from './jobs/daily-content-digest';
 
 /**
  * Initialize all cron jobs
@@ -398,6 +399,15 @@ export function initializeCronJobs() {
       console.error('[Cron] Scheduled posts executor failed:', error);
     }
   });
+
+  // Daily Content Digest: Every day at 8 AM EST — sends pending approvals + unread comments summary to admin
+  cron.schedule('0 8 * * *', async () => {
+    try {
+      await sendDailyContentDigest();
+    } catch (error) {
+      console.error('[Cron] Daily content digest failed:', error);
+    }
+  }, { timezone: 'America/New_York' });
 
   console.log('[Cron] All cron jobs initialized successfully');
   console.log('[Cron] - Scheduled Vapi calls: DISABLED (Tim handles manually)');
