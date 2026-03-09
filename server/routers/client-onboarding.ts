@@ -182,6 +182,21 @@ Make every piece specific to their business. Never use generic filler content. R
 
 // ─── Router ───────────────────────────────────────────────────────────────────
 export const clientOnboardingRouter = router({
+  // Alias used by ClientWebsite page
+  getMyOnboarding: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) return null;
+    const [client] = await db.select().from(clients).where(eq(clients.userId, ctx.user.id));
+    if (!client) return null;
+    const seoClientRows = await db.select().from(seoClients).where(eq(seoClients.crmClientId, client.id));
+    const seoClient = seoClientRows[0] || null;
+    return {
+      websiteUrl: seoClient?.websiteUrl || (client as any).websiteUrl || null,
+      businessName: seoClient?.businessName || client.name || null,
+      businessWebsite: seoClient?.businessWebsite || null,
+    };
+  }),
+
   // Get current onboarding status for the logged-in client
   getStatus: protectedProcedure.query(async ({ ctx }) => {
     const db = await getDb();

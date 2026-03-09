@@ -345,7 +345,7 @@ export const publicFeaturesRouter = router({
         .toISOString().slice(0, 19).replace('T', ' ');
       const dailyVolume = await db
         .select({
-          date: sql<string>`DATE(${leads.createdAt})`,
+          date: sql<string>`DATE(MIN(${leads.createdAt}))`,
           count: count(),
         })
         .from(leads)
