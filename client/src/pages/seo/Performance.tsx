@@ -573,7 +573,7 @@ export default function Performance() {
                 </p>
                 <Button
                   variant="outline"
-                  onClick={() => setLocation(`/clients/${gscClient}`)}
+                  onClick={() => setLocation(`/seo/clients/${gscClient}`)}
                   className="gap-2"
                 >
                   <ExternalLink className="h-4 w-4" />

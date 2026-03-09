@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,11 +9,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
   FileText, Search, Calendar, Eye, CheckCircle, Clock, XCircle,
   Loader2, Send, Sparkles, RefreshCw, CalendarPlus, CheckSquare, LayoutGrid,
+  ArrowLeft,
 } from "lucide-react";
 import PortalLayout from "@/components/PortalLayout";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -22,11 +26,245 @@ import { FeedbackThread } from "@/components/FeedbackThread";
 
 type Tab = "my-content" | "approvals";
 
+// ─── Content Detail Sheet (inline drawer) ────────────────────────────────────
+function ContentDetailSheet({
+  contentId,
+  open,
+  onClose,
+}: {
+  contentId: number | null;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const { user } = useAuth();
+  const utils = trpc.useUtils();
+  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
+  const [showRevisionDialog, setShowRevisionDialog] = useState(false);
+  const [comment, setComment] = useState("");
+
+  const { data: content, isLoading, refetch } = trpc.seo.content.getById.useQuery(
+    { id: contentId ?? 0 },
+    { enabled: !!contentId && contentId > 0 && !!user && open }
+  );
+
+  const approveMutation = trpc.seo.approvals.approve.useMutation({
+    onSuccess: () => {
+      toast.success("Content approved successfully");
+      setShowApprovalDialog(false);
+      setComment("");
+      refetch();
+      utils.seo.content.listForPortal.invalidate();
+    },
+    onError: (e: any) => toast.error(e.message || "Failed to approve content"),
+  });
+
+  const requestRevisionMutation = trpc.seo.approvals.requestRevision.useMutation({
+    onSuccess: () => {
+      toast.success("Revision requested successfully");
+      setShowRevisionDialog(false);
+      setComment("");
+      refetch();
+      utils.seo.content.listForPortal.invalidate();
+    },
+    onError: (e: any) => toast.error(e.message || "Failed to request revision"),
+  });
+
+  const handleClose = () => {
+    setShowApprovalDialog(false);
+    setShowRevisionDialog(false);
+    setComment("");
+    onClose();
+  };
+
+  const canApprove = content?.status === "draft" || content?.status === "in_progress" || content?.status === "pending_approval";
+
+  const statusColor =
+    content?.status === "approved"
+      ? "bg-green-500/10 text-green-500 border-green-500/30"
+      : content?.status === "published"
+      ? "bg-blue-500/10 text-blue-500 border-blue-500/30"
+      : content?.status === "pending_approval"
+      ? "bg-orange-500/10 text-orange-500 border-orange-500/30"
+      : "bg-yellow-500/10 text-yellow-500 border-yellow-500/30";
+
+  return (
+    <>
+      <Sheet open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-2xl p-0 flex flex-col"
+        >
+          <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
+            <div className="flex items-start gap-3 pr-6">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0 mt-0.5"
+                onClick={handleClose}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex-1 min-w-0">
+                <SheetTitle className="text-lg leading-tight truncate">
+                  {isLoading ? "Loading..." : content?.title ?? "Content"}
+                </SheetTitle>
+                {content && (
+                  <SheetDescription className="mt-1 flex items-center gap-2 flex-wrap">
+                    <span>{content.topic}</span>
+                    <Badge className={statusColor}>
+                      {content.status.replace(/_/g, " ")}
+                    </Badge>
+                  </SheetDescription>
+                )}
+              </div>
+            </div>
+          </SheetHeader>
+
+          <ScrollArea className="flex-1 h-0">
+            <div className="px-6 py-4 space-y-6">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : !content ? (
+                <div className="text-center py-20 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-3 opacity-40" />
+                  <p>Content not found</p>
+                </div>
+              ) : (
+                <>
+                  {/* Content body */}
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Content</p>
+                    <div className="rounded-lg bg-muted/50 border p-4">
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed">{content.content}</p>
+                    </div>
+                  </div>
+
+                  {/* Meta grid */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="rounded-lg border p-3">
+                      <p className="text-xs text-muted-foreground mb-1">Created</p>
+                      <p className="text-sm font-medium">{new Date(content.createdAt).toLocaleDateString()}</p>
+                    </div>
+                    {content.scheduledPublishDate && (
+                      <div className="rounded-lg border p-3">
+                        <p className="text-xs text-muted-foreground mb-1">Scheduled</p>
+                        <p className="text-sm font-medium">{new Date(content.scheduledPublishDate).toLocaleDateString()}</p>
+                      </div>
+                    )}
+                    {content.wordCount && (
+                      <div className="rounded-lg border p-3">
+                        <p className="text-xs text-muted-foreground mb-1">Word Count</p>
+                        <p className="text-sm font-medium">{content.wordCount} words</p>
+                      </div>
+                    )}
+                    {content.aiModel && (
+                      <div className="rounded-lg border p-3">
+                        <p className="text-xs text-muted-foreground mb-1">AI Model</p>
+                        <p className="text-sm font-medium">{content.aiModel}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Approval actions */}
+                  {canApprove && (
+                    <div className="flex gap-3">
+                      <Button
+                        className="flex-1 bg-green-600 hover:bg-green-700"
+                        onClick={() => setShowApprovalDialog(true)}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Approve Content
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => setShowRevisionDialog(true)}
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Request Revision
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+
+      {/* Approve Dialog */}
+      <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Approve Content</DialogTitle>
+            <DialogDescription>Confirm that this content is ready to be published.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="approve-comment">Comment (Optional)</Label>
+            <Textarea
+              id="approve-comment"
+              placeholder="Add any comments or feedback..."
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowApprovalDialog(false); setComment(""); }}>Cancel</Button>
+            <Button
+              onClick={() => approveMutation.mutate({ contentId: contentId ?? 0 })}
+              disabled={approveMutation.isPending}
+            >
+              {approveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Approve
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Revision Dialog */}
+      <Dialog open={showRevisionDialog} onOpenChange={setShowRevisionDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Request Revision</DialogTitle>
+            <DialogDescription>Provide feedback on what needs to be changed.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="revision-comment">Feedback *</Label>
+            <Textarea
+              id="revision-comment"
+              placeholder="Please describe what changes are needed..."
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              rows={5}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowRevisionDialog(false); setComment(""); }}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={() => requestRevisionMutation.mutate({ contentId: contentId ?? 0, reason: comment })}
+              disabled={requestRevisionMutation.isPending || !comment.trim()}
+            >
+              {requestRevisionMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Request Revision
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 // ─── My Content sub-tab ───────────────────────────────────────────────────────
 function MyContentTab() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedContentId, setSelectedContentId] = useState<number | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const { data: contentList, isLoading } = trpc.seo.content.listForPortal.useQuery(
     undefined,
@@ -63,8 +301,20 @@ function MyContentTab() {
     }
   };
 
+  const handleOpenContent = (id: number) => {
+    setSelectedContentId(id);
+    setSheetOpen(true);
+  };
+
   return (
     <div>
+      {/* Inline content detail sheet */}
+      <ContentDetailSheet
+        contentId={selectedContentId}
+        open={sheetOpen}
+        onClose={() => { setSheetOpen(false); setSelectedContentId(null); }}
+      />
+
       {/* Filters */}
       <Card className="p-6 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
@@ -109,40 +359,42 @@ function MyContentTab() {
       ) : (
         <div className="grid gap-4">
           {filteredContent.map((item: any) => (
-            <Link key={item.id} href={`/seo/portal/content/${item.id}`}>
-              <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      {getStatusIcon(item.status)}
-                      <h3 className="text-lg font-semibold">{item.title}</h3>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{item.topic}</p>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {new Date(item.createdAt).toLocaleDateString()}
-                      </div>
-                      {item.scheduledPublishDate && (
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          Scheduled: {new Date(item.scheduledPublishDate).toLocaleDateString()}
-                        </div>
-                      )}
-                      {item.wordCount && <span>{item.wordCount} words</span>}
-                    </div>
+            <Card
+              key={item.id}
+              className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => handleOpenContent(item.id)}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    {getStatusIcon(item.status)}
+                    <h3 className="text-lg font-semibold">{item.title}</h3>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <Badge className={getStatusColor(item.status)}>
-                      {item.status.replace("_", " ")}
-                    </Badge>
-                    {item.aiModel && (
-                      <span className="text-xs text-muted-foreground">{item.aiModel}</span>
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{item.topic}</p>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      {new Date(item.createdAt).toLocaleDateString()}
+                    </div>
+                    {item.scheduledPublishDate && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        Scheduled: {new Date(item.scheduledPublishDate).toLocaleDateString()}
+                      </div>
                     )}
+                    {item.wordCount && <span>{item.wordCount} words</span>}
                   </div>
                 </div>
-              </Card>
-            </Link>
+                <div className="flex flex-col items-end gap-2">
+                  <Badge className={getStatusColor(item.status)}>
+                    {item.status.replace("_", " ")}
+                  </Badge>
+                  {item.aiModel && (
+                    <span className="text-xs text-muted-foreground">{item.aiModel}</span>
+                  )}
+                </div>
+              </div>
+            </Card>
           ))}
         </div>
       )}

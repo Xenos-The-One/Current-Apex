@@ -293,3 +293,9 @@
 - [x] Browser console clean — no ERROR-level entries in latest session
 - [x] All 78 vitest tests passing
 - [ ] Note: Twilio returns 401 — credentials may need to be re-verified by user
+
+## Round 30: Bug Fixes
+
+- [x] Fix Clients page 404 in AI SEO portal (clicking Clients nav item shows 404) — fixed /clients/:id → /seo/clients/:id
+- [x] Integrate AI SEO content generation inline in Apex Content tab — My Content items now open in a right-side Sheet drawer instead of navigating to a separate page
+- [x] Fix nested anchor tags in PortalLayout nav (Link wrapping a tags) — removed inner a elements

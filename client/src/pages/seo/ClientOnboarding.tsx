@@ -138,7 +138,7 @@ export default function ClientOnboarding() {
         reportingFrequency: reportingFrequency || undefined,
       });
       toast.success("Client created successfully!");
-      setLocation(`/clients/${result.id}`);
+      setLocation(`/seo/clients/${result.id}`);
     } catch {
       toast.error("Failed to create client");
     }

@@ -96,30 +96,30 @@ export default function PortalLayout({ children, activePath }: PortalLayoutProps
               {NAV_ITEMS.map(({ label, path, icon: Icon }) => {
                 const isActive = activePath === path;
                 return (
-                  <Link key={path} href={path}>
-                    <a
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
-                      style={
-                        isActive
-                          ? { color: "#00FFFF", backgroundColor: "rgba(0,255,255,0.1)" }
-                          : { color: "rgba(255,255,255,0.55)" }
+                  <Link
+                    key={path}
+                    href={path}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+                    style={
+                      isActive
+                        ? { color: "#00FFFF", backgroundColor: "rgba(0,255,255,0.1)" }
+                        : { color: "rgba(255,255,255,0.55)" }
+                    }
+                    onMouseEnter={(e) => {
+                      if (!isActive) {
+                        (e.currentTarget as HTMLElement).style.color = "rgba(0,255,255,0.8)";
+                        (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(0,255,255,0.06)";
                       }
-                      onMouseEnter={(e) => {
-                        if (!isActive) {
-                          (e.currentTarget as HTMLElement).style.color = "rgba(0,255,255,0.8)";
-                          (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(0,255,255,0.06)";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isActive) {
-                          (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.55)";
-                          (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
-                        }
-                      }}
-                    >
-                      <Icon className="h-3.5 w-3.5" />
-                      {label}
-                    </a>
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) {
+                        (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.55)";
+                        (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
+                      }
+                    }}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {label}
                   </Link>
                 );
               })}
@@ -191,19 +191,19 @@ export default function PortalLayout({ children, activePath }: PortalLayoutProps
               {NAV_ITEMS.map(({ label, path, icon: Icon }) => {
                 const isActive = activePath === path;
                 return (
-                  <Link key={path} href={path}>
-                    <a
-                      className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors"
-                      style={
-                        isActive
-                          ? { color: "#00FFFF", backgroundColor: "rgba(0,255,255,0.1)" }
-                          : { color: "rgba(255,255,255,0.65)" }
-                      }
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Icon className="h-4 w-4 shrink-0" />
-                      {label}
-                    </a>
+                  <Link
+                    key={path}
+                    href={path}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors"
+                    style={
+                      isActive
+                        ? { color: "#00FFFF", backgroundColor: "rgba(0,255,255,0.1)" }
+                        : { color: "rgba(255,255,255,0.65)" }
+                    }
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    {label}
                   </Link>
                 );
               })}

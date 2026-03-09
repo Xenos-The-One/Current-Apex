@@ -609,7 +609,7 @@ export default function Clients() {
                     <tr
                       key={client.id}
                       className={`border-b border-border/50 hover:bg-accent/30 cursor-pointer transition-colors ${isSelected ? "bg-primary/5" : idx % 2 === 0 ? "" : "bg-muted/10"}`}
-                      onClick={() => setLocation(`/clients/${client.id}`)}
+                      onClick={() => setLocation(`/seo/clients/${client.id}`)}
                     >
                       {/* Checkbox */}
                       <td className="px-4 py-3" onClick={e => { e.stopPropagation(); toggleSelect(client.id); }}>
