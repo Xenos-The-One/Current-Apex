@@ -345,3 +345,20 @@
 
 ### Phase 8 — Partner Portal Rebuild
 - [x] Partner Portal already exists at /partner-portal as a dedicated page (token-based access for partners)
+
+## Round 33: GHL-Style Redesign + Follow-ups + Test Clients
+
+- [ ] Add Suggested Follow-ups AI tab to Follow-ups page
+- [ ] Redesign client-facing layout: light theme, GHL-style sidebar + top nav bar
+- [ ] Convert Account Setup from separate wizard page to inline settings panel within CRM
+- [ ] Seed 5 realistic test client accounts with leads and appointments
+
+## Round 33: GHL-Style Conversations + Test Data
+- [x] Seed 5 realistic test client accounts (Sarah Williams, Emily Thompson, Lisa Garcia, Kevin Wilson, Tanya Johnson) with leads and appointments
+- [x] Seed 8 test conversations with messages (SMS + email channels)
+- [x] Rebuild Conversations page with GHL-style two-panel inbox (smart lists, thread view, send messages)
+- [x] New conversations backend router (list, getMessages, sendMessage, markRead, markUnread, archive, getStats)
+- [x] Add Conversations to admin sidebar under Activity section
+- [ ] Add Suggested Follow-ups AI tab to Follow-ups page (suggested follow-up actions with AI-generated messages)
+- [ ] Conversations unread badge in sidebar nav item
+- [ ] Account Setup inline panel (GHL-style, no separate page redirect)

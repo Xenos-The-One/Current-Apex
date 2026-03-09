@@ -1,0 +1,85 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'clients' ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'clients' ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "agency_id"
+    },
+    {
+      "COLUMN_NAME": "user_id"
+    },
+    {
+      "COLUMN_NAME": "name"
+    },
+    {
+      "COLUMN_NAME": "email"
+    },
+    {
+      "COLUMN_NAME": "phone"
+    },
+    {
+      "COLUMN_NAME": "subscription_tier"
+    },
+    {
+      "COLUMN_NAME": "subscription_status"
+    },
+    {
+      "COLUMN_NAME": "stripe_customer_id"
+    },
+    {
+      "COLUMN_NAME": "stripe_subscription_id"
+    },
+    {
+      "COLUMN_NAME": "trial_start_date"
+    },
+    {
+      "COLUMN_NAME": "trial_end_date"
+    },
+    {
+      "COLUMN_NAME": "billing_start_date"
+    },
+    {
+      "COLUMN_NAME": "access_mode"
+    },
+    {
+      "COLUMN_NAME": "lead_count"
+    },
+    {
+      "COLUMN_NAME": "booking_slug"
+    },
+    {
+      "COLUMN_NAME": "booking_title"
+    },
+    {
+      "COLUMN_NAME": "booking_description"
+    },
+    {
+      "COLUMN_NAME": "booking_active"
+    },
+    {
+      "COLUMN_NAME": "vapi_calls_enabled"
+    },
+    {
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "COLUMN_NAME": "subscription_plan"
+    },
+    {
+      "COLUMN_NAME": "is_active"
+    },
+    {
+      "COLUMN_NAME": "onboarding_completed"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\nagency_id\nuser_id\nname\nemail\nphone\nsubscription_tier\nsubscription_status\nstripe_customer_id\nstripe_subscription_id\ntrial_start_date\ntrial_end_date\nbilling_start_date\naccess_mode\nlead_count\nbooking_slug\nbooking_title\nbooking_description\nbooking_active\nvapi_calls_enabled\ncreatedAt\nupdatedAt\nsubscription_plan\nis_active\nonboarding_completed\n",
+  "stderr": "",
+  "execution_time_ms": 62
+}

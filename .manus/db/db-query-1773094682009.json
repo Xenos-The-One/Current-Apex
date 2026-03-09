@@ -1,0 +1,210 @@
+{
+  "query": "DESCRIBE clients;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute DESCRIBE clients;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "agency_id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "user_id",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "name",
+      "Type": "varchar(255)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "email",
+      "Type": "varchar(320)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "",
+      "Extra": ""
+    },
+    {
+      "Field": "phone",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "subscription_tier",
+      "Type": "enum('starter','pro','enterprise','done_for_you')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "starter",
+      "Extra": ""
+    },
+    {
+      "Field": "subscription_status",
+      "Type": "enum('trial','active','past_due','canceled','paused')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "trial",
+      "Extra": ""
+    },
+    {
+      "Field": "stripe_customer_id",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "stripe_subscription_id",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "trial_start_date",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "trial_end_date",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "billing_start_date",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "access_mode",
+      "Type": "enum('limited','full','read_only')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "limited",
+      "Extra": ""
+    },
+    {
+      "Field": "lead_count",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "booking_slug",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "booking_title",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "booking_description",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "booking_active",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "vapi_calls_enabled",
+      "Type": "tinyint(1)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "createdAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "updatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    },
+    {
+      "Field": "subscription_plan",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "is_active",
+      "Type": "tinyint(1)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "onboarding_completed",
+      "Type": "tinyint(1)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nagency_id\tint\tNO\t\tNULL\t\nuser_id\tint\tYES\t\tNULL\t\nname\tvarchar(255)\tNO\t\tNULL\t\nemail\tvarchar(320)\tNO\t\t\t\nphone\tvarchar(50)\tYES\t\tNULL\t\nsubscription_tier\tenum('starter','pro','enterprise','done_for_you')\tNO\t\tstarter\t\nsubscription_status\tenum('trial','active','past_due','canceled','paused')\tNO\t\ttrial\t\nstripe_customer_id\tvarchar(255)\tYES\t\tNULL\t\nstripe_subscription_id\tvarchar(255)\tYES\t\tNULL\t\ntrial_start_date\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\ntrial_end_date\ttimestamp\tYES\t\tNULL\t\nbilling_start_date\ttimestamp\tYES\t\tNULL\t\naccess_mode\tenum('limited','full','read_only')\tNO\t\tlimited\t\nlead_count\tint\tNO\t\t0\t\nbooking_slug\tvarchar(100)\tYES\t\tNULL\t\nbooking_title\tvarchar(255)\tYES\t\tNULL\t\nbooking_description\ttext\tYES\t\tNULL\t\nbooking_active\ttinyint(1)\tYES\t\t1\t\nvapi_calls_enabled\ttinyint(1)\tNO\t\t1\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\nsubscription_plan\tvarchar(100)\tYES\t\tNULL\t\nis_active\ttinyint(1)\tNO\t\t1\t\nonboarding_completed\ttinyint(1)\tNO\t\t0\t\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

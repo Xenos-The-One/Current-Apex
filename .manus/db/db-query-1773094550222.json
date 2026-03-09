@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, name FROM agencies; SELECT id, name, email FROM clients LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, name FROM agencies; SELECT id, name, email FROM clients LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Kyle Realty Group"
+    }
+  ],
+  "messages": [
+    "id\tname\temail",
+    "1\tKyle Thompson\tkyle@kylerealty.com"
+  ],
+  "stdout": "id\tname\n1\tKyle Realty Group\nid\tname\temail\n1\tKyle Thompson\tkyle@kylerealty.com\n",
+  "stderr": "",
+  "execution_time_ms": 68
+}

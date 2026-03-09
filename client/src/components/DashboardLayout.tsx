@@ -99,15 +99,15 @@ function ClientOnboardingBanner({ setLocation }: { setLocation: (path: string) =
   if (!onboardingStatus || onboardingStatus.completed) return null;
 
   return (
-    <div className="mx-2 mt-2 mb-1 rounded-lg bg-cyan-500/15 border border-cyan-400/30 p-2.5">
+    <div className="mx-2 mt-2 mb-1 rounded-lg bg-amber-50 border border-amber-200 p-2.5">
       <div className="flex items-start gap-2">
-        <AlertCircle className="h-3.5 w-3.5 text-cyan-300 mt-0.5 shrink-0" />
+        <AlertCircle className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-semibold text-cyan-200 leading-tight">Setup Incomplete</p>
-          <p className="text-[10px] text-cyan-300/70 mt-0.5 leading-tight">Complete your business profile to unlock content generation.</p>
+          <p className="text-[11px] font-semibold text-amber-800 leading-tight">Setup Incomplete</p>
+          <p className="text-[10px] text-amber-600 mt-0.5 leading-tight">Complete your business profile to unlock content generation.</p>
           <button
             onClick={() => setLocation("/account-setup")}
-            className="mt-1.5 text-[10px] font-semibold text-cyan-300 hover:text-cyan-100 underline underline-offset-2 transition-colors"
+            className="mt-1.5 text-[10px] font-semibold text-amber-700 hover:text-amber-900 underline underline-offset-2 transition-colors"
           >
             Complete Setup →
           </button>
@@ -149,6 +149,7 @@ const adminMenuSections: MenuSection[] = [
     items: [
       // Single entry — tabs: Appointments | Call Review | Follow-Ups | Birthdays
       { icon: CalendarClock, label: "Activity", path: "/activity" },
+      { icon: MessageSquare, label: "Conversations", path: "/conversations" },
     ],
   },
   {
@@ -303,8 +304,8 @@ function PipelineNavItem({
         className={`h-7 transition-all font-normal text-[13px] ${
           isClient
             ? isActive
-              ? "bg-white/15 text-white font-medium"
-              : "text-white/70 hover:text-white hover:bg-white/10"
+              ? "bg-blue-50 text-blue-700 font-medium"
+              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
             : ""
         }`}
         onClick={() => setLocation("/contacts")}
@@ -313,8 +314,8 @@ function PipelineNavItem({
           className={`h-4 w-4 ${
             isClient
               ? isActive
-                ? "text-cyan-300"
-                : "text-white/60"
+                ? "text-blue-600"
+                : "text-gray-400"
               : isActive
               ? "text-primary"
               : ""
@@ -398,8 +399,8 @@ function GroupedSidebarNav({
                 className={`w-full flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest transition-colors select-none mt-1 ${
                   isClient
                     ? sectionActive
-                      ? "text-cyan-300/80"
-                      : "text-white/25 hover:text-white/50"
+                      ? "text-blue-600"
+                      : "text-gray-400 hover:text-gray-600"
                     : sectionActive
                     ? "text-primary/80"
                     : "text-muted-foreground/45 hover:text-muted-foreground/70"
@@ -432,8 +433,8 @@ function GroupedSidebarNav({
                       className={`h-7 transition-all font-normal text-[13px] ${
                         isClient
                           ? isActive
-                            ? "bg-white/12 text-white font-medium"
-                            : "text-white/60 hover:text-white hover:bg-white/8"
+                            ? "bg-blue-50 text-blue-700 font-medium"
+                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                           : isActive
                           ? "bg-primary/8 text-primary font-medium"
                           : "text-foreground/70 hover:text-foreground hover:bg-accent/50"
@@ -444,8 +445,8 @@ function GroupedSidebarNav({
                           className={`h-3.5 w-3.5 ${
                             isClient
                               ? isActive
-                                ? "text-cyan-300"
-                                : "text-white/45"
+                                ? "text-blue-600"
+                                : "text-gray-400"
                               : isActive
                               ? "text-primary"
                               : "text-muted-foreground/70"
@@ -464,7 +465,7 @@ function GroupedSidebarNav({
             {!isCollapsed && (
               <div
                 className={`mx-2 mt-1.5 mb-0 h-px ${
-                  isClient ? "bg-white/6" : "bg-border/40"
+                  isClient ? "bg-gray-100" : "bg-border/40"
                 }`}
               />
             )}
@@ -986,7 +987,7 @@ function DashboardLayoutContent({
                     alt="Sterling Marketing"
                     className="h-5 w-5 object-contain"
                   />
-                  <span className={`text-sm font-bold tracking-tight truncate ${isClient ? "text-white" : ""}`}>
+                  <span className={`text-sm font-bold tracking-tight truncate ${isClient ? "text-gray-900" : ""}`}>
                     Sterling Marketing
                   </span>
                 </div>
@@ -1011,14 +1012,14 @@ function DashboardLayoutContent({
                 <button
                   className={`flex items-center gap-2 rounded-md px-1.5 py-1 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                     isClient
-                      ? "hover:bg-white/10"
+                      ? "hover:bg-gray-100"
                       : "hover:bg-accent/50"
                   }`}
                 >
                   <Avatar className="h-7 w-7 border shrink-0">
                     <AvatarFallback
                       className={`text-[11px] font-medium ${
-                        isClient ? "bg-cyan-500/20 text-cyan-200" : ""
+                        isClient ? "bg-blue-100 text-blue-700" : ""
                       }`}
                     >
                       {user?.name?.charAt(0).toUpperCase()}
@@ -1027,14 +1028,14 @@ function DashboardLayoutContent({
                   <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
                     <p
                       className={`text-[13px] font-medium truncate leading-none ${
-                        isClient ? "text-white" : ""
+                        isClient ? "text-gray-900" : ""
                       }`}
                     >
                       {user?.name || "-"}
                     </p>
                     <p
                       className={`text-[11px] truncate mt-0.5 ${
-                        isClient ? "text-white/50" : "text-muted-foreground"
+                        isClient ? "text-gray-500" : "text-muted-foreground"
                       }`}
                     >
                       {user?.email || "-"}

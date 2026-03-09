@@ -1,0 +1,19 @@
+{
+  "query": "SELECT id, name FROM agencies LIMIT 5; SELECT id, name, email, role FROM users LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, name FROM agencies LIMIT 5; SELECT id, name, email, role FROM users LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Kyle Realty Group"
+    }
+  ],
+  "messages": [
+    "id\tname\temail\trole",
+    "1\tThailer Somerville\tthailer@raindropmarketingcom.com\tadmin",
+    "420001\tTariq Haskins\ttariqhaskins@indigolabsai.com\tadmin",
+    "450215\tjohn Moreno\tjohnmoreno189@gmail.com\tadmin"
+  ],
+  "stdout": "id\tname\n1\tKyle Realty Group\nid\tname\temail\trole\n1\tThailer Somerville\tthailer@raindropmarketingcom.com\tadmin\n420001\tTariq Haskins\ttariqhaskins@indigolabsai.com\tadmin\n450215\tjohn Moreno\tjohnmoreno189@gmail.com\tadmin\n",
+  "stderr": "",
+  "execution_time_ms": 109
+}
