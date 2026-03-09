@@ -2,7 +2,7 @@ import { z } from "zod";
 import { router, protectedProcedure } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { getDb, getClientByUserId, createSocialMediaPost } from "../db";
-import { contentApprovals, clients, users, teamNotifications } from "../../drizzle/schema";
+import { contentApprovals, clients, users, teamNotifications, contentComments } from "../../drizzle/schema";
 import { seoClients } from "../../drizzle/seo-schema";
 import { sendSMS } from "../twilio";
 import { sendEmail } from "../email-service";
@@ -514,6 +514,75 @@ export const contentApprovalsRouter = router({
       } catch (taskErr) {
         console.warn("[adminReject] Follow-up reminder creation failed:", taskErr);
       }
+      return { success: true };
+    }),
+
+  // ─── Feedback Thread ──────────────────────────────────────────────────────
+
+  // List all comments for a content item
+  listComments: protectedProcedure
+    .input(z.object({ contentApprovalId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      const rows = await db
+        .select({
+          id: contentComments.id,
+          message: contentComments.message,
+          authorRole: contentComments.authorRole,
+          createdAt: contentComments.createdAt,
+          authorName: users.name,
+        })
+        .from(contentComments)
+        .innerJoin(users, eq(contentComments.authorId, users.id))
+        .where(eq(contentComments.contentApprovalId, input.contentApprovalId))
+        .orderBy(contentComments.createdAt);
+      return rows;
+    }),
+
+  // Add a comment to a content item
+  addComment: protectedProcedure
+    .input(z.object({
+      contentApprovalId: z.number(),
+      message: z.string().min(1).max(2000),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const [item] = await db
+        .select({ id: contentApprovals.id, agencyId: contentApprovals.agencyId, title: contentApprovals.title })
+        .from(contentApprovals)
+        .where(eq(contentApprovals.id, input.contentApprovalId))
+        .limit(1);
+      if (!item) throw new TRPCError({ code: "NOT_FOUND", message: "Content item not found" });
+
+      const isAdmin = (ADMIN_ROLES as readonly string[]).includes(ctx.user.role);
+      const authorRole = isAdmin ? "admin" : "client";
+
+      await db.insert(contentComments).values({
+        contentApprovalId: input.contentApprovalId,
+        agencyId: item.agencyId,
+        authorId: ctx.user.id,
+        authorRole,
+        message: input.message,
+      });
+
+      // Notify the other party
+      try {
+        await db.insert(teamNotifications).values({
+          userId: ctx.user.id,
+          type: "content_comment",
+          title: isAdmin ? "Admin replied to your content" : "Client left feedback",
+          body: `New comment on "${item.title}": ${input.message.slice(0, 100)}${input.message.length > 100 ? "..." : ""}`,
+          priority: "normal",
+          actionUrl: "/content-approvals",
+          metadata: JSON.stringify({ contentApprovalId: input.contentApprovalId }),
+        });
+      } catch (notifErr) {
+        console.warn("[addComment] Notification failed:", notifErr);
+      }
+
       return { success: true };
     }),
 });

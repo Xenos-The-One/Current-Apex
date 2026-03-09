@@ -639,7 +639,8 @@ export const teamNotifications = mysqlTable("team_notifications", {
     "appointment_booked",
     "vapi_call",
     "lead_status_change",
-    "facebook_lead"
+    "facebook_lead",
+    "content_comment"
   ]).notNull(),
   title: varchar("title", { length: 500 }).notNull(),
   body: text("body").notNull(),
@@ -1236,3 +1237,18 @@ export const marketAnalytics = mysqlTable("market_analytics", {
 });
 export type MarketAnalytic = typeof marketAnalytics.$inferSelect;
 export type InsertMarketAnalytic = typeof marketAnalytics.$inferInsert;
+
+// ==========================================
+// Content Comments - Threaded feedback on content approvals
+// ==========================================
+export const contentComments = mysqlTable("content_comments", {
+  id: int("id").autoincrement().primaryKey(),
+  contentApprovalId: int("content_approval_id").notNull().references(() => contentApprovals.id),
+  agencyId: int("agency_id").notNull().references(() => agencies.id),
+  authorId: int("author_id").notNull().references(() => users.id),
+  authorRole: mysqlEnum("author_role", ["admin", "client"]).notNull(),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type ContentComment = typeof contentComments.$inferSelect;
+export type InsertContentComment = typeof contentComments.$inferInsert;

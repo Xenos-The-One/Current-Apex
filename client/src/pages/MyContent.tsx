@@ -9,10 +9,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
-  FileText, RefreshCw, MessageSquare, CheckCircle2, XCircle,
+  FileText, RefreshCw, CheckCircle2, XCircle,
   Clock, Facebook, Instagram, Linkedin, Globe, Mail, Loader2,
   ChevronDown, ChevronUp, Sparkles,
 } from "lucide-react";
+import { FeedbackThread } from "@/components/FeedbackThread";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function getPlatformIcon(platform: string | null) {
@@ -90,16 +91,10 @@ function ContentCard({ item, onFeedback }: { item: any; onFeedback: (id: number,
             </div>
           )}
 
-          <div className="flex items-center gap-2 pt-1">
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 px-3 text-xs gap-1.5"
-              onClick={() => onFeedback(item.id, item.feedback || "")}
-            >
-              <MessageSquare className="w-3 h-3" />
-              Leave Feedback
-            </Button>
+          {/* Threaded feedback — replaces the single Leave Feedback button */}
+          <FeedbackThread contentApprovalId={item.id} compact />
+
+          <div className="flex items-center pt-1">
             <span className="text-xs text-muted-foreground ml-auto">
               {new Date(item.createdAt).toLocaleDateString()}
             </span>

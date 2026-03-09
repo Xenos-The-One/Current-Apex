@@ -223,3 +223,7 @@
 
 ## Round 20: Bug Fixes
 - [x] Fix content_approvals query error on Admin Dashboard — missing column causing listPending to fail
+
+## Round 21: Bell Badge, Feedback Thread
+- [x] Notification bell badge — red dot on bell icon in admin header for unread notifications (already implemented)
+- [x] Client feedback thread — multi-round threaded comments on content items with revision history

@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Loader2, CheckCircle, XCircle, Clock, Send, Eye, Sparkles, RefreshCw, CalendarPlus, CheckSquare } from "lucide-react";
+import { FeedbackThread } from "@/components/FeedbackThread";
 import { useLocation } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
 
@@ -512,6 +513,8 @@ export default function ContentApprovals() {
                     </div>
                   </div>
                 )}
+                {/* Feedback Thread */}
+                <FeedbackThread contentApprovalId={selectedApproval.id} />
               </div>
               <DialogFooter>
                 {selectedApproval.status === "pending" && (
