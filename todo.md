@@ -299,3 +299,8 @@
 - [x] Fix Clients page 404 in AI SEO portal (clicking Clients nav item shows 404) — fixed /clients/:id → /seo/clients/:id
 - [x] Integrate AI SEO content generation inline in Apex Content tab — My Content items now open in a right-side Sheet drawer instead of navigating to a separate page
 - [x] Fix nested anchor tags in PortalLayout nav (Link wrapping a tags) — removed inner a elements
+
+## Round 31: Admin Promotion + Apex Content CRM Integration
+
+- [x] Promote johnmoreno189@gmail.com to admin role in database
+- [x] Move Apex Content (Approvals + My Content tabs) into main CRM layout — new /apex-content route uses DashboardLayout like Social Media; all sidebar/dashboard links updated

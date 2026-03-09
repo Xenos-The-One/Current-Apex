@@ -401,7 +401,7 @@ export default function ClientDashboard() {
     actionItems.push({
       icon: <FileText className="h-4 w-4 text-blue-500" />,
       label: `${stats.pendingApprovalsCount} content item${stats.pendingApprovalsCount > 1 ? "s" : ""} awaiting your approval`,
-      href: "/seo/portal/approvals",
+      href: "/apex-content",
       priority: "medium" as const,
     });
   }
@@ -779,7 +779,7 @@ export default function ClientDashboard() {
                       <Sparkles className="h-4 w-4 text-cyan-500" />
                       AI Content
                     </CardTitle>
-                    <Link href="/seo/portal/apex-content">
+                    <Link href="/apex-content">
                       <Button variant="ghost" size="sm" className="gap-1 text-xs h-7">
                         Open <ExternalLink className="h-3 w-3" />
                       </Button>

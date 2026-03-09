@@ -225,7 +225,7 @@ const clientMenuSections: MenuSection[] = [
     id: "grow", label: "Grow", icon: TrendingUp,
     items: [
       { icon: TrendingUp, label: "Reports", path: "/reports" },
-      { icon: CheckSquare, label: "Apex Content", path: "/seo/portal/apex-content" },
+      { icon: CheckSquare, label: "Apex Content", path: "/apex-content" },
       { icon: Share2, label: "Social Media", path: "/social" },
       { icon: Sparkles, label: "Follow-Ups", path: "/seo/portal/follow-ups" },
       { icon: Settings, label: "Settings", path: "/account" },
@@ -456,7 +456,7 @@ function GroupedSidebarNav({
                           }`}
                         />
                         {item.path === "/notifications" && <NotificationBadge />}
-                        {item.path === "/seo/portal/apex-content" && <ApprovalBadge />}
+                        {item.path === "/apex-content" && <ApprovalBadge />}
                       </div>
                       <span>{item.label}</span>
                     </SidebarMenuButton>

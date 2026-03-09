@@ -19,6 +19,7 @@ import LeadDetail from "./pages/LeadDetail";
 import NewLead from "./pages/NewLead";
 import LeadImport from "./pages/LeadImport";
 import SocialMedia from "./pages/SocialMedia";
+import ApexContent from "./pages/ApexContent";
 import NewSocialPost from "./pages/NewSocialPost";
 import AIScriptGenerator from "./pages/AIScriptGenerator";
 import EmailCampaigns from "./pages/EmailCampaigns";
@@ -122,6 +123,7 @@ function Router() {
       <Route path="/marketing/ai-scripts" component={MarketingHub} />
       <Route path="/marketing/templates" component={MarketingHub} />
       {/* ── Standalone sidebar pages ── */}
+      <Route path="/apex-content" component={ApexContent} />
       <Route path="/social" component={SocialMedia} />
       <Route path="/social/new" component={NewSocialPost} />
       <Route path="/automations" component={WorkflowAutomations} />
