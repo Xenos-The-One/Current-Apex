@@ -421,7 +421,7 @@ export const appointments = mysqlTable("appointments", {
   // Assignment
   assignedTo: mysqlEnum("assigned_to", ["loan_officer", "loa"]).default("loan_officer").notNull(),
   // Status tracking
-  status: mysqlEnum("status", ["scheduled", "confirmed", "completed", "cancelled", "no_show"]).default("scheduled").notNull(),
+  status: mysqlEnum("status", ["scheduled", "confirmed", "completed", "cancelled", "no_show", "no_answer", "busy"]).default("scheduled").notNull(),
   reminderSent: boolean("reminder_sent").default(false),
   reminderSent24h: boolean("reminder_sent_24h").default(false),
   reminderSent2h: boolean("reminder_sent_2h").default(false),

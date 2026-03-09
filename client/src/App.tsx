@@ -73,6 +73,9 @@ import PartnerPortal from "./pages/PartnerPortal";
 import AdvancedReports from "./pages/AdvancedReports";
 import ActivateAccount from "./pages/ActivateAccount";
 import Launchpad from "./pages/Launchpad";
+import ClientCalendar from "./pages/ClientCalendar";
+import ClientWebsite from "./pages/ClientWebsite";
+import PaymentsPage from "./pages/PaymentsPage";
 // OnboardingSnapshot removed — /onboarding-snapshot now redirects to /admin
 import ContactsHub from "./pages/ContactsHub";
 import ActivityHub from "./pages/ActivityHub";
@@ -197,12 +200,15 @@ function Router() {
       <Route path="/conversations" component={Conversations} />
       <Route path="/workflows/:id/builder" component={WorkflowBuilder} />
       <Route path="/activate-account" component={ActivateAccount} />
-      <Route path="/launchpad" component={Launchpad} />
+      <Route path="/launchpad" component={() => { if (typeof window !== 'undefined') window.location.replace('/account-setup'); return null; }} />
       <Route path="/client-onboarding" component={ClientOnboarding} />
       <Route path="/account-setup" component={ClientOnboarding} />
       <Route path="/onboarding-snapshot" component={() => { if (typeof window !== 'undefined') window.location.replace('/admin'); return null; }} />
       <Route path="/book/:slug" component={PublicBooking} />
       <Route path="/partner-portal" component={PartnerPortal} />
+      <Route path="/calendar" component={ClientCalendar} />
+      <Route path="/website" component={ClientWebsite} />
+      <Route path="/payments" component={PaymentsPage} />
       {/* ── Portal routes: registered BEFORE /seo/:rest* to avoid SeoLayout wrapping ── */}
       <Route path="/seo/portal/login"><Suspense fallback={<PortalFallback />}><PortalLogin /></Suspense></Route>
       <Route path="/seo/portal/content/:id"><Suspense fallback={<PortalFallback />}><PortalContentDetail /></Suspense></Route>

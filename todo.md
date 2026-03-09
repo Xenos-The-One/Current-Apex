@@ -304,3 +304,44 @@
 
 - [x] Promote johnmoreno189@gmail.com to admin role in database
 - [x] Move Apex Content (Approvals + My Content tabs) into main CRM layout — new /apex-content route uses DashboardLayout like Social Media; all sidebar/dashboard links updated
+
+## Round 32: Owner Meeting Changes (March 9)
+
+### Phase 1 — Quick Wins
+- [x] Remove Automations from client sidebar (DashboardLayout clientMenuSections)
+- [x] Merge Launchpad into Account Setup — /launchpad now redirects to /account-setup
+- [x] Instagram, Facebook, Website URL fields already exist in Account Setup Step 3
+- [x] Fix "Connect Your Tools" link to point to Account Setup
+
+### Phase 2 — Client Calendar
+- [x] Build full visual calendar page at /calendar for clients (month/week view)
+- [x] Show appointments on calendar with color-coded status
+- [x] Allow reschedule and cancel from calendar
+- [x] Register /calendar route in App.tsx and add to client sidebar
+
+### Phase 3 — Client Conversations
+- [ ] Build Conversations page at /conversations (replace placeholder)
+- [ ] Left panel: smart lists + contact list with search bar
+- [ ] Right panel: conversation thread (email/SMS two-way)
+- [ ] Wire to existing leads/contacts data
+
+### Phase 4 — AI Coach Widget
+- [x] AI Coach widget already exists as AIAssistantWidget (bottom-right floating chat, context-aware, uses aiAssistant.chat procedure)
+
+### Phase 5 — Website Tab
+- [x] Add Website tab to client sidebar at /website
+- [x] View-only: show client's website URL in an iframe with desktop/tablet/mobile modes
+- [x] Pull website URL from client's account setup profile
+
+### Phase 6 — Admin Sidebar Cleanup
+- [x] Remove Social Media tab from admin sidebar
+- [x] Marketing tab already existed in admin sidebar
+- [x] Add Payments & Subscriptions tab to admin sidebar
+- [x] Build Payments page showing active/inactive/canceled clients with search and filters
+
+### Phase 7 — Appointment Fixes
+- [x] Add No-Show, No-Answer, Busy statuses to appointments (schema updated, DB migrated, router updated)
+- [x] Make client/lead names clickable in Appointments pipeline → navigate to their profile
+
+### Phase 8 — Partner Portal Rebuild
+- [x] Partner Portal already exists at /partner-portal as a dedicated page (token-based access for partners)

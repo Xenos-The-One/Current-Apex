@@ -339,7 +339,7 @@ export const appointmentsRouter = router({
   updateStatus: protectedProcedure
     .input(z.object({
       appointmentId: z.number(),
-      status: z.enum(["scheduled", "confirmed", "completed", "cancelled", "no_show"]),
+      status: z.enum(["scheduled", "confirmed", "completed", "cancelled", "no_show", "no_answer", "busy"]),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();

@@ -134,7 +134,6 @@ const adminMenuSections: MenuSection[] = [
   {
     id: "overview", label: "Overview", icon: Home,
     items: [
-      { icon: Rocket, label: "Launchpad", path: "/launchpad" },
       { icon: Building2, label: "Admin Dashboard", path: "/admin" },
     ],
   },
@@ -160,12 +159,6 @@ const adminMenuSections: MenuSection[] = [
     ],
   },
   {
-    id: "social", label: "Social Media", icon: Share2,
-    items: [
-      { icon: Share2, label: "Social Media", path: "/social" },
-    ],
-  },
-  {
     id: "automations", label: "Automations", icon: Workflow,
     items: [
       { icon: Workflow, label: "Automations", path: "/automations" },
@@ -186,6 +179,12 @@ const adminMenuSections: MenuSection[] = [
     ],
   },
   {
+    id: "payments", label: "Payments", icon: PieChart,
+    items: [
+      { icon: PieChart, label: "Payments & Subscriptions", path: "/payments" },
+    ],
+  },
+  {
     id: "tools", label: "Tools", icon: Settings,
     items: [
       // Single entry — tabs: Content Studio | Inbox | Email Templates | Notifications
@@ -199,7 +198,6 @@ const clientMenuSections: MenuSection[] = [
   {
     id: "home", label: "Home", icon: Home,
     items: [
-      { icon: Rocket, label: "Launchpad", path: "/launchpad" },
       { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
       { icon: UserPlus, label: "Account Setup", path: "/account-setup" },
     ],
@@ -209,16 +207,15 @@ const clientMenuSections: MenuSection[] = [
     items: [
       { icon: Users, label: "Pipeline", path: "/leads" },
       { icon: BellDot, label: "Follow-Ups", path: "/follow-ups" },
-      { icon: Handshake, label: "Partner Portal", path: "/referral-partners" },
+      { icon: Handshake, label: "Partner Portal", path: "/partner-portal" },
     ],
   },
   {
     id: "engage", label: "Engage", icon: MessageSquare,
     items: [
-      { icon: CalendarClock, label: "Calendar", path: "/appointments" },
+      { icon: Calendar, label: "Calendar", path: "/calendar" },
       { icon: MessageSquare, label: "Conversations", path: "/conversations" },
       { icon: Megaphone, label: "Campaigns", path: "/campaigns" },
-      { icon: Workflow, label: "Automations", path: "/workflows" },
     ],
   },
   {
@@ -226,8 +223,7 @@ const clientMenuSections: MenuSection[] = [
     items: [
       { icon: TrendingUp, label: "Reports", path: "/reports" },
       { icon: CheckSquare, label: "Apex Content", path: "/apex-content" },
-      { icon: Share2, label: "Social Media", path: "/social" },
-      { icon: Sparkles, label: "Follow-Ups", path: "/seo/portal/follow-ups" },
+      { icon: FileText, label: "Website", path: "/website" },
       { icon: Settings, label: "Settings", path: "/account" },
     ],
   },

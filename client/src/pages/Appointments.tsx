@@ -3,7 +3,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
-import { Calendar, Clock, Phone, Mail, MapPin, User, CheckCircle2, XCircle, AlertCircle, Sparkles, Loader2, ExternalLink, MessageSquare, Send } from "lucide-react";
+import { Calendar, Clock, Phone, Mail, MapPin, User, CheckCircle2, XCircle, AlertCircle, Sparkles, Loader2, ExternalLink, MessageSquare, Send, PhoneMissed, PhoneOff, UserX } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { toast } from "sonner";
 
 export default function Appointments() {
-  const [selectedStatus, setSelectedStatus] = useState<"all" | "scheduled" | "confirmed" | "completed" | "cancelled">("all");
+  const [selectedStatus, setSelectedStatus] = useState<"all" | "scheduled" | "confirmed" | "completed" | "cancelled" | "no_show" | "no_answer" | "busy">("all");
   
   // Get all appointments for Premier Mortgage Resources
   const [dateRange] = useState(() => ({
@@ -62,6 +62,8 @@ export default function Appointments() {
       case "completed": return "bg-gray-100 text-gray-800";
       case "cancelled": return "bg-red-100 text-red-800";
       case "no_show": return "bg-orange-100 text-orange-800";
+      case "no_answer": return "bg-yellow-100 text-yellow-800";
+      case "busy": return "bg-purple-100 text-purple-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
@@ -71,6 +73,8 @@ export default function Appointments() {
       case "confirmed": return <CheckCircle2 className="w-4 h-4" />;
       case "cancelled": return <XCircle className="w-4 h-4" />;
       case "no_show": return <AlertCircle className="w-4 h-4" />;
+      case "no_answer": return <PhoneMissed className="w-4 h-4" />;
+      case "busy": return <PhoneOff className="w-4 h-4" />;
       default: return <Clock className="w-4 h-4" />;
     }
   };
@@ -113,7 +117,7 @@ export default function Appointments() {
 
         {/* Filter Tabs */}
         <div className="flex gap-1 border-b pb-0">
-          {(["all", "scheduled", "confirmed", "completed", "cancelled"] as const).map((s) => (
+          {(["all", "scheduled", "confirmed", "completed", "cancelled", "no_show", "no_answer", "busy"] as const).map((s) => (
             <button
               key={s}
               onClick={() => setSelectedStatus(s)}
@@ -123,7 +127,7 @@ export default function Appointments() {
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
+              {s === "all" ? "All" : s === "no_show" ? "No Show" : s === "no_answer" ? "No Answer" : s.charAt(0).toUpperCase() + s.slice(1)}
             </button>
           ))}
         </div>
@@ -154,7 +158,13 @@ export default function Appointments() {
                     <tr key={appointment.id}>
                       <td>
                         <div>
-                          <p className="font-medium text-sm">{appointment.firstName} {appointment.lastName}</p>
+                          <button
+                            className="font-medium text-sm text-primary hover:underline text-left"
+                            onClick={() => appointment.leadId ? (window.location.href = `/leads/${appointment.leadId}`) : undefined}
+                            style={{ cursor: appointment.leadId ? 'pointer' : 'default' }}
+                          >
+                            {appointment.firstName} {appointment.lastName}
+                          </button>
                           {appointment.loanType && (
                             <p className="text-[10px] text-muted-foreground">{appointment.loanType}</p>
                           )}
@@ -204,7 +214,23 @@ export default function Appointments() {
                                 onClick={() => updateStatusFn({ appointmentId: appointment.id, status: "completed" })}>
                                 Done
                               </Button>
+                              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                title="Mark No Show"
+                                onClick={() => updateStatusFn({ appointmentId: appointment.id, status: "no_show" })}>
+                                <UserX className="w-3 h-3" />
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
+                                title="Mark No Answer"
+                                onClick={() => updateStatusFn({ appointmentId: appointment.id, status: "no_answer" })}>
+                                <PhoneMissed className="w-3 h-3" />
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                                title="Mark Busy"
+                                onClick={() => updateStatusFn({ appointmentId: appointment.id, status: "busy" })}>
+                                <PhoneOff className="w-3 h-3" />
+                              </Button>
                               <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                                title="Send Outreach"
                                 onClick={() => { setOutreachModal({ open: true, appointment }); setOutreachChannel("both"); setOutreachMessage(""); }}>
                                 <MessageSquare className="w-3 h-3" />
                               </Button>
