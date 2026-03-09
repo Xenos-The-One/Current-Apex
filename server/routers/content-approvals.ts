@@ -674,6 +674,40 @@ export const contentApprovalsRouter = router({
 
       return { success: true };
     }),
+
+  // Recent activity feed for the client portal dashboard (last 10 status changes)
+  recentActivity: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) return [];
+    const isAdmin = (ADMIN_ROLES as readonly string[]).includes(ctx.user.role);
+    let approvals;
+    if (isAdmin) {
+      approvals = await db
+        .select()
+        .from(contentApprovals)
+        .orderBy(desc(contentApprovals.updatedAt))
+        .limit(10);
+    } else {
+      const clientRecord = await getClientByUserId(ctx.user.id);
+      if (!clientRecord) return [];
+      approvals = await db
+        .select()
+        .from(contentApprovals)
+        .where(eq(contentApprovals.clientId, clientRecord.id))
+        .orderBy(desc(contentApprovals.updatedAt))
+        .limit(10);
+    }
+    return approvals.map(a => ({
+      id: a.id,
+      title: a.title,
+      contentType: a.contentType,
+      status: a.status,
+      brand: a.brand,
+      updatedAt: a.updatedAt,
+      approvedAt: a.approvedAt,
+      rejectedAt: a.rejectedAt,
+    }));
+  }),
 });
 
 // Helper function to send SMS approval request

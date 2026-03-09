@@ -313,8 +313,25 @@ function ApprovalsTab() {
               <CardTitle>Pending Approvals</CardTitle>
               <CardDescription>Content awaiting your review</CardDescription>
             </div>
-            {socialPending.length > 0 && (
+            {(pendingApprovals?.length ?? 0) > 0 && (
               <div className="flex items-center gap-2 shrink-0">
+                {/* Select All */}
+                <label className="flex items-center gap-1.5 cursor-pointer text-sm text-muted-foreground select-none">
+                  <Checkbox
+                    checked={
+                      selectedIds.size === (pendingApprovals?.length ?? 0) &&
+                      (pendingApprovals?.length ?? 0) > 0
+                    }
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedIds(new Set((pendingApprovals ?? []).map((a: any) => a.id)));
+                      } else {
+                        setSelectedIds(new Set());
+                      }
+                    }}
+                  />
+                  Select All
+                </label>
                 {selectedIds.size > 0 && (
                   <Button
                     size="sm"
@@ -323,19 +340,21 @@ function ApprovalsTab() {
                     className="bg-green-600 hover:bg-green-700 gap-1.5"
                   >
                     {bulkMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CalendarPlus className="w-3.5 h-3.5" />}
-                    Approve & Schedule Selected ({selectedIds.size})
+                    Approve Selected ({selectedIds.size})
                   </Button>
                 )}
-                <Button
-                  size="sm"
-                  onClick={handleBulkApproveAll}
-                  disabled={bulkMutation.isPending}
-                  variant="outline"
-                  className="gap-1.5"
-                >
-                  {bulkMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckSquare className="w-3.5 h-3.5" />}
-                  Approve All Social ({socialPending.length})
-                </Button>
+                {socialPending.length > 0 && selectedIds.size === 0 && (
+                  <Button
+                    size="sm"
+                    onClick={handleBulkApproveAll}
+                    disabled={bulkMutation.isPending}
+                    variant="outline"
+                    className="gap-1.5"
+                  >
+                    {bulkMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckSquare className="w-3.5 h-3.5" />}
+                    Approve All Social ({socialPending.length})
+                  </Button>
+                )}
               </div>
             )}
           </div>

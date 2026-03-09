@@ -1,14 +1,55 @@
 import { Link } from "wouter";
 import { Card } from "@/components/ui/card";
-import { FileText, Calendar, TrendingUp, CheckSquare, Send, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { FileText, Calendar, TrendingUp, CheckSquare, Send, Sparkles, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import PortalLayout from "@/components/PortalLayout";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+
+function statusIcon(status: string) {
+  switch (status) {
+    case "approved": return <CheckCircle2 className="h-4 w-4 text-green-400 shrink-0" />;
+    case "rejected": return <XCircle className="h-4 w-4 text-red-400 shrink-0" />;
+    case "revised": return <AlertCircle className="h-4 w-4 text-yellow-400 shrink-0" />;
+    default: return <Clock className="h-4 w-4 text-orange-400 shrink-0" />;
+  }
+}
+
+function statusBadge(status: string) {
+  const variants: Record<string, string> = {
+    approved: "bg-green-500/15 text-green-400 border-green-500/20",
+    rejected: "bg-red-500/15 text-red-400 border-red-500/20",
+    revised: "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
+    pending: "bg-orange-500/15 text-orange-400 border-orange-500/20",
+  };
+  return (
+    <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full border ${variants[status] ?? variants.pending}`}>
+      {status}
+    </span>
+  );
+}
+
+function timeAgo(date: Date | string | null): string {
+  if (!date) return "";
+  const d = new Date(date);
+  const diffMs = Date.now() - d.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `${diffH}h ago`;
+  const diffD = Math.floor(diffH / 24);
+  return `${diffD}d ago`;
+}
 
 export default function PortalDashboard() {
   const { user } = useAuth();
   const { data: contentList } = trpc.seo.content.listForPortal.useQuery(undefined, { enabled: !!user });
   const { data: pendingApprovals } = trpc.contentApprovals.listPending.useQuery({}, { enabled: !!user });
+  const { data: recentActivity, isLoading: activityLoading } = trpc.contentApprovals.recentActivity.useQuery(undefined, {
+    enabled: !!user,
+    refetchInterval: 60000,
+  });
   const totalContent = contentList?.length ?? 0;
   const pendingCount = pendingApprovals?.length ?? 0;
 
@@ -91,11 +132,50 @@ export default function PortalDashboard() {
 
       {/* Recent Activity */}
       <Card className="p-6 mt-8" style={{ backgroundColor: "rgba(2,18,20,0.8)", borderColor: "rgba(0,255,255,0.12)" }}>
-        <h3 className="text-lg font-semibold mb-4 text-white">Recent Activity</h3>
-        <div className="text-center py-12 text-muted-foreground">
-          <p>No recent activity</p>
-          <p className="text-sm mt-2">Activity will appear here as content is created and updated</p>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-white">Recent Activity</h3>
+          <Link href="/seo/portal/apex-content">
+            <a className="text-xs font-medium" style={{ color: "rgba(0,255,255,0.7)" }}>View all →</a>
+          </Link>
         </div>
+
+        {activityLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-12 rounded-lg animate-pulse" style={{ backgroundColor: "rgba(0,255,255,0.05)" }} />
+            ))}
+          </div>
+        ) : !recentActivity || recentActivity.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <p>No recent activity</p>
+            <p className="text-sm mt-2">Activity will appear here as content is created and updated</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {recentActivity.map((item) => (
+              <Link key={item.id} href="/seo/portal/apex-content">
+                <a className="flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer"
+                  style={{ backgroundColor: "rgba(0,255,255,0.03)" }}
+                  onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(0,255,255,0.07)"}
+                  onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(0,255,255,0.03)"}
+                >
+                  {statusIcon(item.status)}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{item.title}</p>
+                    <p className="text-xs text-muted-foreground capitalize">
+                      {item.contentType.replace("_", " ")}
+                      {item.brand ? ` · ${item.brand}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {statusBadge(item.status)}
+                    <span className="text-xs text-muted-foreground">{timeAgo(item.updatedAt)}</span>
+                  </div>
+                </a>
+              </Link>
+            ))}
+          </div>
+        )}
       </Card>
     </PortalLayout>
   );

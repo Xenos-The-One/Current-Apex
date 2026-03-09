@@ -273,3 +273,11 @@
 - [x] Update PortalDashboard quick-links — Apex Content replaces My Content + Approvals cards
 - [x] Wire live stats on PortalDashboard — Total Content and Pending Approval show real counts
 - [x] Add Follow-Ups quick-link card to PortalDashboard
+
+## Round 28: Portal Improvements (Suggested Follow-ups)
+- [x] Approval count badge on Apex Content sidebar entry in DashboardLayout
+- [x] Add recentActivity tRPC procedure to content-approvals router
+- [x] Live Recent Activity feed on Portal Dashboard — last 10 status changes with icons, status badges, and time-ago
+- [x] Select All checkbox in Pending Approvals header of PortalApexContent
+- [x] Approve Selected button shown when items are individually checked
+- [x] Approve All Social button hidden when items are individually selected (prevents confusion)

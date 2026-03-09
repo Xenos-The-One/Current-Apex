@@ -456,6 +456,7 @@ function GroupedSidebarNav({
                           }`}
                         />
                         {item.path === "/notifications" && <NotificationBadge />}
+                        {item.path === "/seo/portal/apex-content" && <ApprovalBadge />}
                       </div>
                       <span>{item.label}</span>
                     </SidebarMenuButton>
@@ -571,6 +572,20 @@ function NotificationBadge() {
   if (count === 0) return null;
   return (
     <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full h-4 min-w-4 flex items-center justify-center px-0.5">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
+function ApprovalBadge() {
+  const { data } = trpc.contentApprovals.listPending.useQuery({}, {
+    refetchInterval: 60000,
+    retry: false,
+  });
+  const count = data?.length || 0;
+  if (count === 0) return null;
+  return (
+    <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[10px] font-bold rounded-full h-4 min-w-4 flex items-center justify-center px-0.5">
       {count > 99 ? "99+" : count}
     </span>
   );
