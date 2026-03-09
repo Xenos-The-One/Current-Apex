@@ -8,8 +8,7 @@
  *  - View their publishing history / schedule
  */
 
-import { useState, useEffect } from "react";
-import { useLocation, Link } from "wouter";
+import { Link } from "wouter";
 import PortalLayout from "@/components/PortalLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +47,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 const TIMEZONES = [
   "America/New_York",
@@ -62,8 +62,7 @@ const TIMEZONES = [
 ];
 
 export default function PortalPublishing() {
-  const [, setLocation] = useLocation();
-  const [user, setUser] = useState<any>(null);
+  const { user } = useAuth();
   const [branding, setBranding] = useState<any>(null);
 
   // Dialog state
@@ -81,36 +80,11 @@ export default function PortalPublishing() {
     Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
   );
 
-  useEffect(() => {
-    const token = localStorage.getItem("client_portal_token");
-    const userData = localStorage.getItem("client_portal_user");
-    if (!token || !userData) {
-      setLocation("/seo/portal/login");
-      return;
-    }
-    const parsed = JSON.parse(userData);
-    setUser(parsed);
-
-    // Fetch branding
-    if (parsed.clientId) {
-      fetch(
-        `/api/trpc/portalBranding.get?input=${encodeURIComponent(
-          JSON.stringify({ clientId: parsed.clientId })
-        )}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-        .then((r) => r.json())
-        .then((d) => {
-          if (d.result?.data) setBranding(d.result.data);
-        })
-        .catch(() => {});
-    }
-  }, [setLocation]);
 
   // Queries
   const { data: permissions } = trpc.seo.clientPublishingPermissions.getPermissions.useQuery(
-    { clientId: user?.clientId || 0 },
-    { enabled: !!user?.clientId }
+    { clientId: (user as any)?.clientId || 0 },
+    { enabled: !!(user as any)?.clientId }
   );
 
   const { data: contentList, isLoading: contentLoading } = trpc.seo.content.list.useQuery(
@@ -124,13 +98,13 @@ export default function PortalPublishing() {
   );
 
   const { data: wpConnections } = trpc.seo.wordpress.getConnections.useQuery(
-    { clientId: user?.clientId || 0 },
-    { enabled: !!user?.clientId }
+    { clientId: (user as any)?.clientId || 0 },
+    { enabled: !!(user as any)?.clientId }
   );
 
   const { data: manusWebsites } = trpc.seo.manusWebsites.getWebsites.useQuery(
-    { clientId: user?.clientId || 0 },
-    { enabled: !!user?.clientId }
+    { clientId: (user as any)?.clientId || 0 },
+    { enabled: !!(user as any)?.clientId }
   );
 
   // Mutations
@@ -139,7 +113,7 @@ export default function PortalPublishing() {
 
   // Filter content for this client
   const clientContent = contentList?.filter(
-    (c) => c.content.clientId === user?.clientId
+    (c) => c.content.clientId === (user as any)?.clientId
   ) || [];
 
   const approvedContent = clientContent.filter(
@@ -149,7 +123,7 @@ export default function PortalPublishing() {
   // Client schedules
   const clientSchedules = schedules?.filter((s) => {
     const item = contentList?.find((c) => c.content.id === s.contentId);
-    return item?.content.clientId === user?.clientId;
+    return item?.content.clientId === (user as any)?.clientId;
   }) || [];
 
   const pendingSchedules = clientSchedules.filter((s) => s.status === "pending");
@@ -157,9 +131,7 @@ export default function PortalPublishing() {
   const failedSchedules = clientSchedules.filter((s) => s.status === "failed");
 
   const handleLogout = () => {
-    localStorage.removeItem("client_portal_token");
-    localStorage.removeItem("client_portal_user");
-    setLocation("/seo/portal/login");
+    // Logout handled by main app auth
   };
 
   const openPublishDialog = (contentId: number) => {
@@ -384,7 +356,7 @@ export default function PortalPublishing() {
   );
 
   return (
-    <PortalLayout activePath="/portal/publishing">
+    <PortalLayout activePath="/seo/portal/publishing">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-white">Publishing Center</h2>
         <p className="mt-1" style={{ color: "rgba(0,255,255,0.5)" }}>

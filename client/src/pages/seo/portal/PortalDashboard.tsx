@@ -1,36 +1,17 @@
-import { useState, useEffect } from "react";
-import { useLocation, Link } from "wouter";
+import { Link } from "wouter";
 import { Card } from "@/components/ui/card";
 import { FileText, Calendar, TrendingUp, User, Send } from "lucide-react";
 import PortalLayout from "@/components/PortalLayout";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function PortalDashboard() {
-  const [, setLocation] = useLocation();
-  const [user, setUser] = useState<any>(null);
-
-  useEffect(() => {
-    const token = localStorage.getItem("client_portal_token");
-    const userData = localStorage.getItem("client_portal_user");
-    if (!token || !userData) {
-      setLocation("/seo/portal/login");
-      return;
-    }
-    setUser(JSON.parse(userData));
-  }, [setLocation]);
-
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#000F12" }}>
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
+  const { user } = useAuth();
 
   return (
-    <PortalLayout activePath="/portal/dashboard">
+    <PortalLayout activePath="/seo/portal/dashboard">
       {/* Welcome */}
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white">Welcome back, {user.name}</h2>
+        <h2 className="text-2xl font-bold text-white">Welcome back, {user?.name}</h2>
         <p className="text-sm mt-1" style={{ color: "rgba(0,255,255,0.5)" }}>
           Here's an overview of your content and activity.
         </p>

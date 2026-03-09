@@ -232,3 +232,9 @@
 - [x] Unread comment badge on content cards — red dot on cards with unread comments in Content Approvals and My Content
 - [x] Daily approval digest email — scheduled daily summary email to admins listing pending approvals and new comments
 - [x] @mention in comments — allow @admin or @client in comment thread to route and notify the right person
+
+## Round 23: Full Client SEO Portal (No Separate Login)
+- [x] Replace "My Content" sidebar link with full /seo/portal/ experience — remove separate login, use main app auth
+- [x] Remove localStorage token checks from all portal pages — use useAuth() instead
+- [x] Update PortalLayout to use main app user (useAuth) instead of client_portal_token
+- [x] Update sidebar "My Content" link to point to /seo/portal/dashboard

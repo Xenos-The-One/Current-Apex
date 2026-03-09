@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useLocation, Link } from "wouter";
+import { useState } from "react";
+import { Link } from "wouter";
 import PortalLayout from "@/components/PortalLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,23 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { TrendingUp, Eye, MousePointerClick, Share2, ArrowUp, ArrowDown, BarChart3, Activity } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function PortalPerformance() {
-  const [, setLocation] = useLocation();
-  const [user, setUser] = useState<any>(null);
+  const { user } = useAuth();
   const [dataSource, setDataSource] = useState<"internal" | "ga">("internal");
 
-  useEffect(() => {
-    const token = localStorage.getItem("client_portal_token");
-    const userData = localStorage.getItem("client_portal_user");
-    
-    if (!token || !userData) {
-      setLocation("/seo/portal/login");
-      return;
-    }
-    
-    setUser(JSON.parse(userData));
-  }, [setLocation]);
 
   const { data: contentList } = trpc.seo.content.list.useQuery(
     undefined,
@@ -33,7 +22,7 @@ export default function PortalPerformance() {
   // Google Analytics data
   const { data: gaMetrics } = trpc.seo.googleAnalytics.getMetrics.useQuery(
     {
-      clientId: user?.clientId!,
+      clientId: (user as any)?.clientId,
       startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       endDate: new Date().toISOString().split('T')[0],
     },
@@ -42,7 +31,7 @@ export default function PortalPerformance() {
   
   const { data: gaPages } = trpc.seo.googleAnalytics.getPageMetrics.useQuery(
     {
-      clientId: user?.clientId!,
+      clientId: (user as any)?.clientId,
       startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       endDate: new Date().toISOString().split('T')[0],
       limit: 10,
@@ -50,12 +39,9 @@ export default function PortalPerformance() {
     { enabled: dataSource === "ga" && !!user?.clientId }
   );
 
-  if (!user) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  }
 
   // Filter content by client
-  const clientContent = contentList?.filter((item: any) => item.clientId === user.clientId) || [];
+  const clientContent = contentList?.filter((item: any) => item.clientId === (user as any)?.clientId) || [];
 
   // Calculate performance data from content list
   const performanceData = clientContent.reduce(
@@ -87,7 +73,7 @@ export default function PortalPerformance() {
     .slice(0, 5);
 
   return (
-    <PortalLayout activePath="/portal/performance">
+    <PortalLayout activePath="/seo/portal/performance">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-white">Performance Dashboard</h2>

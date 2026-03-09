@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useLocation, useParams, Link } from "wouter";
+import { useState } from "react";
+import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,27 +8,16 @@ import { trpc } from "@/lib/trpc";
 import { ArrowLeft, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import PortalLayout from "@/components/PortalLayout";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function PortalContentDetail() {
   const params = useParams<{ id: string }>();
+  const { user } = useAuth();
   const contentId = parseInt(params.id || "0");
-  const [, setLocation] = useLocation();
-  const [user, setUser] = useState<any>(null);
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [showRevisionDialog, setShowRevisionDialog] = useState(false);
   const [comment, setComment] = useState("");
 
-  useEffect(() => {
-    const token = localStorage.getItem("client_portal_token");
-    const userData = localStorage.getItem("client_portal_user");
-
-    if (!token || !userData) {
-      setLocation("/seo/portal/login");
-      return;
-    }
-
-    setUser(JSON.parse(userData));
-  }, [setLocation]);
 
   const { data: content, isLoading, refetch } = trpc.seo.content.getById.useQuery(
     { id: contentId },
@@ -72,7 +61,7 @@ export default function PortalContentDetail() {
 
   if (isLoading) {
     return (
-      <PortalLayout activePath="/portal/content">
+      <PortalLayout activePath="/seo/portal/content">
         <div className="flex items-center justify-center py-32">
           <div className="animate-pulse" style={{ color: "rgba(0,255,255,0.5)" }}>Loading content...</div>
         </div>
@@ -82,7 +71,7 @@ export default function PortalContentDetail() {
 
   if (!content || content.clientId !== user.clientId) {
     return (
-      <PortalLayout activePath="/portal/content">
+      <PortalLayout activePath="/seo/portal/content">
         <div className="flex items-center justify-center py-32">
           <Card className="p-8 text-center max-w-md">
             <h2 className="text-xl font-semibold mb-2">Content not found</h2>
@@ -106,7 +95,7 @@ export default function PortalContentDetail() {
       : "bg-yellow-500/10 text-yellow-500 border-yellow-500/30";
 
   return (
-    <PortalLayout activePath="/portal/content">
+    <PortalLayout activePath="/seo/portal/content">
       {/* Page header */}
       <div className="flex items-start justify-between mb-6 gap-4">
         <div className="flex items-start gap-3">

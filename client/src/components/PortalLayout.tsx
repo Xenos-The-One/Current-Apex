@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { LogOut, LayoutDashboard, FileText, Calendar, TrendingUp, Send, Menu, X } from "lucide-react";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
+import { getLoginUrl } from "@/const";
 
 interface PortalLayoutProps {
   children: React.ReactNode;
@@ -19,18 +22,20 @@ const NAV_ITEMS = [
 
 export default function PortalLayout({ children, activePath }: PortalLayoutProps) {
   const [, setLocation] = useLocation();
-  const [user, setUser] = useState<any>(null);
+  const { user, isLoading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const logoutMutation = trpc.auth.logout.useMutation({
+    onSuccess: () => {
+      window.location.href = getLoginUrl();
+    },
+  });
 
+  // Redirect to login if not authenticated
   useEffect(() => {
-    const token = localStorage.getItem("client_portal_token");
-    const userData = localStorage.getItem("client_portal_user");
-    if (!token || !userData) {
-      setLocation("/seo/portal/login");
-      return;
+    if (!isLoading && !user) {
+      window.location.href = getLoginUrl("/seo/portal/dashboard");
     }
-    setUser(JSON.parse(userData));
-  }, [setLocation]);
+  }, [isLoading, user]);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -38,10 +43,16 @@ export default function PortalLayout({ children, activePath }: PortalLayoutProps
   }, [activePath]);
 
   const handleLogout = () => {
-    localStorage.removeItem("client_portal_token");
-    localStorage.removeItem("client_portal_user");
-    setLocation("/seo/portal/login");
+    logoutMutation.mutate();
   };
+
+  if (isLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#000F12" }}>
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -119,7 +130,7 @@ export default function PortalLayout({ children, activePath }: PortalLayoutProps
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-medium text-white/90">{user.name}</p>
                   <p className="text-xs" style={{ color: "rgba(0,255,255,0.5)" }}>
-                    {user.role === "client_admin" ? "Admin" : "Viewer"}
+                    Client
                   </p>
                 </div>
               )}
@@ -168,7 +179,7 @@ export default function PortalLayout({ children, activePath }: PortalLayoutProps
                 <div>
                   <p className="text-sm font-medium text-white">{user.name}</p>
                   <p className="text-xs" style={{ color: "rgba(0,255,255,0.5)" }}>
-                    {user.role === "client_admin" ? "Admin" : "Viewer"}
+                    Client
                   </p>
                 </div>
               </div>
