@@ -362,3 +362,17 @@
 - [ ] Add Suggested Follow-ups AI tab to Follow-ups page (suggested follow-up actions with AI-generated messages)
 - [ ] Conversations unread badge in sidebar nav item
 - [ ] Account Setup inline panel (GHL-style, no separate page redirect)
+
+## Round 34: Critical Fixes & New Features
+
+- [x] Fix server wake-up issue (restart dev server)
+- [x] Fix client detail 404 — fixed onboardingProgress.clientId → userId mismatch, fixed agency_settings missing table, linked client 1 to user 1
+- [x] Add Suggested Follow-up #1 to Follow-ups page — AI Suggestions tab already exists, linked user 1 to client 1 so suggestions show
+- [x] Add Suggested Follow-up #2 to Follow-ups page — same fix, getSuggested returns top 10 suggestions
+- [x] Build AI website generator on admin SEO side — /seo/website-generator page with LLM generation, preview, DB storage, SEO style
+- [x] Add Ad Manager to client sidebar under Content & Ads section
+- [x] Add Social Media and Apex Content to client sidebar under Content & Ads section
+- [x] Twilio SMS verified — credentials configured, sendFollowUpSMS procedure active, SMS Campaigns in client sidebar
+- [x] Vapi AI Calling verified — API key + phone number ID configured, AI Calling in client sidebar under Communicate
+- [x] SendGrid email verified — API key configured, Email Campaigns in client sidebar under Communicate
+- [x] Market Analytics added to client sidebar under Grow section — /market-analytics route fixed

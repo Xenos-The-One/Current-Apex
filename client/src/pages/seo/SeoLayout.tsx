@@ -95,6 +95,7 @@ const NAV_GROUPS: NavGroup[] = [
       { icon: Globe, label: "Design Standards", path: "/seo/design-standards" },
       { icon: Users, label: "AI Client Discovery", path: "/seo/ai-client-discovery" },
       { icon: Building2, label: "Google Business", path: "/seo/google-business-profile" },
+      { icon: Globe, label: "Website Generator", path: "/seo/website-generator" },
     ],
   },
   {

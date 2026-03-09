@@ -150,6 +150,7 @@ function Router() {
       <Route path="/ai-scripts" component={MarketingHub} />
       <Route path="/email-campaigns" component={MarketingHub} />
       <Route path="/sms-campaigns" component={MarketingHub} />
+      <Route path="/ai-calling" component={lazy(() => import('./pages/AICalling'))} />
       <Route path="/content-approvals" component={ContentApprovals} />
       <Route path="/my-content" component={MyContent} />
       <Route path="/indigo-labs" component={IndigoLabsLanding} />
@@ -171,7 +172,7 @@ function Router() {
       {/* ── Legacy reporting routes → ReportingHub ── */}
       <Route path="/conversion" component={ReportingHub} />
       <Route path="/metrics" component={ReportingHub} />
-      <Route path="/market-analytics" component={ReportingHub} />
+      <Route path="/market-analytics" component={MarketAnalytics} />
       <Route path="/reports" component={ReportingHub} />
       {/* ── Legacy tools routes → ToolsHub ── */}
       <Route path="/notifications" component={ToolsHub} />

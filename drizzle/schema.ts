@@ -1257,3 +1257,39 @@ export const contentComments = mysqlTable("content_comments", {
 });
 export type ContentComment = typeof contentComments.$inferSelect;
 export type InsertContentComment = typeof contentComments.$inferInsert;
+
+// ==========================================
+// Generated Websites - AI-generated loan officer websites
+// ==========================================
+export const generatedWebsites = mysqlTable("generated_websites", {
+  id: int("id").autoincrement().primaryKey(),
+  agencyId: int("agency_id").notNull().references(() => agencies.id),
+  clientId: int("client_id").references(() => clients.id),
+  seoClientId: int("seo_client_id"),
+  businessName: varchar("business_name", { length: 255 }).notNull(),
+  ownerName: varchar("owner_name", { length: 255 }),
+  tagline: varchar("tagline", { length: 500 }),
+  phone: varchar("phone", { length: 50 }),
+  email: varchar("email", { length: 255 }),
+  city: varchar("city", { length: 100 }),
+  state: varchar("state", { length: 50 }),
+  licenseNumber: varchar("license_number", { length: 100 }),
+  specialties: text("specialties"),
+  yearsExperience: int("years_experience"),
+  colorScheme: varchar("color_scheme", { length: 50 }).default("navy"),
+  heroSection: text("hero_section"),
+  servicesSection: text("services_section"),
+  testimonialsSection: text("testimonials_section"),
+  aboutSection: text("about_section"),
+  faqSection: text("faq_section"),
+  ctaSection: text("cta_section"),
+  status: mysqlEnum("status", ["draft", "generating", "ready", "published", "archived"]).default("draft").notNull(),
+  publishedUrl: varchar("published_url", { length: 500 }),
+  customDomain: varchar("custom_domain", { length: 255 }),
+  generatedHtml: text("generated_html"),
+  createdBy: int("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type GeneratedWebsite = typeof generatedWebsites.$inferSelect;
+export type InsertGeneratedWebsite = typeof generatedWebsites.$inferInsert;

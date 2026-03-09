@@ -51,6 +51,7 @@ import { wordpressRouter } from "./routers/seo/wordpress";
 import { bulkPublishingRouter } from "./routers/seo/bulkPublishing";
 import { clientsRouter } from "./routers/clients";
 import { conversationsRouter } from "./routers/conversations";
+import { websiteGeneratorRouter } from "./routers/website-generator";
 
 export const appRouter = router({
   system: systemRouter,
@@ -103,6 +104,7 @@ export const appRouter = router({
   bulkPublishing: bulkPublishingRouter,
   clients: clientsRouter,
   conversations: conversationsRouter,
+  websiteGenerator: websiteGeneratorRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

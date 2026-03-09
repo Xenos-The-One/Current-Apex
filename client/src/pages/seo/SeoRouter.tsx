@@ -38,6 +38,7 @@ const GoogleBusinessProfile = lazy(() => import("./GoogleBusinessProfile"));
 const AdsManager = lazy(() => import("./AdsManager"));
 const KeywordGap = lazy(() => import("./KeywordGap"));
 const BriefForm = lazy(() => import("./BriefForm"));
+const WebsiteGenerator = lazy(() => import("./WebsiteGenerator"));
 
 // Portal pages — each wraps itself in PortalLayout, so they must NOT be inside SeoLayout
 const PortalLogin = lazy(() => import("./portal/PortalLogin"));
@@ -126,6 +127,7 @@ export default function SeoRouter() {
               <Route path="/seo/ads" component={AdsManager} />
               <Route path="/seo/keyword-gap" component={KeywordGap} />
               <Route path="/seo/brief/:token" component={BriefForm} />
+              <Route path="/seo/website-generator" component={WebsiteGenerator} />
             </Switch>
           </Suspense>
         </SeoLayout>

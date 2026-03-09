@@ -214,7 +214,7 @@ export const clientOnboardingRouter = router({
     const progressRows = await db
       .select()
       .from(onboardingProgress)
-      .where(eq(onboardingProgress.clientId, client.id));
+      .where(eq(onboardingProgress.userId, ctx.user.id));
 
     const completedSteps = progressRows.filter((r: any) => r.completedAt).map((r: any) => r.stepKey);
     const onboardingComplete = completedSteps.includes("onboarding_form_complete");
@@ -262,7 +262,7 @@ export const clientOnboardingRouter = router({
       }).where(eq(seoClients.id, seoClient.id));
 
       // Mark step complete
-      await markStepComplete(db, client.id, "step_1_business_info");
+      await markStepComplete(db, ctx.user.id, "step_1_business_info");
 
       return { success: true, seoClientId: seoClient.id };
     }),
@@ -287,7 +287,7 @@ export const clientOnboardingRouter = router({
         brandVoice: input.brandVoice,
       }).where(eq(seoClients.id, seoClient.id));
 
-      await markStepComplete(db, client.id, "step_2_services_brand");
+      await markStepComplete(db, ctx.user.id, "step_2_services_brand");
       return { success: true };
     }),
 
@@ -313,7 +313,7 @@ export const clientOnboardingRouter = router({
         websitePlatform: input.websitePlatform,
       }).where(eq(seoClients.id, seoClient.id));
 
-      await markStepComplete(db, client.id, "step_3_social_connections");
+      await markStepComplete(db, ctx.user.id, "step_3_social_connections");
       return { success: true };
     }),
 
@@ -338,9 +338,9 @@ export const clientOnboardingRouter = router({
       }).where(eq(seoClients.id, seoClient.id));
 
       // Mark all steps complete
-      await markStepComplete(db, client.id, "step_4_publishing_prefs");
-      await markStepComplete(db, client.id, "onboarding_form_complete");
-      await markStepComplete(db, client.id, "profile_complete");
+      await markStepComplete(db, ctx.user.id, "step_4_publishing_prefs");
+      await markStepComplete(db, ctx.user.id, "onboarding_form_complete");
+      await markStepComplete(db, ctx.user.id, "profile_complete");
 
       // Fetch the fully updated seo_client for content generation
       const [updatedSeoClient] = await db.select().from(seoClients).where(eq(seoClients.id, seoClient.id));
@@ -408,23 +408,22 @@ export const clientOnboardingRouter = router({
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-async function markStepComplete(db: any, clientId: number, stepKey: string) {
+async function markStepComplete(db: any, userId: number, stepKey: string) {
   const existing = await db
     .select()
     .from(onboardingProgress)
-    .where(and(eq(onboardingProgress.clientId, clientId), eq(onboardingProgress.stepKey, stepKey)));
-
+    .where(and(eq(onboardingProgress.userId, userId), eq(onboardingProgress.stepKey, stepKey)));
   if (existing.length > 0) {
     await db
       .update(onboardingProgress)
-      .set({ completedAt: new Date(), completedBy: clientId })
-      .where(and(eq(onboardingProgress.clientId, clientId), eq(onboardingProgress.stepKey, stepKey)));
+      .set({ completedAt: new Date(), completedBy: userId })
+      .where(and(eq(onboardingProgress.userId, userId), eq(onboardingProgress.stepKey, stepKey)));
   } else {
     await db.insert(onboardingProgress).values({
-      clientId,
+      userId,
       stepKey,
       completedAt: new Date(),
-      completedBy: clientId,
+      completedBy: userId,
     });
   }
 }

@@ -70,6 +70,10 @@ import {
   Zap,
   ChevronRight,
   Share2,
+  Instagram,
+  Bot,
+  MapPin,
+  Globe,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { CSSProperties, useEffect, useRef, useState, useMemo, useCallback } from "react";
@@ -220,11 +224,27 @@ const clientMenuSections: MenuSection[] = [
     ],
   },
   {
+    id: "communicate", label: "Communicate", icon: Phone,
+    items: [
+      { icon: Bot, label: "AI Calling", path: "/ai-calling" },
+      { icon: Mail, label: "Email Campaigns", path: "/email-campaigns" },
+      { icon: MessageSquare, label: "SMS Campaigns", path: "/sms-campaigns" },
+    ],
+  },
+  {
+    id: "content", label: "Content & Ads", icon: Instagram,
+    items: [
+      { icon: Share2, label: "Social Media", path: "/social" },
+      { icon: CheckSquare, label: "Apex Content", path: "/apex-content" },
+      { icon: Megaphone, label: "Ad Manager", path: "/seo/ads" },
+    ],
+  },
+  {
     id: "grow", label: "Grow", icon: TrendingUp,
     items: [
       { icon: TrendingUp, label: "Reports", path: "/reports" },
-      { icon: CheckSquare, label: "Apex Content", path: "/apex-content" },
-      { icon: FileText, label: "Website", path: "/website" },
+      { icon: MapPin, label: "Market Analytics", path: "/market-analytics" },
+      { icon: Globe, label: "Website", path: "/website" },
       { icon: Settings, label: "Settings", path: "/account" },
     ],
   },
