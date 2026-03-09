@@ -2,7 +2,7 @@ import { z } from "zod";
 import { router, protectedProcedure } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { getDb, getClientByUserId, createSocialMediaPost } from "../db";
-import { contentApprovals, clients, users } from "../../drizzle/schema";
+import { contentApprovals, clients, users, teamNotifications } from "../../drizzle/schema";
 import { seoClients } from "../../drizzle/seo-schema";
 import { sendSMS } from "../twilio";
 import { sendEmail } from "../email-service";
@@ -494,6 +494,25 @@ export const contentApprovalsRouter = router({
         }
       } catch (emailErr) {
         console.warn("[adminReject] Email notification failed:", emailErr);
+      }
+      // Create 48-hour follow-up reminder for the admin
+      try {
+        await db.insert(teamNotifications).values({
+          userId: ctx.user.id,
+          type: "custom",
+          title: `Follow-up: Did client request a new batch?`,
+          body: `You rejected "${approval.title}" 48 hours ago. Check if the client has requested a new content batch in Content Approvals.`,
+          priority: "normal",
+          actionUrl: "/admin",
+          metadata: JSON.stringify({
+            approvalId: input.approvalId,
+            approvalTitle: approval.title,
+            type: "rejection_followup",
+            reminderDue: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+          }),
+        });
+      } catch (taskErr) {
+        console.warn("[adminReject] Follow-up reminder creation failed:", taskErr);
       }
       return { success: true };
     }),

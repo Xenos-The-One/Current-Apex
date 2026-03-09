@@ -695,6 +695,11 @@ export default function AdminDashboard() {
               <div className="flex items-center gap-2">
                 <ClipboardList className="w-4 h-4 text-primary" />
                 <CardTitle className="text-sm font-semibold">Content Oversight</CardTitle>
+                {(allPendingApprovals?.length ?? 0) > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
+                    {allPendingApprovals!.length}
+                  </span>
+                )}
               </div>
               <span className="text-xs text-muted-foreground">
                 {allPendingApprovals?.length || 0} pending across all clients

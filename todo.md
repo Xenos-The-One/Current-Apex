@@ -215,3 +215,8 @@
 - [x] Client access to AI SEO portal — add AI SEO link/view to client sidebar so clients can create their own content
 - [x] Calendar month-level stats — show "X posts this month" counter above the Social Media calendar
 - [x] Content Oversight filter — add platform/client filter to Admin Content Oversight section
+
+## Round 19: Client Content Portal, Oversight Badge, Rejection Reminder
+- [x] Client-only content portal page — replace admin SEO link with dedicated /my-content page (view content, request new batch, leave feedback, no generation tools)
+- [x] Oversight badge — red unreviewed count badge on Content Oversight section header in Admin Dashboard
+- [x] Rejection follow-up reminder — auto-create 48-hour follow-up task when admin rejects content

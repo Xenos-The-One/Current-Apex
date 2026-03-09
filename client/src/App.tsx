@@ -23,6 +23,7 @@ import AIScriptGenerator from "./pages/AIScriptGenerator";
 import EmailCampaigns from "./pages/EmailCampaigns";
 import SMSCampaigns from "./pages/SmsCampaigns";
 import ContentApprovals from "./pages/ContentApprovals";
+import MyContent from "./pages/MyContent";
 import IndigoLabsLanding from "./pages/IndigoLabsLanding";
 import Analytics from "./pages/Analytics";
 import Templates from "./pages/Templates";
@@ -130,6 +131,7 @@ function Router() {
       <Route path="/email-campaigns" component={MarketingHub} />
       <Route path="/sms-campaigns" component={MarketingHub} />
       <Route path="/content-approvals" component={ContentApprovals} />
+      <Route path="/my-content" component={MyContent} />
       <Route path="/indigo-labs" component={IndigoLabsLanding} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/templates" component={Templates} />
