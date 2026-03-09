@@ -220,3 +220,6 @@
 - [x] Client-only content portal page — replace admin SEO link with dedicated /my-content page (view content, request new batch, leave feedback, no generation tools)
 - [x] Oversight badge — red unreviewed count badge on Content Oversight section header in Admin Dashboard
 - [x] Rejection follow-up reminder — auto-create 48-hour follow-up task when admin rejects content
+
+## Round 20: Bug Fixes
+- [x] Fix content_approvals query error on Admin Dashboard — missing column causing listPending to fail

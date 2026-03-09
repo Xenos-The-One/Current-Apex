@@ -442,26 +442,27 @@ export type InsertAppointment = typeof appointments.$inferInsert;
  */
 export const contentApprovals = mysqlTable("content_approvals", {
   id: int("id").autoincrement().primaryKey(),
-  agencyId: int("agency_id").notNull().references(() => agencies.id),
-  clientId: int("client_id").references(() => clients.id), // Which client this content is for
-  contentType: mysqlEnum("content_type", ["video_script", "social_post", "email", "sms", "ad_copy"]).notNull(),
-  platform: varchar("platform", { length: 100 }), // e.g., "YouTube", "Instagram", "TikTok", "LinkedIn"
-  brand: varchar("brand", { length: 100 }), // e.g., "Coach Tim", "Your Home Loan Coach", "TIMISHA"
+  // NOTE: Old columns use camelCase DB names (created by original migration before schema standardization)
+  agencyId: int("agencyId").notNull().references(() => agencies.id),
+  clientId: int("client_id").references(() => clients.id),
+  contentType: mysqlEnum("contentType", ["video_script", "social_post", "email", "sms", "ad_copy"]).notNull(),
+  platform: varchar("platform", { length: 100 }),
+  brand: varchar("brand", { length: 100 }),
   title: varchar("title", { length: 500 }).notNull(),
-  content: text("content").notNull(), // The actual script/post content
-  reasoning: text("reasoning"), // Statistical reasoning for why this content works
-  stats: text("stats"), // JSON with expected performance metrics
+  content: text("content").notNull(),
+  reasoning: text("reasoning"),
+  stats: text("stats"),
   status: mysqlEnum("status", ["pending", "approved", "rejected", "revised"]).default("pending").notNull(),
-  approverName: varchar("approver_name", { length: 255 }), // "Tim" or "Timisha"
-  approverPhone: varchar("approver_phone", { length: 20 }), // Phone number to send approval request
-  feedback: text("feedback"), // Feedback if rejected or needs revision
+  approverName: varchar("approver_name", { length: 255 }),
+  approverPhone: varchar("approver_phone", { length: 20 }),
+  feedback: text("feedback"),
   approvedAt: timestamp("approved_at"),
   rejectedAt: timestamp("rejected_at"),
   smsApprovalSent: boolean("sms_approval_sent").default(false),
   smsApprovalSentAt: timestamp("sms_approval_sent_at"),
   createdBy: int("created_by").notNull().references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type ContentApproval = typeof contentApprovals.$inferSelect;
