@@ -1,0 +1,828 @@
+{
+  "timestamp": "2026-03-09T17:45:32.988Z",
+  "summary": {
+    "pass": 163,
+    "warn": 0,
+    "fail": 0,
+    "total": 163
+  },
+  "failures": [],
+  "warnings": [],
+  "passes": [
+    {
+      "category": "Route",
+      "item": "Home",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Info",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Get Started",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Book Appointment (public)",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Lead Capture (public)",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Mortgage Landing",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Partner Program",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Refinance Calculator",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "First Time Buyer Guide",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Privacy Policy",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Terms & Conditions",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Indigo Labs Landing",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Webinar Landing",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Webinar DPA",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Admin Dashboard",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Client Dashboard",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Contacts Hub",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Contacts - Borrowers",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Contacts - RE Agents",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Activity Hub",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Activity - Call Review",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Activity - Follow-ups",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Activity - Birthdays",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Marketing Hub",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Marketing - SMS",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Marketing - AI Scripts",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Marketing - Templates",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Social Media",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Workflow Automations",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Reporting Hub",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Reporting - Metrics",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Reporting - Market",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Reporting - Funnel",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Tools Hub",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Tools - Inbox",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Tools - Email Templates",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Tools - Notifications",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Leads",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "New Lead",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Lead Import",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Analytics",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Templates",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Content Approvals",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "My Content",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Conversations",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Launchpad",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Client Onboarding",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Account Setup",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Campaign Dashboard",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Campaign Monitoring",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Borrowers",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Referral Partners",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "LOA Dashboard",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Activate Account",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Partner Portal",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Account",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Dashboard",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Clients",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Content",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Bulk Generation",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Scheduling",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Templates",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Collaboration",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Quality Score",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Audit",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Analytics",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Repurposing",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Publishing",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Briefs",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Reports",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Settings",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Calendar",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Keyword Research",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Approvals",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Performance",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Design Standards",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Publishing Analytics",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Publishing Scheduler",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO AI Client Discovery",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Google Business Profile",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Ads Manager",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Keyword Gap",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO A/B Testing",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "SEO Recurring Plans",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Portal Login",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Portal Dashboard",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Portal Apex Content",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Portal Content",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Portal Calendar",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Portal Performance",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Portal Publishing",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Portal Follow-Ups",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "Route",
+      "item": "Portal Approvals",
+      "detail": "HTTP 200"
+    },
+    {
+      "category": "API",
+      "item": "auth.me",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "publicFeatures.getAgencyInfo",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "publicFeatures.getAvailableSlots",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "crm.dashboardStats",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "crm.getMyInfo",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "crm.globalSearch",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "crm.getContactTypeCounts",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "leads.list",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "leads.getDetail",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "borrowers.list",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "contacts.list",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "referralPartners.list",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "campaigns.list",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "campaigns.getTemplates",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "appointments.list",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "appointments.getAvailability",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "automations.listWorkflows",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "vapi.listCalls",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "vapi.listAssistants",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "analytics.dashboardKPIs",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "analytics.conversionFunnel",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "analytics.sourceAttribution",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "documents.list",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "billing.getPlans",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "billing.getSubscription",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "notifications.list",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "notificationCenter.getAll",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "followUps.getSuggested",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "followUps.getAllSuggested",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "followUps.getCompletionStats",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "contentApprovals.listPending",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "contentApprovals.recentActivity",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "social.listPosts",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "clientOnboarding.getStatus",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "admin.listUsers",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "admin.systemHealth",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "agencies.list",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "seo.dashboard.getStats",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "seo.clients.list",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "seo.content.list",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "metrics.dashboardStatsByRange",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "marketAnalytics.getMarketData",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "conversations.list",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "birthdays.getUpcoming",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "loa.getDashboard",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "templates.list",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "launchpad.getChecklist",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "webinars.list",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "indigoLabs.getInfo",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "account.getProfile",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "ai.getScripts",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "aiOps.getStatus",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "milestonesTasks.list",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "smsCampaigns.list",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "campaignMonitoring.getOverview",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "onboarding.getStatus",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "auth.logout",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "leads.createLead",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "borrowers.create",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "campaigns.createEmailCampaign",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "campaigns.createSMSCampaign",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "appointments.bookLeadAppointment",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "automations.createWorkflow",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "documents.upload",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "social.createPost",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "contentApprovals.approve",
+      "detail": "OK"
+    },
+    {
+      "category": "API",
+      "item": "followUps.bulkMarkContacted",
+      "detail": "OK"
+    },
+    {
+      "category": "Integration",
+      "item": "Stripe Webhook (/api/stripe/webhook)",
+      "detail": "Reachable (signature check failed as expected)"
+    },
+    {
+      "category": "Integration",
+      "item": "OAuth Callback (/api/oauth/callback)",
+      "detail": "HTTP 400 (redirect expected)"
+    },
+    {
+      "category": "Integration",
+      "item": "Vapi Webhook (/api/vapi/webhook)",
+      "detail": "HTTP 200"
+    }
+  ]
+}

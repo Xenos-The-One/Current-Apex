@@ -281,3 +281,15 @@
 - [x] Select All checkbox in Pending Approvals header of PortalApexContent
 - [x] Approve Selected button shown when items are individually checked
 - [x] Approve All Social button hidden when items are individually selected (prevents confusion)
+
+## Round 29: Full System Scan
+- [x] Audit all routes and pages — 97 routes tested, all HTTP 200
+- [x] Test all tRPC API endpoints — 63 procedures tested (queries + mutations), all OK
+- [x] Test integrations — SendGrid valid, Vapi valid, Stripe valid (test mode), S3/Forge configured, OAuth configured, LLM available
+- [x] Database audit — 95 tables present, all accessible
+- [x] Fix PortalPublishing.tsx — missing useState import added
+- [x] Fix express clearCookie deprecation warning — removed maxAge from clearCookie call
+- [x] Fix auth.logout test — updated assertion to match new clearCookie behavior
+- [x] Browser console clean — no ERROR-level entries in latest session
+- [x] All 78 vitest tests passing
+- [ ] Note: Twilio returns 401 — credentials may need to be re-verified by user

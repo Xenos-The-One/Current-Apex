@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, name, email, role, openId FROM users WHERE email = 'tariqhaskins@indigolabsai.com' LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, name, email, role, openId FROM users WHERE email = 'tariqhaskins@indigolabsai.com' LIMIT 1;",
+  "rows": [
+    {
+      "id": "420001",
+      "name": "Tariq Haskins",
+      "email": "tariqhaskins@indigolabsai.com",
+      "role": "user",
+      "openId": "2gvuGsUocDAHvfFK5VBpXh"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\topenId\n420001\tTariq Haskins\ttariqhaskins@indigolabsai.com\tuser\t2gvuGsUocDAHvfFK5VBpXh\n",
+  "stderr": "",
+  "execution_time_ms": 71
+}
