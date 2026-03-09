@@ -256,3 +256,11 @@
 - [x] Fix /seo/portal/content 404 — portal routes moved outside SeoLayout in SeoRouter.tsx
 - [x] Fix /seo/portal/approvals 404 — portal routes now render directly with their own PortalLayout
 - [x] Restructure SeoRouter.tsx — portal routes matched first (before SeoLayout catch-all), admin SEO routes use SeoLayout catch-all
+
+## Round 26: Portal 404 Fix (Again) + Suggested Follow-ups
+- [x] Fix /seo/portal/content 404 — registered portal routes directly in App.tsx (lazy-loaded, before /seo/:rest*)
+- [x] Fix /seo/portal/approvals 404 — same fix; all portal routes now bypass SeoLayout entirely
+- [x] Add PortalFollowUps page — AI-prioritized follow-up list with Draft/SMS/Done/Snooze actions
+- [x] Add Follow-Ups nav item to PortalLayout (desktop + mobile)
+- [x] Add Follow-Ups to client sidebar Grow section in DashboardLayout
+- [x] Register /seo/portal/follow-ups route in App.tsx

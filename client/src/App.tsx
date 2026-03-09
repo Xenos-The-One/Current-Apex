@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
@@ -77,6 +78,19 @@ import ActivityHub from "./pages/ActivityHub";
 import MarketingHub from "./pages/MarketingHub";
 import ReportingHub from "./pages/ReportingHub";
 import ToolsHub from "./pages/ToolsHub";
+
+// Lazy-loaded portal pages (each has its own PortalLayout — no SeoLayout wrapper needed)
+const PortalLogin = lazy(() => import("./pages/seo/portal/PortalLogin"));
+const PortalDashboard = lazy(() => import("./pages/seo/portal/PortalDashboard"));
+const PortalContent = lazy(() => import("./pages/seo/portal/PortalContent"));
+const PortalContentDetail = lazy(() => import("./pages/seo/portal/PortalContentDetail"));
+const PortalCalendar = lazy(() => import("./pages/seo/portal/PortalCalendar"));
+const PortalPerformance = lazy(() => import("./pages/seo/portal/PortalPerformance"));
+const PortalPublishing = lazy(() => import("./pages/seo/portal/PortalPublishing"));
+const PortalFollowUps = lazy(() => import("./pages/seo/portal/PortalFollowUps"));
+function PortalFallback() {
+  return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
+}
 
 function Router() {
   return (
@@ -186,6 +200,16 @@ function Router() {
       <Route path="/onboarding-snapshot" component={() => { if (typeof window !== 'undefined') window.location.replace('/admin'); return null; }} />
       <Route path="/book/:slug" component={PublicBooking} />
       <Route path="/partner-portal" component={PartnerPortal} />
+      {/* ── Portal routes: registered BEFORE /seo/:rest* to avoid SeoLayout wrapping ── */}
+      <Route path="/seo/portal/login"><Suspense fallback={<PortalFallback />}><PortalLogin /></Suspense></Route>
+      <Route path="/seo/portal/content/:id"><Suspense fallback={<PortalFallback />}><PortalContentDetail /></Suspense></Route>
+      <Route path="/seo/portal/content"><Suspense fallback={<PortalFallback />}><PortalContent /></Suspense></Route>
+      <Route path="/seo/portal/calendar"><Suspense fallback={<PortalFallback />}><PortalCalendar /></Suspense></Route>
+      <Route path="/seo/portal/performance"><Suspense fallback={<PortalFallback />}><PortalPerformance /></Suspense></Route>
+      <Route path="/seo/portal/publishing"><Suspense fallback={<PortalFallback />}><PortalPublishing /></Suspense></Route>
+      <Route path="/seo/portal/follow-ups"><Suspense fallback={<PortalFallback />}><PortalFollowUps /></Suspense></Route>
+      <Route path="/seo/portal/approvals"><Suspense fallback={<PortalFallback />}><ContentApprovals /></Suspense></Route>
+      <Route path="/seo/portal/dashboard"><Suspense fallback={<PortalFallback />}><PortalDashboard /></Suspense></Route>
       <Route path="/seo/:rest*" component={SeoRouter} />
       <Route path="/seo" component={SeoRouter} />
       <Route path="/account" component={Account} />

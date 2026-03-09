@@ -228,6 +228,7 @@ const clientMenuSections: MenuSection[] = [
       { icon: CheckSquare, label: "Content Approvals", path: "/seo/portal/approvals" },
       { icon: Share2, label: "Social Media", path: "/social" },
       { icon: FileText, label: "My Content", path: "/seo/portal/content" },
+      { icon: Sparkles, label: "Follow-Ups", path: "/seo/portal/follow-ups" },
       { icon: Settings, label: "Settings", path: "/account" },
     ],
   },

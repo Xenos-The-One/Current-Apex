@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { LogOut, LayoutDashboard, FileText, Calendar, TrendingUp, Send, Menu, X, CheckSquare } from "lucide-react";
+import { LogOut, LayoutDashboard, FileText, Calendar, TrendingUp, Send, Menu, X, CheckSquare, Sparkles } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { label: "Calendar", path: "/seo/portal/calendar", icon: Calendar },
   { label: "Performance", path: "/seo/portal/performance", icon: TrendingUp },
   { label: "Publishing", path: "/seo/portal/publishing", icon: Send },
+  { label: "Follow-Ups", path: "/seo/portal/follow-ups", icon: Sparkles },
 ];
 
 export default function PortalLayout({ children, activePath }: PortalLayoutProps) {
