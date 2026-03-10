@@ -432,3 +432,10 @@
 - [ ] Fix Tim's Facebook app leads_retrieval permission so lead data can be fetched
 - [ ] Backfill 2 existing Tim leads with real contact data once permission is fixed
 - [ ] Fix app visibility from "Only people invited" to "Public" (Thailer must do this)
+
+## Round 41: Lead Import Fix
+
+- [ ] Fix field mapper to recognize "Owner 1 First Name" / "Owner 1 Last Name" column patterns
+- [ ] Fix field mapper to handle "Mobile" and "Landline" phone columns
+- [ ] Fix field mapper to handle property data columns (Address, City, State, Zip, Property Type, etc.)
+- [ ] Make import work with combined name columns (single "Owner" field)

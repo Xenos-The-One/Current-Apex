@@ -31,22 +31,39 @@ export default function LeadImport() {
     }
   };
 
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+        else inQuotes = !inQuotes;
+      } else if (ch === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += ch;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  };
+
   const parseCSV = (text: string): any[] => {
     const lines = text.split('\n').filter(line => line.trim());
     if (lines.length === 0) return [];
-
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase());
     const rows = [];
-
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim());
+      const values = parseCSVLine(lines[i]);
       const row: any = {};
       headers.forEach((header, index) => {
         row[header] = values[index] || '';
       });
       rows.push(row);
     }
-
     return rows;
   };
 
@@ -75,29 +92,60 @@ export default function LeadImport() {
 
       for (const row of rows) {
         try {
-          // Map CSV columns to lead fields
-          const firstName = row['first name'] || row['firstname'] || row['first_name'] || '';
-          const lastName = row['last name'] || row['lastname'] || row['last_name'] || '';
-          const email = row['email'] || '';
-          const phone = row['phone'] || row['phone number'] || row['phone_number'] || '';
+          // Map CSV columns to lead fields — handles many formats including property/owner lists
+          const firstName = row['first name'] || row['firstname'] || row['first_name'] ||
+            row['owner 1 first name'] || row['owner1 first name'] || row['owner_1_first_name'] ||
+            row['owner first name'] || row['contact first name'] || '';
+          const lastName = row['last name'] || row['lastname'] || row['last_name'] ||
+            row['owner 1 last name'] || row['owner1 last name'] || row['owner_1_last_name'] ||
+            row['owner last name'] || row['contact last name'] ||
+            // Handle LLC/company names stored in last name field
+            row['owner 1'] || row['owner'] || row['company'] || row['business name'] || '';
+          const email = (row['email'] || '').split(',')[0].trim(); // take first email if multiple
+          const phone = (row['mobile'] || row['phone'] || row['phone number'] || row['phone_number'] ||
+            row['cell'] || row['cell phone'] || row['landline'] || '').split(',')[0].trim(); // take first phone if multiple
           const source = row['source'] || row['lead source'] || row['lead_source'] || '';
-          const notes = row['notes'] || row['note'] || '';
+          // Build notes from property data if present
+          const propertyAddress = row['address'] || '';
+          const propertyCity = row['city'] || '';
+          const propertyState = row['state'] || '';
+          const propertyZip = row['zip'] || row['zip code'] || '';
+          const propertyType = row['property type'] || '';
+          const estValue = row['est. value'] || row['estimated value'] || '';
+          const estEquity = row['est. equity'] || row['estimated equity'] || '';
+          const propertyNotes = [propertyAddress && `Address: ${propertyAddress}${propertyCity ? ', ' + propertyCity : ''}${propertyState ? ', ' + propertyState : ''}${propertyZip ? ' ' + propertyZip : ''}`, propertyType && `Type: ${propertyType}`, estValue && `Est. Value: ${estValue}`, estEquity && `Est. Equity: ${estEquity}`].filter(Boolean).join(' | ');
+          const notes = row['notes'] || row['note'] || propertyNotes || '';
 
-          if (!firstName || !lastName) {
+          // If no first name but we have a combined owner name, split it
+          let resolvedFirst = firstName;
+          let resolvedLast = lastName;
+          if (!resolvedFirst && !resolvedLast) {
+            const fullName = row['name'] || row['full name'] || row['owner name'] || row['contact'] || '';
+            if (fullName) {
+              const parts = fullName.trim().split(/\s+/);
+              resolvedFirst = parts[0] || '';
+              resolvedLast = parts.slice(1).join(' ') || parts[0] || '';
+            }
+          }
+
+          if (!resolvedFirst && !resolvedLast) {
             failed++;
             errors.push(`Row ${success + failed}: Missing first or last name`);
             continue;
           }
+          // Use company/LLC name as last name if only one name field found
+          if (!resolvedFirst) resolvedFirst = resolvedLast;
+          if (!resolvedLast) resolvedLast = resolvedFirst;
 
           if (!email && !phone) {
             failed++;
-            errors.push(`Row ${success + failed}: Missing both email and phone for ${firstName} ${lastName}`);
+            errors.push(`Row ${success + failed}: Missing both email and phone for ${resolvedFirst} ${resolvedLast}`);
             continue;
           }
 
           await createLead.mutateAsync({
-            firstName,
-            lastName,
+            firstName: resolvedFirst,
+            lastName: resolvedLast,
             email: email || undefined,
             phone: phone || undefined,
             source: source || undefined,
