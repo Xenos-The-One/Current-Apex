@@ -12,7 +12,7 @@ const queryClient = new QueryClient();
 
 // Public paths where we should NOT auto-redirect to OAuth login.
 // These pages have their own login UI (email+password form) or are fully public.
-const PUBLIC_PATHS = ["/", "/info", "/get-started", "/activate-account",
+const PUBLIC_PATHS = ["/", "/login", "/info", "/get-started", "/activate-account",
   "/webinar", "/refinance", "/first-time-buyer", "/book",
   "/partner-program", "/privacy-policy", "/terms",
   "/lead-capture", "/mortgage",

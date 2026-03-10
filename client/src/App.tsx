@@ -7,6 +7,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { ImpersonationProvider } from "./contexts/ImpersonationContext";
 import Home from "./pages/Home";
+import Login from "./pages/Login";
 import Info from "./pages/Info";
 import GetStarted from "./pages/GetStarted";
 import OnboardingSuccess from "./pages/OnboardingSuccess";
@@ -102,6 +103,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/login" component={Login} />
       <Route path="/info" component={Info} />
       <Route path="/get-started" component={GetStarted} />
       <Route path="/onboarding/success" component={OnboardingSuccess} />
