@@ -1,0 +1,192 @@
+{
+  "query": "SELECT id, first_name, last_name, source, client_id FROM leads ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, first_name, last_name, source, client_id FROM leads ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "first_name": "Sarah",
+      "last_name": "Johnson",
+      "source": "facebook_ads",
+      "client_id": "1"
+    },
+    {
+      "id": "2",
+      "first_name": "Marcus",
+      "last_name": "Williams",
+      "source": "social_media",
+      "client_id": "1"
+    },
+    {
+      "id": "3",
+      "first_name": "Jennifer",
+      "last_name": "Davis",
+      "source": "referral",
+      "client_id": "1"
+    },
+    {
+      "id": "4",
+      "first_name": "Robert",
+      "last_name": "Chen",
+      "source": "facebook_ads",
+      "client_id": "1"
+    },
+    {
+      "id": "5",
+      "first_name": "Amanda",
+      "last_name": "Torres",
+      "source": "website",
+      "client_id": "1"
+    },
+    {
+      "id": "30001",
+      "first_name": "Sarah",
+      "last_name": "Williams",
+      "source": "referral",
+      "client_id": "30001"
+    },
+    {
+      "id": "30002",
+      "first_name": "Emily",
+      "last_name": "Thompson",
+      "source": "website",
+      "client_id": "30001"
+    },
+    {
+      "id": "30003",
+      "first_name": "Lisa",
+      "last_name": "Garcia",
+      "source": "referral",
+      "client_id": "30002"
+    },
+    {
+      "id": "30004",
+      "first_name": "Kevin",
+      "last_name": "Wilson",
+      "source": "website",
+      "client_id": "30003"
+    },
+    {
+      "id": "30005",
+      "first_name": "Tanya",
+      "last_name": "Johnson",
+      "source": "referral",
+      "client_id": "30003"
+    },
+    {
+      "id": "30006",
+      "first_name": "Jose",
+      "last_name": "Hernandez",
+      "source": "referral",
+      "client_id": "30004"
+    },
+    {
+      "id": "30007",
+      "first_name": "Tyler",
+      "last_name": "Scott",
+      "source": "website",
+      "client_id": "30005"
+    },
+    {
+      "id": "30008",
+      "first_name": "Rachel",
+      "last_name": "Adams",
+      "source": "referral",
+      "client_id": "30005"
+    },
+    {
+      "id": "60001",
+      "first_name": "Marcus",
+      "last_name": "Williams",
+      "source": "facebook_ads",
+      "client_id": "60001"
+    },
+    {
+      "id": "60002",
+      "first_name": "Jennifer",
+      "last_name": "Patel",
+      "source": "facebook_ads",
+      "client_id": "60001"
+    },
+    {
+      "id": "60003",
+      "first_name": "Derek",
+      "last_name": "Washington",
+      "source": "facebook_ads",
+      "client_id": "60001"
+    },
+    {
+      "id": "60004",
+      "first_name": "Carlos",
+      "last_name": "Rivera",
+      "source": "facebook_ads",
+      "client_id": "60001"
+    },
+    {
+      "id": "60005",
+      "first_name": "Amanda",
+      "last_name": "Foster",
+      "source": "facebook_ads",
+      "client_id": "60001"
+    },
+    {
+      "id": "60006",
+      "first_name": "Robert",
+      "last_name": "Chen",
+      "source": "facebook_ads",
+      "client_id": "60001"
+    },
+    {
+      "id": "60007",
+      "first_name": "Sarah",
+      "last_name": "Mitchell",
+      "source": "facebook_ads",
+      "client_id": "60001"
+    },
+    {
+      "id": "60008",
+      "first_name": "Michael",
+      "last_name": "Thompson",
+      "source": "facebook_ads",
+      "client_id": "60001"
+    },
+    {
+      "id": "60009",
+      "first_name": "Facebook",
+      "last_name": "Lead AD_001",
+      "source": "facebook_ads",
+      "client_id": "60002"
+    },
+    {
+      "id": "60010",
+      "first_name": "Facebook",
+      "last_name": "Lead 444444",
+      "source": "facebook_ads",
+      "client_id": "NULL"
+    },
+    {
+      "id": "60011",
+      "first_name": "Facebook",
+      "last_name": "Lead 444444",
+      "source": "facebook_ads",
+      "client_id": "NULL"
+    },
+    {
+      "id": "60012",
+      "first_name": "Facebook",
+      "last_name": "Lead 044402",
+      "source": "facebook_ads",
+      "client_id": "60002"
+    },
+    {
+      "id": "60013",
+      "first_name": "Facebook",
+      "last_name": "Lead 372982",
+      "source": "facebook_ads",
+      "client_id": "60002"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tfirst_name\tlast_name\tsource\tclient_id\n1\tSarah\tJohnson\tfacebook_ads\t1\n2\tMarcus\tWilliams\tsocial_media\t1\n3\tJennifer\tDavis\treferral\t1\n4\tRobert\tChen\tfacebook_ads\t1\n5\tAmanda\tTorres\twebsite\t1\n30001\tSarah\tWilliams\treferral\t30001\n30002\tEmily\tThompson\twebsite\t30001\n30003\tLisa\tGarcia\treferral\t30002\n30004\tKevin\tWilson\twebsite\t30003\n30005\tTanya\tJohnson\treferral\t30003\n30006\tJose\tHernandez\treferral\t30004\n30007\tTyler\tScott\twebsite\t30005\n30008\tRachel\tAdams\treferral\t30005\n60001\tMarcus\tWilliams\tfacebook_ads\t60001\n60002\tJennifer\tPatel\tfacebook_ads\t60001\n60003\tDerek\tWashington\tfacebook_ads\t60001\n60004\tCarlos\tRivera\tfacebook_ads\t60001\n60005\tAmanda\tFoster\tfacebook_ads\t60001\n60006\tRobert\tChen\tfacebook_ads\t60001\n60007\tSarah\tMitchell\tfacebook_ads\t60001\n60008\tMichael\tThompson\tfacebook_ads\t60001\n60009\tFacebook\tLead AD_001\tfacebook_ads\t60002\n60010\tFacebook\tLead 444444\tfacebook_ads\tNULL\n60011\tFacebook\tLead 444444\tfacebook_ads\tNULL\n60012\tFacebook\tLead 044402\tfacebook_ads\t60002\n60013\tFacebook\tLead 372982\tfacebook_ads\t60002\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

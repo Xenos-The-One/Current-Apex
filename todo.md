@@ -419,3 +419,9 @@
 
 - [x] Follow-Ups banner: show all 3 suggestions (updated DB leads to have new/contacted/qualified statuses)
 - [x] Settings: added /settings route to App.tsx and linked sidebar to it (both admin and client sidebars)
+
+## Round 39: Production Cleanup + Lead Import
+
+- [x] Delete all test/seeded/junk leads from database (26 leads removed, DB now clean)
+- [x] Build CSV/Excel lead import feature with field mapping UI (xlsx support, client selector, auto field mapping, preview step, bulk import)
+- [ ] Kyle's Facebook Page Access Token (pending - user will add in morning)
