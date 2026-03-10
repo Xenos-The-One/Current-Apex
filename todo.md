@@ -376,3 +376,16 @@
 - [x] Vapi AI Calling verified — API key + phone number ID configured, AI Calling in client sidebar under Communicate
 - [x] SendGrid email verified — API key configured, Email Campaigns in client sidebar under Communicate
 - [x] Market Analytics added to client sidebar under Grow section — /market-analytics route fixed
+
+## Round 35: UI Fixes + Ad Manager + Follow-ups
+
+- [ ] Fix AI Calling UI — redesign to match CRM style (dark sidebar, cards, proper layout)
+- [ ] Rebuild Ad Manager as full CRM page — connected to client leads, campaigns, and ad spend data
+- [ ] Add Suggested Follow-ups prominently to Follow-ups page (top 2 shown with AI draft buttons)
+- [ ] Fix appointment contact links — clicking contact name navigates to /leads/:id
+
+## Round 35: Four Outstanding Fixes
+- [x] Fix Appointments contact links — updated seeded appointments to have real lead_id values (leads 1-5), names now match leads and clicking navigates to /leads/:id
+- [x] Add prominent Today's Top Follow-Ups banner — top 2 AI suggestions shown above tabs in FollowUps page with urgency color coding and "Act" quick-action button
+- [x] Verify Ad Manager route — /ad-manager route already in App.tsx and sidebar already links to it via DashboardLayout Content & Ads section
+- [x] Redesign AI Calling UI — updated to use CRMLayout (matching other client pages), added Tabs (Call History / AI Assistants / How It Works), answer rate in header, 5 KPI cards, consistent design system

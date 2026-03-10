@@ -717,6 +717,50 @@ export default function FollowUps() {
           </div>
         </div>
 
+        {/* ── Today's Top Follow-Ups Banner ── */}
+        {suggested?.suggestions && suggested.suggestions.length > 0 && (
+          <div className="rounded-xl border bg-gradient-to-r from-primary/5 to-primary/10 p-4 space-y-2">
+            <div className="flex items-center gap-2 mb-2">
+              <BrainCircuit className="w-4 h-4 text-primary" />
+              <span className="text-sm font-semibold">Today's Top Follow-Ups</span>
+              <Badge variant="outline" className="text-xs">{suggested.suggestions.length} AI suggestions</Badge>
+              <button
+                onClick={() => setActiveTab("ai-suggestions")}
+                className="ml-auto text-xs text-primary hover:underline font-medium"
+              >View all →</button>
+            </div>
+            {suggested.suggestions.slice(0, 2).map((s: any) => (
+              <div key={s.leadId} className="flex items-center gap-3 p-3 rounded-lg bg-background/80 border hover:bg-accent/40 transition-colors">
+                <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                  s.urgency === 'high' ? 'bg-red-500' : s.urgency === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+                }`} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{s.leadName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{s.reason}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Badge
+                    variant="outline"
+                    className={`text-xs capitalize ${
+                      s.urgency === 'high' ? 'border-red-300 text-red-600' :
+                      s.urgency === 'medium' ? 'border-yellow-300 text-yellow-600' :
+                      'border-green-300 text-green-600'
+                    }`}
+                  >{s.urgency}</Badge>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => setActiveTab("ai-suggestions")}
+                  >
+                    <Zap className="w-3 h-3" /> Act
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-1">
             <TabsTrigger value="tasks" className="gap-1.5">

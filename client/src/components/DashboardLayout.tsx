@@ -236,7 +236,7 @@ const clientMenuSections: MenuSection[] = [
     items: [
       { icon: Share2, label: "Social Media", path: "/social" },
       { icon: CheckSquare, label: "Apex Content", path: "/apex-content" },
-      { icon: Megaphone, label: "Ad Manager", path: "/seo/ads" },
+      { icon: Megaphone, label: "Ad Manager", path: "/ad-manager" },
     ],
   },
   {

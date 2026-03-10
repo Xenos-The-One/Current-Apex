@@ -151,6 +151,8 @@ function Router() {
       <Route path="/email-campaigns" component={MarketingHub} />
       <Route path="/sms-campaigns" component={MarketingHub} />
       <Route path="/ai-calling" component={lazy(() => import('./pages/AICalling'))} />
+      <Route path="/ad-manager" component={lazy(() => import('./pages/AdManager'))} />
+      <Route path="/suggested-follow-ups" component={SuggestedFollowUps} />
       <Route path="/content-approvals" component={ContentApprovals} />
       <Route path="/my-content" component={MyContent} />
       <Route path="/indigo-labs" component={IndigoLabsLanding} />
