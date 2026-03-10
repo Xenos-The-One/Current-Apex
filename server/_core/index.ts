@@ -4,6 +4,7 @@ import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
+import { registerClientLoginRoute } from "../client-login-page";
 import { facebookWebhookVerify, facebookWebhookHandler } from "../webhooks/facebook";
 import { handleStripeWebhook } from "../webhooks/stripe";
 import { handleSquareWebhook } from "../webhooks/square";
@@ -53,6 +54,9 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+  // Standalone client login page — served BEFORE OAuth routes so platform can't intercept
+  registerClientLoginRoute(app);
 
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
