@@ -1,0 +1,43 @@
+{
+  "query": "\nSELECT c.id, c.name, c.email, c.user_id, c.agency_id, c.access_mode, u.id as u_id, u.email as u_email, u.role\nFROM clients c\nLEFT JOIN users u ON u.id = c.user_id\nORDER BY c.id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nSELECT c.id, c.name, c.email, c.user_id, c.agency_id, c.access_mode, u.id as u_id, u.email as u_email, u.role\nFROM clients c\nLEFT JOIN users u ON u.id = c.user_id\nORDER BY c.id;\n",
+  "rows": [
+    {
+      "id": "60001",
+      "name": "Optimal Lending Solutions",
+      "email": "info@optimallendingsolutions.com",
+      "user_id": "NULL",
+      "agency_id": "1",
+      "access_mode": "full",
+      "u_id": "NULL",
+      "u_email": "NULL",
+      "role": "NULL"
+    },
+    {
+      "id": "60002",
+      "name": "Premier Mortgage Resources",
+      "email": "haskinstim57@gmail.com",
+      "user_id": "510412",
+      "agency_id": "1",
+      "access_mode": "full",
+      "u_id": "510412",
+      "u_email": "haskinstim57@gmail.com",
+      "role": "client_user"
+    },
+    {
+      "id": "90001",
+      "name": "Tariq Test Account",
+      "email": "tariq@optimallendingsolutions.com",
+      "user_id": "540335",
+      "agency_id": "1",
+      "access_mode": "full",
+      "u_id": "540335",
+      "u_email": "tariq@optimallendingsolutions.com",
+      "role": "client_user"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tuser_id\tagency_id\taccess_mode\tu_id\tu_email\trole\n60001\tOptimal Lending Solutions\tinfo@optimallendingsolutions.com\tNULL\t1\tfull\tNULL\tNULL\tNULL\n60002\tPremier Mortgage Resources\thaskinstim57@gmail.com\t510412\t1\tfull\t510412\thaskinstim57@gmail.com\tclient_user\n90001\tTariq Test Account\ttariq@optimallendingsolutions.com\t540335\t1\tfull\t540335\ttariq@optimallendingsolutions.com\tclient_user\n",
+  "stderr": "",
+  "execution_time_ms": 61
+}

@@ -1,0 +1,73 @@
+{
+  "query": "\nSELECT u.id, u.email, u.role, u.name, c.id as client_id, c.name as client_name, c.agency_id\nFROM users u\nLEFT JOIN clients c ON c.user_id = u.id\nORDER BY u.id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nSELECT u.id, u.email, u.role, u.name, c.id as client_id, c.name as client_name, c.agency_id\nFROM users u\nLEFT JOIN clients c ON c.user_id = u.id\nORDER BY u.id;\n",
+  "rows": [
+    {
+      "id": "1",
+      "email": "thailer@raindropmarketingcom.com",
+      "role": "admin",
+      "name": "Thailer Somerville",
+      "client_id": "NULL",
+      "client_name": "NULL",
+      "agency_id": "NULL"
+    },
+    {
+      "id": "420001",
+      "email": "tariqhaskins@indigolabsai.com",
+      "role": "admin",
+      "name": "Tariq Haskins",
+      "client_id": "NULL",
+      "client_name": "NULL",
+      "agency_id": "NULL"
+    },
+    {
+      "id": "450215",
+      "email": "johnmoreno189@gmail.com",
+      "role": "admin",
+      "name": "john Moreno",
+      "client_id": "NULL",
+      "client_name": "NULL",
+      "agency_id": "NULL"
+    },
+    {
+      "id": "481377",
+      "email": "tariqhaskins@indigolabsai.com",
+      "role": "admin",
+      "name": "Tariq Haskins",
+      "client_id": "NULL",
+      "client_name": "NULL",
+      "agency_id": "NULL"
+    },
+    {
+      "id": "510412",
+      "email": "haskinstim57@gmail.com",
+      "role": "client_user",
+      "name": "Tim Haskins",
+      "client_id": "60002",
+      "client_name": "Premier Mortgage Resources",
+      "agency_id": "1"
+    },
+    {
+      "id": "540335",
+      "email": "tariq@optimallendingsolutions.com",
+      "role": "client_user",
+      "name": "Tariq Haskins",
+      "client_id": "90001",
+      "client_name": "Tariq Test Account",
+      "agency_id": "1"
+    },
+    {
+      "id": "540353",
+      "email": "info@optimallendingsolutions.com",
+      "role": "user",
+      "name": "Kyle Dombecki",
+      "client_id": "NULL",
+      "client_name": "NULL",
+      "agency_id": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\trole\tname\tclient_id\tclient_name\tagency_id\n1\tthailer@raindropmarketingcom.com\tadmin\tThailer Somerville\tNULL\tNULL\tNULL\n420001\ttariqhaskins@indigolabsai.com\tadmin\tTariq Haskins\tNULL\tNULL\tNULL\n450215\tjohnmoreno189@gmail.com\tadmin\tjohn Moreno\tNULL\tNULL\tNULL\n481377\ttariqhaskins@indigolabsai.com\tadmin\tTariq Haskins\tNULL\tNULL\tNULL\n510412\thaskinstim57@gmail.com\tclient_user\tTim Haskins\t60002\tPremier Mortgage Resources\t1\n540335\ttariq@optimallendingsolutions.com\tclient_user\tTariq Haskins\t90001\tTariq Test Account\t1\n540353\tinfo@optimallendingsolutions.com\tuser\tKyle Dombecki\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 63
+}

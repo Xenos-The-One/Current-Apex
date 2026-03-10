@@ -1,0 +1,34 @@
+{
+  "query": "\nSELECT id, name, email, user_id, agency_id, access_mode FROM clients ORDER BY id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nSELECT id, name, email, user_id, agency_id, access_mode FROM clients ORDER BY id;\n",
+  "rows": [
+    {
+      "id": "60001",
+      "name": "Optimal Lending Solutions",
+      "email": "info@optimallendingsolutions.com",
+      "user_id": "NULL",
+      "agency_id": "1",
+      "access_mode": "full"
+    },
+    {
+      "id": "60002",
+      "name": "Premier Mortgage Resources",
+      "email": "haskinstim57@gmail.com",
+      "user_id": "510412",
+      "agency_id": "1",
+      "access_mode": "full"
+    },
+    {
+      "id": "90001",
+      "name": "Tariq Test Account",
+      "email": "tariq@optimallendingsolutions.com",
+      "user_id": "540335",
+      "agency_id": "1",
+      "access_mode": "full"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tuser_id\tagency_id\taccess_mode\n60001\tOptimal Lending Solutions\tinfo@optimallendingsolutions.com\tNULL\t1\tfull\n60002\tPremier Mortgage Resources\thaskinstim57@gmail.com\t510412\t1\tfull\n90001\tTariq Test Account\ttariq@optimallendingsolutions.com\t540335\t1\tfull\n",
+  "stderr": "",
+  "execution_time_ms": 63
+}

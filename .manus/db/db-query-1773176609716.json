@@ -1,0 +1,52 @@
+{
+  "query": "SELECT id, email, role, name FROM users ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, email, role, name FROM users ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "email": "thailer@raindropmarketingcom.com",
+      "role": "admin",
+      "name": "Thailer Somerville"
+    },
+    {
+      "id": "420001",
+      "email": "tariqhaskins@indigolabsai.com",
+      "role": "admin",
+      "name": "Tariq Haskins"
+    },
+    {
+      "id": "450215",
+      "email": "johnmoreno189@gmail.com",
+      "role": "admin",
+      "name": "john Moreno"
+    },
+    {
+      "id": "481377",
+      "email": "tariqhaskins@indigolabsai.com",
+      "role": "admin",
+      "name": "Tariq Haskins"
+    },
+    {
+      "id": "510412",
+      "email": "haskinstim57@gmail.com",
+      "role": "client_user",
+      "name": "Tim Haskins"
+    },
+    {
+      "id": "540335",
+      "email": "tariq@optimallendingsolutions.com",
+      "role": "client_user",
+      "name": "Tariq Haskins"
+    },
+    {
+      "id": "540353",
+      "email": "info@optimallendingsolutions.com",
+      "role": "user",
+      "name": "Kyle Dombecki"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\trole\tname\n1\tthailer@raindropmarketingcom.com\tadmin\tThailer Somerville\n420001\ttariqhaskins@indigolabsai.com\tadmin\tTariq Haskins\n450215\tjohnmoreno189@gmail.com\tadmin\tjohn Moreno\n481377\ttariqhaskins@indigolabsai.com\tadmin\tTariq Haskins\n510412\thaskinstim57@gmail.com\tclient_user\tTim Haskins\n540335\ttariq@optimallendingsolutions.com\tclient_user\tTariq Haskins\n540353\tinfo@optimallendingsolutions.com\tuser\tKyle Dombecki\n",
+  "stderr": "",
+  "execution_time_ms": 60
+}

@@ -1,0 +1,9 @@
+{
+  "query": "\nUPDATE clients SET user_id = 540353 WHERE id = 60001;\nUPDATE users SET role = 'client_user' WHERE id = 540353;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nUPDATE clients SET user_id = 540353 WHERE id = 60001;\nUPDATE users SET role = 'client_user' WHERE id = 540353;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 85
+}

@@ -1,0 +1,34 @@
+{
+  "query": "SELECT id, email, role, name FROM users WHERE role IN ('admin', 'super_admin', 'agency_owner') ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, email, role, name FROM users WHERE role IN ('admin', 'super_admin', 'agency_owner') ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "email": "thailer@raindropmarketingcom.com",
+      "role": "admin",
+      "name": "Thailer Somerville"
+    },
+    {
+      "id": "420001",
+      "email": "tariqhaskins@indigolabsai.com",
+      "role": "admin",
+      "name": "Tariq Haskins"
+    },
+    {
+      "id": "450215",
+      "email": "johnmoreno189@gmail.com",
+      "role": "admin",
+      "name": "john Moreno"
+    },
+    {
+      "id": "481377",
+      "email": "tariqhaskins@indigolabsai.com",
+      "role": "admin",
+      "name": "Tariq Haskins"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\trole\tname\n1\tthailer@raindropmarketingcom.com\tadmin\tThailer Somerville\n420001\ttariqhaskins@indigolabsai.com\tadmin\tTariq Haskins\n450215\tjohnmoreno189@gmail.com\tadmin\tjohn Moreno\n481377\ttariqhaskins@indigolabsai.com\tadmin\tTariq Haskins\n",
+  "stderr": "",
+  "execution_time_ms": 72
+}

@@ -439,3 +439,11 @@
 - [ ] Fix field mapper to handle "Mobile" and "Landline" phone columns
 - [ ] Fix field mapper to handle property data columns (Address, City, State, Zip, Property Type, etc.)
 - [ ] Make import work with combined name columns (single "Owner" field)
+
+## Round 42: Bug Fixes
+- [x] Fixed "Client profile not found" on lead import — root cause: Kyle's client record (id 60001) had user_id=null, not linked to his user account
+- [x] Linked Kyle's client record (id 60001) to his user account (id 540353) in the database
+- [x] Fixed Kyle's user role from 'user' to 'client_user' so he can access client procedures
+- [x] Rewrote LeadImport page to use leads.bulkImport with admin client selector dropdown (instead of crm.createLead row-by-row which required a linked client profile)
+- [x] Fixed webinar_registrations table schema mismatch — dropped old table, recreated with correct columns (webinar_id, state, brokerage, status, reminder columns, etc.)
+- [x] Webinar cron job errors now resolved — no more "Unknown column webinar_date" errors every minute
