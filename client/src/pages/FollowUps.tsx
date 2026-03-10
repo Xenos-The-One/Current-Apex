@@ -729,7 +729,7 @@ export default function FollowUps() {
                 className="ml-auto text-xs text-primary hover:underline font-medium"
               >View all →</button>
             </div>
-            {suggested.suggestions.slice(0, 2).map((s: any) => (
+            {suggested.suggestions.slice(0, 3).map((s: any) => (
               <div key={s.leadId} className="flex items-center gap-3 p-3 rounded-lg bg-background/80 border hover:bg-accent/40 transition-colors">
                 <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${
                   s.urgency === 'high' ? 'bg-red-500' : s.urgency === 'medium' ? 'bg-yellow-500' : 'bg-green-500'

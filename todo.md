@@ -389,3 +389,7 @@
 - [x] Add prominent Today's Top Follow-Ups banner — top 2 AI suggestions shown above tabs in FollowUps page with urgency color coding and "Act" quick-action button
 - [x] Verify Ad Manager route — /ad-manager route already in App.tsx and sidebar already links to it via DashboardLayout Content & Ads section
 - [x] Redesign AI Calling UI — updated to use CRMLayout (matching other client pages), added Tabs (Call History / AI Assistants / How It Works), answer rate in header, 5 KPI cards, consistent design system
+
+## Round 36: Conversations + Follow-Ups Fixes
+- [x] Conversations: Add "New Conversation" button (the + icon) that opens a composer dialog to start SMS or email with any contact/lead
+- [x] Follow-Ups: Expand Today's Top Follow-Ups banner from 2 to 3 suggestions
