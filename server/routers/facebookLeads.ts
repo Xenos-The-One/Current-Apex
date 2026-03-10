@@ -1,18 +1,19 @@
 import { z } from "zod";
-import { publicProcedure, router } from "../_core/trpc";
+import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
-import { leads } from "../../drizzle/schema";
+import { leads, facebookPageConfigs } from "../../drizzle/schema";
+import { eq } from "drizzle-orm";
 import { scheduleLeadFollowUp } from "../lead-automation";
 
 /**
  * Facebook Lead Ads Webhook Router
  * Handles incoming leads from Facebook instant forms
+ * Tokens are stored per-page in the facebook_page_configs table
  */
 
 export const facebookLeadsRouter = router({
   /**
    * Webhook verification endpoint (required by Facebook)
-   * Facebook will call this with hub.mode=subscribe and hub.verify_token
    */
   verifyWebhook: publicProcedure
     .input(
@@ -24,7 +25,6 @@ export const facebookLeadsRouter = router({
     )
     .query(({ input }) => {
       const VERIFY_TOKEN = process.env.FACEBOOK_VERIFY_TOKEN || "sterling_marketing_webhook_2024";
-      
       if (input.mode === "subscribe" && input.token === VERIFY_TOKEN) {
         console.log("[Facebook Webhook] Verification successful");
         return { challenge: input.challenge };
@@ -35,8 +35,7 @@ export const facebookLeadsRouter = router({
     }),
 
   /**
-   * Webhook endpoint to receive lead data from Facebook
-   * Facebook sends POST requests when new leads are captured
+   * Receive webhook from Facebook — looks up token and client by page ID
    */
   receiveWebhook: publicProcedure
     .input(
@@ -67,28 +66,52 @@ export const facebookLeadsRouter = router({
       console.log("[Facebook Webhook] Received webhook:", JSON.stringify(input, null, 2));
 
       if (input.object !== "page") {
-        console.log("[Facebook Webhook] Not a page event, ignoring");
         return { success: true, message: "Not a page event" };
       }
 
-      // Process each entry
       for (const entry of input.entry) {
         for (const change of entry.changes) {
-          if (change.field === "leadgen") {
-            const leadgenId = change.value.leadgen_id;
-            console.log(`[Facebook Webhook] Processing lead: ${leadgenId}`);
+          if (change.field !== "leadgen") continue;
 
-            try {
-              // Fetch lead data from Facebook Graph API
-              const leadData = await fetchLeadFromFacebook(leadgenId);
-              
-              // Create lead in CRM
-              await createLeadFromFacebook(leadData);
-              
-              console.log(`[Facebook Webhook] Lead ${leadgenId} processed successfully`);
-            } catch (error) {
-              console.error(`[Facebook Webhook] Error processing lead ${leadgenId}:`, error);
+          const leadgenId = change.value.leadgen_id;
+          const pageId = change.value.page_id ?? entry.id;
+
+          console.log(`[Facebook Webhook] Processing lead: ${leadgenId} from page: ${pageId}`);
+
+          try {
+            // Look up the page config (token + client) from DB
+            const db = await getDb();
+            if (!db) throw new Error("Database not available");
+
+            const configs = await db
+              .select()
+              .from(facebookPageConfigs)
+              .where(eq(facebookPageConfigs.pageId, pageId))
+              .limit(1);
+
+            const config = configs[0];
+            if (!config) {
+              console.warn(`[Facebook Webhook] No config found for page ${pageId} — using fallback`);
             }
+
+            const accessToken = config?.pageAccessToken ?? process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
+            const clientId = config?.clientId ?? null;
+            const agencyId = config?.agencyId ?? 1;
+
+            if (!accessToken) {
+              console.error(`[Facebook Webhook] No access token for page ${pageId}`);
+              continue;
+            }
+
+            // Fetch real lead data from Facebook Graph API
+            const leadData = await fetchLeadFromFacebook(leadgenId, accessToken);
+
+            // Create lead in CRM with correct client assignment
+            await createLeadFromFacebook(leadData, agencyId, clientId);
+
+            console.log(`[Facebook Webhook] Lead ${leadgenId} processed for client ${clientId}`);
+          } catch (error) {
+            console.error(`[Facebook Webhook] Error processing lead ${leadgenId}:`, error);
           }
         }
       }
@@ -97,9 +120,86 @@ export const facebookLeadsRouter = router({
     }),
 
   /**
+   * List all Facebook page configs (admin only)
+   */
+  listPageConfigs: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+    const configs = await db.select().from(facebookPageConfigs).orderBy(facebookPageConfigs.createdAt);
+    // Mask the token for display
+    return configs.map(c => ({
+      ...c,
+      pageAccessToken: c.pageAccessToken ? "••••••" + c.pageAccessToken.slice(-6) : "",
+    }));
+  }),
+
+  /**
+   * Save or update a Facebook page config
+   */
+  savePageConfig: protectedProcedure
+    .input(
+      z.object({
+        pageId: z.string().min(1),
+        pageName: z.string().optional(),
+        pageAccessToken: z.string().min(10),
+        clientId: z.number().optional(),
+        agencyId: z.number().default(1),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      // Check if config already exists for this page
+      const existing = await db
+        .select()
+        .from(facebookPageConfigs)
+        .where(eq(facebookPageConfigs.pageId, input.pageId))
+        .limit(1);
+
+      if (existing[0]) {
+        // Update existing
+        await db
+          .update(facebookPageConfigs)
+          .set({
+            pageName: input.pageName,
+            pageAccessToken: input.pageAccessToken,
+            clientId: input.clientId ?? null,
+            agencyId: input.agencyId,
+            isActive: true,
+          })
+          .where(eq(facebookPageConfigs.pageId, input.pageId));
+      } else {
+        // Insert new
+        await db.insert(facebookPageConfigs).values({
+          pageId: input.pageId,
+          pageName: input.pageName,
+          pageAccessToken: input.pageAccessToken,
+          clientId: input.clientId ?? null,
+          agencyId: input.agencyId,
+          isActive: true,
+        });
+      }
+
+      return { success: true };
+    }),
+
+  /**
+   * Delete a Facebook page config
+   */
+  deletePageConfig: protectedProcedure
+    .input(z.object({ pageId: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.delete(facebookPageConfigs).where(eq(facebookPageConfigs.pageId, input.pageId));
+      return { success: true };
+    }),
+
+  /**
    * Manual test endpoint to simulate Facebook lead
    */
-  testWebhook: publicProcedure
+  testWebhook: protectedProcedure
     .input(
       z.object({
         firstName: z.string(),
@@ -107,17 +207,17 @@ export const facebookLeadsRouter = router({
         email: z.string().email(),
         phone: z.string(),
         source: z.string().optional(),
+        clientId: z.number().optional(),
       })
     )
     .mutation(async ({ input }) => {
-      // For Tim's account (hardcoded for now)
-      const clientId = 1; // Tim's client ID
-      const agencyId = 1; // Premier Mortgage Resources
-
       const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const [lead] = await db.insert(leads).values({
+      if (!db) throw new Error("Database not available");
+
+      const clientId = input.clientId ?? 60002; // Default to Tim
+      const agencyId = 1;
+
+      const [lead] = await db.insert(leads).values({
         clientId,
         agencyId,
         firstName: input.firstName,
@@ -126,9 +226,10 @@ export const facebookLeadsRouter = router({
         phone: input.phone,
         source: input.source || "facebook_test",
         status: "new",
+        pipelineStage: "new",
+        contactType: "borrower",
       });
 
-      // Schedule Vapi follow-up call (respects per-client vapi_calls_enabled flag)
       await scheduleLeadFollowUp(
         lead.insertId,
         input.phone,
@@ -146,42 +247,35 @@ export const facebookLeadsRouter = router({
 });
 
 /**
- * Fetch lead data from Facebook Graph API
+ * Fetch lead data from Facebook Graph API using the page access token
  */
-async function fetchLeadFromFacebook(leadgenId: string) {
-  const accessToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
-  
-  if (!accessToken) {
-    throw new Error("FACEBOOK_PAGE_ACCESS_TOKEN not configured");
-  }
-
+async function fetchLeadFromFacebook(leadgenId: string, accessToken: string) {
   const url = `https://graph.facebook.com/v18.0/${leadgenId}?access_token=${accessToken}`;
-  
+
   const response = await fetch(url);
-  
+
   if (!response.ok) {
-    throw new Error(`Facebook API error: ${response.statusText}`);
+    const errText = await response.text();
+    throw new Error(`Facebook API error ${response.status}: ${errText}`);
   }
 
   const data = await response.json();
-  
-  // Parse field data into structured format
-  const leadData: any = {
+
+  const leadData: Record<string, string | undefined> & { leadgenId: string; createdTime?: string } = {
     leadgenId,
     createdTime: data.created_time,
   };
 
   for (const field of data.field_data || []) {
-    const name = field.name.toLowerCase();
-    const value = field.values[0];
+    const name = (field.name as string).toLowerCase();
+    const value = field.values?.[0] as string | undefined;
 
     if (name.includes("first") && name.includes("name")) {
       leadData.firstName = value;
     } else if (name.includes("last") && name.includes("name")) {
       leadData.lastName = value;
     } else if (name.includes("full") && name.includes("name")) {
-      // Split full name
-      const parts = value.split(" ");
+      const parts = (value ?? "").split(" ");
       leadData.firstName = parts[0];
       leadData.lastName = parts.slice(1).join(" ") || parts[0];
     } else if (name.includes("email")) {
@@ -195,18 +289,18 @@ async function fetchLeadFromFacebook(leadgenId: string) {
 }
 
 /**
- * Create lead in CRM from Facebook data
+ * Create lead in CRM from Facebook data with correct client assignment
  */
-async function createLeadFromFacebook(leadData: any) {
-  // For Tim's account (hardcoded for now - can be made dynamic later)
-  const clientId = 1; // Tim's client ID
-  const agencyId = 1; // Premier Mortgage Resources
-
+async function createLeadFromFacebook(
+  leadData: Record<string, string | undefined> & { leadgenId: string },
+  agencyId: number,
+  clientId: number | null
+) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   const [lead] = await db.insert(leads).values({
-    clientId,
+    clientId: clientId ?? undefined,
     agencyId,
     firstName: leadData.firstName || "Unknown",
     lastName: leadData.lastName || "Lead",
@@ -214,22 +308,25 @@ async function createLeadFromFacebook(leadData: any) {
     phone: leadData.phone,
     source: "facebook_lead_ads",
     status: "new",
+    pipelineStage: "new",
+    contactType: "borrower",
     customFields: JSON.stringify({
       facebookLeadgenId: leadData.leadgenId,
       facebookCreatedTime: leadData.createdTime,
     }),
   });
 
-  console.log(`[Facebook Webhook] Created lead ID: ${lead.insertId}`);
+  console.log(`[Facebook Webhook] Created lead ID: ${lead.insertId} for client ${clientId}`);
 
-  // Schedule Vapi follow-up call (respects per-client vapi_calls_enabled flag)
-  await scheduleLeadFollowUp(
-    lead.insertId,
-    leadData.phone || "",
-    leadData.firstName || "Unknown",
-    "facebook_lead_ads",
-    clientId
-  );
+  if (leadData.phone) {
+    await scheduleLeadFollowUp(
+      lead.insertId,
+      leadData.phone,
+      leadData.firstName || "Unknown",
+      "facebook_lead_ads",
+      clientId ?? 0
+    );
+  }
 
   return lead.insertId;
 }

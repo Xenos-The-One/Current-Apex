@@ -19,7 +19,8 @@ import {
   Webhook,
   XCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -229,6 +230,100 @@ function VapiCallTester() {
         {callMutation.isPending ? "Calling..." : "Place Test Call"}
       </Button>
     </div>
+  );
+}
+
+// ─── Facebook Page Config Card ─────────────────────────────────────────────
+function FacebookPageConfigCard() {
+  const { agencyId } = useAgency();
+  const { data: clients } = trpc.admin.listClients.useQuery({ agencyId });
+  const { data: configs, refetch } = trpc.facebookLeads.listPageConfigs.useQuery();
+  const saveConfig = trpc.facebookLeads.savePageConfig.useMutation({
+    onSuccess: () => { toast.success("Facebook page config saved!"); refetch(); setForm({ pageId: "", pageName: "", pageAccessToken: "", clientId: "" }); },
+    onError: (e) => toast.error(e.message),
+  });
+  const deleteConfig = trpc.facebookLeads.deletePageConfig.useMutation({
+    onSuccess: () => { toast.success("Config removed"); refetch(); },
+  });
+  const [form, setForm] = useState({ pageId: "", pageName: "", pageAccessToken: "", clientId: "" });
+  const [showToken, setShowToken] = useState(false);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <Webhook className="w-4 h-4" /> Facebook Lead Ads
+        </CardTitle>
+        <CardDescription>
+          Configure Facebook Page Access Tokens per client. Leads from each page will automatically route to the correct client pipeline.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {/* Webhook URL */}
+        <div>
+          <Label>Webhook URL</Label>
+          <div className="flex gap-2 mt-1">
+            <Input readOnly value={`${window.location.origin}/api/webhooks/facebook`} className="font-mono text-sm bg-muted" />
+            <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/api/webhooks/facebook`); toast.success("Copied!"); }}>Copy</Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">Paste this into Facebook App → Webhooks → leadgen subscription.</p>
+        </div>
+
+        {/* Existing page configs */}
+        {configs && configs.length > 0 && (
+          <div className="space-y-2">
+            <Label>Connected Pages</Label>
+            {configs.map(cfg => (
+              <div key={cfg.pageId} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
+                <div>
+                  <p className="font-medium">{cfg.pageName || cfg.pageId}</p>
+                  <p className="text-xs text-muted-foreground">Page ID: {cfg.pageId} · Token: {cfg.pageAccessToken} · Client: {clients?.find(c => c.id === cfg.clientId)?.name ?? "Unassigned"}</p>
+                </div>
+                <Button variant="ghost" size="sm" className="text-destructive" onClick={() => deleteConfig.mutate({ pageId: cfg.pageId })}>Remove</Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add / update page config */}
+        <div className="rounded-lg border p-4 space-y-3">
+          <p className="text-sm font-medium">Add / Update Page Token</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Facebook Page ID</Label>
+              <Input value={form.pageId} onChange={e => setForm(f => ({ ...f, pageId: e.target.value }))} placeholder="e.g. 500444413143324" className="mt-1 text-sm" />
+            </div>
+            <div>
+              <Label className="text-xs">Page Name (optional)</Label>
+              <Input value={form.pageName} onChange={e => setForm(f => ({ ...f, pageName: e.target.value }))} placeholder="e.g. Premier Mortgage" className="mt-1 text-sm" />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Page Access Token</Label>
+            <div className="flex gap-2 mt-1">
+              <div className="relative flex-1">
+                <Input type={showToken ? "text" : "password"} value={form.pageAccessToken} onChange={e => setForm(f => ({ ...f, pageAccessToken: e.target.value }))} placeholder="EAALkIuCb5CM..." className="pr-10 font-mono text-sm" />
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" onClick={() => setShowToken(s => !s)}>
+                  {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Assign to Client</Label>
+            <Select value={form.clientId} onValueChange={v => setForm(f => ({ ...f, clientId: v }))}>
+              <SelectTrigger className="mt-1 text-sm"><SelectValue placeholder="Select client..." /></SelectTrigger>
+              <SelectContent>
+                {clients?.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button size="sm" disabled={!form.pageId || !form.pageAccessToken || saveConfig.isPending} onClick={() => saveConfig.mutate({ pageId: form.pageId, pageName: form.pageName || undefined, pageAccessToken: form.pageAccessToken, clientId: form.clientId ? Number(form.clientId) : undefined, agencyId })} className="gap-1.5">
+            <Save className="w-3.5 h-3.5" /> {saveConfig.isPending ? "Saving..." : "Save Page Config"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -596,59 +691,7 @@ export default function Settings() {
 
           {/* ── Webhooks ── */}
           <TabsContent value="webhooks" className="mt-5 space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Webhook className="w-4 h-4" /> Facebook Lead Ads
-                </CardTitle>
-                <CardDescription>
-                  Configure your Facebook Lead Ads webhook to automatically import new leads into the pipeline.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Webhook URL</Label>
-                  <div className="flex gap-2 mt-1">
-                    <Input
-                      readOnly
-                      value={`${window.location.origin}/api/webhooks/facebook`}
-                      className="font-mono text-sm bg-muted"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/api/webhooks/facebook`);
-                        toast.success("Copied to clipboard");
-                      }}
-                    >
-                      Copy
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1.5">
-                    Paste this URL into your Facebook App → Webhooks → leadgen subscription.
-                  </p>
-                </div>
-                <div>
-                  <Label>Verify Token</Label>
-                  <SecretInput
-                    label=""
-                    envKey="FACEBOOK_VERIFY_TOKEN"
-                    description="A custom string you choose — must match exactly what you enter in the Facebook App Webhooks dashboard."
-                    placeholder="manus_crm_verify"
-                  />
-                </div>
-                <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
-                  <p className="font-medium text-foreground">Setup steps:</p>
-                  <ol className="list-decimal list-inside space-y-0.5">
-                    <li>Go to <strong>developers.facebook.com</strong> → Your App → Webhooks</li>
-                    <li>Subscribe to the <strong>leadgen</strong> field on the <strong>Page</strong> object</li>
-                    <li>Paste the Webhook URL and Verify Token above, then click Verify</li>
-                    <li>New leads will automatically appear in your pipeline under source: Facebook Ads</li>
-                  </ol>
-                </div>
-              </CardContent>
-            </Card>
+            <FacebookPageConfigCard />
 
             <Card>
               <CardHeader>

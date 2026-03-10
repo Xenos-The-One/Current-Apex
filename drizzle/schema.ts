@@ -1293,3 +1293,22 @@ export const generatedWebsites = mysqlTable("generated_websites", {
 });
 export type GeneratedWebsite = typeof generatedWebsites.$inferSelect;
 export type InsertGeneratedWebsite = typeof generatedWebsites.$inferInsert;
+
+/**
+ * Facebook Page Configurations
+ * Stores per-client Facebook Page Access Tokens and page IDs
+ * so the webhook can route leads to the correct client and fetch real lead data
+ */
+export const facebookPageConfigs = mysqlTable("facebook_page_configs", {
+  id: int("id").autoincrement().primaryKey(),
+  agencyId: int("agency_id").notNull(),
+  clientId: int("client_id").references(() => clients.id),
+  pageId: varchar("page_id", { length: 64 }).notNull().unique(),
+  pageName: varchar("page_name", { length: 255 }),
+  pageAccessToken: text("page_access_token").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type FacebookPageConfig = typeof facebookPageConfigs.$inferSelect;
+export type InsertFacebookPageConfig = typeof facebookPageConfigs.$inferInsert;

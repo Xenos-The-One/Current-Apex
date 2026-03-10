@@ -419,3 +419,16 @@
 
 - [x] Follow-Ups banner: show all 3 suggestions (updated DB leads to have new/contacted/qualified statuses)
 - [x] Settings: added /settings route to App.tsx and linked sidebar to it (both admin and client sidebars)
+
+## Round 40: Facebook Lead Fix + Login Fix
+
+- [x] Fix email+password login redirect issue (platform-level OAuth intercept)
+- [x] Add /api/client-login standalone HTML login page that bypasses platform OAuth
+- [x] Add facebook_page_configs table to store per-client page tokens
+- [x] Fix Facebook webhook to look up token and client from DB by page ID
+- [x] Restore Facebook page token input UI in Settings → Webhooks
+- [x] Save Tim's page config (page 500444413143324 → client 60002)
+- [x] Save Kyle's page config (page 61586221872067 → client 60001)
+- [ ] Fix Tim's Facebook app leads_retrieval permission so lead data can be fetched
+- [ ] Backfill 2 existing Tim leads with real contact data once permission is fixed
+- [ ] Fix app visibility from "Only people invited" to "Public" (Thailer must do this)

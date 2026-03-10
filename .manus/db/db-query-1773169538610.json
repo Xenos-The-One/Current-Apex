@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `facebook_page_configs` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `agency_id` int NOT NULL,\n  `client_id` int DEFAULT NULL,\n  `page_id` varchar(64) NOT NULL,\n  `page_name` varchar(255) DEFAULT NULL,\n  `page_access_token` text NOT NULL,\n  `is_active` tinyint(1) NOT NULL DEFAULT 1,\n  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `facebook_page_configs_page_id_unique` (`page_id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute CREATE TABLE IF NOT EXISTS `facebook_page_configs` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `agency_id` int NOT NULL,\n  `client_id` int DEFAULT NULL,\n  `page_id` varchar(64) NOT NULL,\n  `page_name` varchar(255) DEFAULT NULL,\n  `page_access_token` text NOT NULL,\n  `is_active` tinyint(1) NOT NULL DEFAULT 1,\n  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `facebook_page_configs_page_id_unique` (`page_id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 219
+}
