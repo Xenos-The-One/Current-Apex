@@ -88,7 +88,16 @@ export async function facebookWebhookHandler(req: Request, res: Response) {
         let campaignName: string | null = null;
         let formName: string | null = null;
 
-        const accessToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
+        // Read token from env var first, then fall back to DB (set via Settings → Integrations)
+        let accessToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
+        if (!accessToken) {
+          try {
+            const [tokenRows] = await conn.query<mysql.RowDataPacket[]>(
+              "SELECT settingValue FROM agency_settings WHERE settingKey = 'FACEBOOK_PAGE_ACCESS_TOKEN' LIMIT 1"
+            );
+            accessToken = tokenRows[0]?.settingValue ?? null;
+          } catch { /* non-fatal */ }
+        }
         if (accessToken) {
           try {
             const resp = await fetch(
