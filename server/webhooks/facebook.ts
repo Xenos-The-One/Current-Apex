@@ -59,6 +59,14 @@ export async function facebookWebhookHandler(req: Request, res: Response) {
 
         if (!leadgenId) continue;
 
+        // ── Skip Meta test events (fake page IDs / test lead IDs) ─────────
+        const TEST_PAGE_IDS = ["444444444444", "111111111111", "123456789"];
+        const isTestLead = TEST_PAGE_IDS.includes(pageId) || leadgenId.startsWith("TEST_") || leadgenId === "444444444444";
+        if (isTestLead) {
+          console.log(`[Facebook] ⚠️  Skipping test event — page=${pageId} leadgen=${leadgenId}`);
+          continue;
+        }
+
         console.log(`[Facebook] Incoming lead — page=${pageId} leadgen=${leadgenId} form=${formId}`);
 
         // ── 1. Route to correct client by page ID ─────────────────────────

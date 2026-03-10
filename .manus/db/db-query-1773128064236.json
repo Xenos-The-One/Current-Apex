@@ -1,0 +1,22 @@
+{
+  "query": "SELECT id, email, role, openId FROM users WHERE email LIKE '%haskinstim%' OR email LIKE '%optimal%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, email, role, openId FROM users WHERE email LIKE '%haskinstim%' OR email LIKE '%optimal%';",
+  "rows": [
+    {
+      "id": "510411",
+      "email": "info@optimallendingsolutions.com",
+      "role": "client_user",
+      "openId": "sub_870b0ba8a4d4e8eeb7afc375cc88e61e"
+    },
+    {
+      "id": "510412",
+      "email": "haskinstim57@gmail.com",
+      "role": "client_user",
+      "openId": "sub_6165111247ae3f54117a75da0c5aa0e1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\trole\topenId\n510411\tinfo@optimallendingsolutions.com\tclient_user\tsub_870b0ba8a4d4e8eeb7afc375cc88e61e\n510412\thaskinstim57@gmail.com\tclient_user\tsub_6165111247ae3f54117a75da0c5aa0e1\n",
+  "stderr": "",
+  "execution_time_ms": 66
+}

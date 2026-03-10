@@ -4,6 +4,8 @@ import axios, { type AxiosInstance } from "axios";
 import { parse as parseCookieHeader } from "cookie";
 import type { Request } from "express";
 import { SignJWT, jwtVerify } from "jose";
+import { eq } from "drizzle-orm";
+import { users } from "../../drizzle/schema";
 import type { User } from "../../drizzle/schema";
 import * as db from "../db";
 import { ENV } from "./env";
@@ -274,14 +276,32 @@ class SDKServer {
     if (!user) {
       try {
         const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
-        await db.upsertUser({
-          openId: userInfo.openId,
-          name: userInfo.name || null,
-          email: userInfo.email ?? null,
-          loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
-          lastSignedIn: signedInAt,
-        });
-        user = await db.getUserByOpenId(userInfo.openId);
+        // Check if an existing client_user account has this email — link it to the new OAuth openId
+        if (userInfo.email) {
+          const existingByEmail = await db.getUserByEmail(userInfo.email);
+          if (existingByEmail && existingByEmail.role === 'client_user') {
+            const dbConn = await db.getDb();
+            if (dbConn) {
+              await dbConn.update(users).set({
+                openId: userInfo.openId,
+                loginMethod: userInfo.loginMethod ?? userInfo.platform ?? 'google',
+                lastSignedIn: signedInAt,
+              }).where(eq(users.id, existingByEmail.id));
+            }
+            user = await db.getUserByOpenId(userInfo.openId);
+            console.log(`[Auth] Linked Google OAuth for ${userInfo.email} to existing client_user account (id=${existingByEmail.id})`);
+          }
+        }
+        if (!user) {
+          await db.upsertUser({
+            openId: userInfo.openId,
+            name: userInfo.name || null,
+            email: userInfo.email ?? null,
+            loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+            lastSignedIn: signedInAt,
+          });
+          user = await db.getUserByOpenId(userInfo.openId);
+        }
       } catch (error) {
         console.error("[Auth] Failed to sync user from OAuth:", error);
         throw ForbiddenError("Failed to sync user info");
