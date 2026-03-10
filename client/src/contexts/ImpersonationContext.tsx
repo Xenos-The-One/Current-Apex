@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export type ImpersonationViewMode = "admin" | "client";
 
@@ -63,22 +64,27 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
     return { clientId: null, clientName: null, viewMode: null };
   });
 
+  const queryClient = useQueryClient();
+
   const startImpersonatingAsAdmin = useCallback((clientId: number, clientName: string) => {
     const next = { clientId, clientName, viewMode: "admin" as ImpersonationViewMode };
     setState(next);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  }, []);
+    queryClient.invalidateQueries();
+  }, [queryClient]);
 
   const startImpersonatingAsClient = useCallback((clientId: number, clientName: string) => {
     const next = { clientId, clientName, viewMode: "client" as ImpersonationViewMode };
     setState(next);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  }, []);
+    queryClient.invalidateQueries();
+  }, [queryClient]);
 
   const stopImpersonating = useCallback(() => {
     setState({ clientId: null, clientName: null, viewMode: null });
     localStorage.removeItem(STORAGE_KEY);
-  }, []);
+    queryClient.invalidateQueries();
+  }, [queryClient]);
 
   return (
     <ImpersonationContext.Provider
