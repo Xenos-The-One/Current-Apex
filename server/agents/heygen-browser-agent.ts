@@ -17,8 +17,25 @@
 
 import { storagePut } from "../storage";
 import { notifyOwner } from "../_core/notification";
-import puppeteer from "puppeteer-core";
-import type { Browser, Page, Protocol } from "puppeteer-core";
+// puppeteer-core is loaded dynamically to avoid ERR_MODULE_NOT_FOUND in production
+// when the optional BROWSERLESS_API_TOKEN is not configured.
+type PuppeteerModule = typeof import("puppeteer-core");
+type Browser = import("puppeteer-core").Browser;
+type Page = import("puppeteer-core").Page;
+type Protocol = import("puppeteer-core").Protocol;
+let _puppeteer: PuppeteerModule | null = null;
+async function getPuppeteer(): Promise<PuppeteerModule> {
+  if (!_puppeteer) {
+    try {
+      _puppeteer = await import("puppeteer-core");
+    } catch {
+      throw new Error(
+        "puppeteer-core is not installed. Run: pnpm add puppeteer-core"
+      );
+    }
+  }
+  return _puppeteer;
+}
 import { eq, desc, and } from "drizzle-orm";
 import { getDb } from "../seo-db";
 import { heygenSessions } from "../../drizzle/seo-schema";
@@ -215,7 +232,8 @@ async function connectBrowser(): Promise<Browser> {
   const wsEndpoint = `${BROWSERLESS_WSS}/?token=${token}&stealth=true`;
   console.log(`[HeyGenBrowser] Connecting to Browserless.io cloud browser...`);
 
-  const browser = await puppeteer.connect({
+  const puppeteer = await getPuppeteer();
+  const browser = await puppeteer.default.connect({
     browserWSEndpoint: wsEndpoint,
     protocolTimeout: 55000,
   });

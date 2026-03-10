@@ -91,7 +91,7 @@ export default function Billing() {
           </div>
           {subscription && (
             <Button variant="outline" size="sm" className="gap-1.5"
-              onClick={() => toast.info("Stripe billing portal — configure STRIPE_SECRET_KEY to enable")}>
+              onClick={() => toast.info("Square billing portal — configure SQUARE_ACCESS_TOKEN in Settings → Integrations to enable")}>
               <ExternalLink className="w-4 h-4" /> Manage Billing
             </Button>
           )}
@@ -124,14 +124,14 @@ export default function Billing() {
           </Card>
         )}
 
-        {/* Stripe notice */}
-        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200">
+        {/* Square notice */}
+        <div className="p-4 rounded-xl bg-blue-50 border border-blue-200">
           <div className="flex items-start gap-3">
-            <CreditCard className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <CreditCard className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-amber-800">Stripe Integration</p>
-              <p className="text-sm text-amber-700 mt-0.5">
-                To enable live payments, add your <code className="bg-amber-100 px-1 rounded text-xs">STRIPE_SECRET_KEY</code> and <code className="bg-amber-100 px-1 rounded text-xs">STRIPE_WEBHOOK_SECRET</code> in Settings → Secrets. Plans below will redirect to Stripe Checkout when configured.
+              <p className="text-sm font-semibold text-blue-800">Square Payments</p>
+              <p className="text-sm text-blue-700 mt-0.5">
+                To enable live payments, add your <code className="bg-blue-100 px-1 rounded text-xs">SQUARE_ACCESS_TOKEN</code> and <code className="bg-blue-100 px-1 rounded text-xs">SQUARE_LOCATION_ID</code> in <strong>Settings → Integrations</strong>. Plans below will redirect to Square Checkout when configured.
               </p>
             </div>
           </div>
@@ -173,7 +173,7 @@ export default function Billing() {
                   className="w-full"
                   variant={plan.popular ? "default" : "outline"}
                   disabled={currentPlan === plan.id}
-                  onClick={() => toast.info("Stripe checkout — configure STRIPE_SECRET_KEY to enable live payments")}
+                  onClick={() => toast.info("Square checkout — configure SQUARE_ACCESS_TOKEN in Settings → Integrations to enable live payments")}
                 >
                   {currentPlan === plan.id ? "Current Plan" : `Subscribe to ${plan.name}`}
                   {currentPlan !== plan.id && <ArrowUpRight className="w-4 h-4 ml-1" />}

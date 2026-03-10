@@ -6,6 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { facebookWebhookVerify, facebookWebhookHandler } from "../webhooks/facebook";
 import { handleStripeWebhook } from "../webhooks/stripe";
+import { handleSquareWebhook } from "../webhooks/square";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -41,6 +42,12 @@ async function startServer() {
     "/api/stripe/webhook",
     express.raw({ type: "application/json" }),
     handleStripeWebhook
+  );
+  // Square webhook — must also use raw body for signature verification
+  app.post(
+    "/api/square/webhook",
+    express.raw({ type: "application/json" }),
+    handleSquareWebhook
   );
 
   // Configure body parser with larger size limit for file uploads

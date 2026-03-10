@@ -403,3 +403,9 @@
 - [x] Campaign scheduler cron job created (fires due campaigns every minute)
 - [x] Wire initializeCronJobs() into server startup (was never being called — critical fix!)
 - [x] All 82 tests passing
+
+## Round 37: Deployment Fix + Square + Integrations Tab
+
+- [ ] Fix deployment crash: puppeteer-core ERR_MODULE_NOT_FOUND in production build
+- [ ] Add Square payment integration (replace Stripe references in UI)
+- [ ] Add Integrations tab to Settings page (Twilio, SendGrid, Vapi, Square credentials)

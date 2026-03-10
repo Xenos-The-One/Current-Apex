@@ -3,6 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { paymentRouter } from "./routers/payment";
+import { squarePaymentRouter } from "./routers/square-payment";
 import { adminRouter } from "./routers/admin";
 import { vapiRouter } from "./routers/vapi";
 import { clientRouter as crmRouter } from "./routers/client";
@@ -56,6 +57,7 @@ import { websiteGeneratorRouter } from "./routers/website-generator";
 export const appRouter = router({
   system: systemRouter,
   payment: paymentRouter,
+  squarePayment: squarePaymentRouter,
   admin: adminRouter,
   vapi: vapiRouter,
   crm: crmRouter,

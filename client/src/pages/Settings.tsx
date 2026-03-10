@@ -549,33 +549,45 @@ export default function Settings() {
               </CardContent>
             </Card>
 
-            {/* Stripe */}
+            {/* Square */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Key className="w-4 h-4" /> Stripe — Payments
+                  <Key className="w-4 h-4" /> Square — Payments
                 </CardTitle>
                 <CardDescription>
-                  Subscription billing for agencies. Claim your Stripe sandbox to activate test mode.
+                  Subscription billing and payment processing via Square. Get credentials at developer.squareup.com.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 space-y-1">
-                  <p className="font-medium">Action Required: Claim Your Stripe Sandbox</p>
-                  <p>Visit <a href="https://dashboard.stripe.com/claim_sandbox/YWNjdF8xVDhQYnpEek1wMmcwc2lGLDE3NzM1Mzk0NDUv1000O5rjCmF" target="_blank" rel="noopener noreferrer" className="underline font-medium">dashboard.stripe.com/claim_sandbox</a> to activate your test environment before May 7, 2026.</p>
+                <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-800 space-y-1">
+                  <p className="font-medium">Setup: Connect Your Square Account</p>
+                  <p>Visit <a href="https://developer.squareup.com/apps" target="_blank" rel="noopener noreferrer" className="underline font-medium">developer.squareup.com/apps</a> to create an application and get your credentials. Use Sandbox mode for testing.</p>
                 </div>
                 <div className="space-y-3">
                   <SecretInput
-                    label="Stripe Secret Key"
-                    envKey="STRIPE_SECRET_KEY"
-                    description="Your Stripe secret key from dashboard.stripe.com/apikeys"
-                    placeholder="sk_live_..."
+                    label="Square Access Token"
+                    envKey="SQUARE_ACCESS_TOKEN"
+                    description="From Square Developer Dashboard → Applications → Credentials. Use sandbox token for testing, production token for live payments."
+                    placeholder="EAAAl..."
                   />
                   <SecretInput
-                    label="Stripe Webhook Secret"
-                    envKey="STRIPE_WEBHOOK_SECRET"
-                    description="Create a webhook at dashboard.stripe.com/webhooks pointing to the URL below, then copy the signing secret here"
-                    placeholder="whsec_..."
+                    label="Square Location ID"
+                    envKey="SQUARE_LOCATION_ID"
+                    description="From Square Developer Dashboard → Locations. Required for creating payment links."
+                    placeholder="LXXXXXXXXXXXXXXXXX"
+                  />
+                  <SecretInput
+                    label="Square Webhook Signature Key"
+                    envKey="SQUARE_WEBHOOK_SIGNATURE_KEY"
+                    description="From Square Developer Dashboard → Webhooks → Signature key. Used to verify incoming webhook events."
+                    placeholder="..."
+                  />
+                  <SecretInput
+                    label="Square Environment"
+                    envKey="SQUARE_ENVIRONMENT"
+                    description='Set to "sandbox" for testing or "production" for live payments.'
+                    placeholder="sandbox"
                   />
                 </div>
               </CardContent>
@@ -640,8 +652,8 @@ export default function Settings() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Stripe Webhook</CardTitle>
-                <CardDescription>Required for subscription status updates and invoice events.</CardDescription>
+                <CardTitle className="text-base">Square Webhook</CardTitle>
+                <CardDescription>Required for payment and subscription status updates from Square.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
@@ -649,14 +661,14 @@ export default function Settings() {
                   <div className="flex gap-2 mt-1">
                     <Input
                       readOnly
-                      value={`${window.location.origin}/api/stripe/webhook`}
+                      value={`${window.location.origin}/api/square/webhook`}
                       className="font-mono text-sm bg-muted"
                     />
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/api/stripe/webhook`);
+                        navigator.clipboard.writeText(`${window.location.origin}/api/square/webhook`);
                         toast.success("Copied to clipboard");
                       }}
                     >
@@ -665,18 +677,18 @@ export default function Settings() {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Register this URL in your Stripe dashboard under Developers → Webhooks. Subscribe to{" "}
-                  <code className="bg-muted px-1 rounded">customer.subscription.*</code>,{" "}
-                  <code className="bg-muted px-1 rounded">invoice.*</code>, and{" "}
-                  <code className="bg-muted px-1 rounded">checkout.session.completed</code> events.
+                  Register this URL in your Square Developer Dashboard under Webhooks. Subscribe to{" "}
+                  <code className="bg-muted px-1 rounded">payment.completed</code>,{" "}
+                  <code className="bg-muted px-1 rounded">order.updated</code>, and{" "}
+                  <code className="bg-muted px-1 rounded">subscription.created</code> events.
                 </p>
                 <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
                   <p className="font-medium text-foreground">Setup steps:</p>
                   <ol className="list-decimal list-inside space-y-0.5">
-                    <li>Go to <strong>dashboard.stripe.com</strong> → Developers → Webhooks</li>
+                    <li>Go to <strong>developer.squareup.com/apps</strong> → Your App → Webhooks</li>
                     <li>Click <strong>Add endpoint</strong> and paste the URL above</li>
-                    <li>Select events: <code className="bg-muted px-1 rounded">checkout.session.completed</code>, <code className="bg-muted px-1 rounded">customer.subscription.*</code>, <code className="bg-muted px-1 rounded">invoice.*</code></li>
-                    <li>Copy the <strong>Signing secret</strong> and add it as <code className="bg-muted px-1 rounded">STRIPE_WEBHOOK_SECRET</code> in Settings → Secrets</li>
+                    <li>Select events: <code className="bg-muted px-1 rounded">payment.completed</code>, <code className="bg-muted px-1 rounded">order.updated</code>, <code className="bg-muted px-1 rounded">subscription.created</code></li>
+                    <li>Copy the <strong>Signature key</strong> and add it as <code className="bg-muted px-1 rounded">SQUARE_WEBHOOK_SIGNATURE_KEY</code> in Settings → Integrations</li>
                   </ol>
                 </div>
               </CardContent>
