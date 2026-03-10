@@ -1,17 +1,22 @@
 /**
- * Dedicated login page for sub-account users (Kyle, Tim, LOAs).
- * Uses email + password ONLY — no Manus OAuth involved.
- * This page deliberately does NOT call useAuth() or any tRPC query
- * on mount so the global error handler cannot redirect away from it.
+ * Universal login page for ALL users.
+ * - Sub-account users (Kyle, Tim, LOAs): email + password form
+ * - Admin (Thailer): "Continue with Manus" button (Google OAuth)
+ *
+ * This page deliberately does NOT call useAuth() on mount and is
+ * listed in PUBLIC_PATHS in main.tsx so the global error handler
+ * can NEVER redirect away from it.
  */
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Lock, Mail, Eye, EyeOff, LogIn } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff, LogIn, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { getLoginUrl } from "@/const";
 
 const LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663346016577/LMov9oD5hWD87TsDa4kZ8o/GradientLogoBlue2Green_5403585a.png";
 
@@ -57,7 +62,8 @@ export default function Login() {
               Sign in to your CRM account
             </CardDescription>
           </CardHeader>
-          <CardContent className="pt-4">
+          <CardContent className="pt-4 space-y-5">
+            {/* Email + Password form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-slate-300">Email Address</Label>
@@ -127,7 +133,28 @@ export default function Login() {
               </Button>
             </form>
 
-            <p className="mt-6 text-center text-xs text-slate-500">
+            {/* Divider */}
+            <div className="flex items-center gap-3">
+              <Separator className="flex-1 bg-slate-700" />
+              <span className="text-xs text-slate-500">or</span>
+              <Separator className="flex-1 bg-slate-700" />
+            </div>
+
+            {/* Admin OAuth login */}
+            <Button
+              variant="outline"
+              className="w-full border-slate-600 bg-slate-700/50 text-slate-300 hover:bg-slate-700 hover:text-white h-11"
+              onClick={() => {
+                window.location.href = getLoginUrl();
+              }}
+            >
+              <span className="flex items-center gap-2">
+                <ArrowRight className="h-4 w-4" />
+                Admin: Continue with Manus
+              </span>
+            </Button>
+
+            <p className="text-center text-xs text-slate-500">
               Having trouble? Contact your account manager.
             </p>
           </CardContent>

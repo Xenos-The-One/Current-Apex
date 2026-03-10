@@ -34,7 +34,9 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   if (!isUnauthorized) return;
 
-  window.location.href = getLoginUrl();
+  // Redirect to our own /login page (email+password) instead of Manus OAuth.
+  // This ensures sub-account users (Kyle, Tim, LOAs) are never sent to the Manus portal.
+  window.location.replace("/login");
 };
 
 queryClient.getQueryCache().subscribe(event => {

@@ -92,13 +92,13 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-4">
             <a
-              href={getLoginUrl()}
+              href="/login"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               Sign In
             </a>
             <Button asChild>
-              <a href={getLoginUrl()}>
+              <a href="/login">
                 <LogIn className="w-4 h-4 mr-2" />
                 Login to CRM
               </a>
@@ -331,7 +331,7 @@ export default function Home() {
               © 2026 Sterling Marketing. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
-              <a href={getLoginUrl()} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <a href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Login
               </a>
               <Link href="/blog" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
