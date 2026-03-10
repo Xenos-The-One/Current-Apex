@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE sub_account_credentials SET password_hash = '$2b$10$JsdLXjLJXeoHLuSsZmDe1utHNYDSKB2PIvR6V71iM190scg4Flf8W', is_active = 1, activated_at = NOW() WHERE user_id = 510411;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute UPDATE sub_account_credentials SET password_hash = '$2b$10$JsdLXjLJXeoHLuSsZmDe1utHNYDSKB2PIvR6V71iM190scg4Flf8W', is_active = 1, activated_at = NOW() WHERE user_id = 510411;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 131
+}
