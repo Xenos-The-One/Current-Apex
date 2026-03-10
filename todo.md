@@ -447,3 +447,11 @@
 - [x] Rewrote LeadImport page to use leads.bulkImport with admin client selector dropdown (instead of crm.createLead row-by-row which required a linked client profile)
 - [x] Fixed webinar_registrations table schema mismatch — dropped old table, recreated with correct columns (webinar_id, state, brokerage, status, reminder columns, etc.)
 - [x] Webinar cron job errors now resolved — no more "Unknown column webinar_date" errors every minute
+
+## Round 43: CSV Import Parser Fix
+- [x] Fixed CSV column mapping to support Palm Beach CSV headers (Owner 1 First Name, Owner 1 Last Name, Mobile, Landline, Email, Address, City, State, Zip, etc.)
+- [x] Fixed name resolution for LLC/company rows where first name is blank — uses last name as both first and last
+- [x] Made phone optional in bulkImport schema (some rows have email only)
+- [x] Added Landline as fallback phone when Mobile is empty
+- [x] Added batching (500 rows per request) to prevent timeouts on large CSVs like the 7,027-row Palm Beach file
+- [x] Simulation confirmed: 6,478 of 7,027 rows will import (549 skipped — no email AND no phone)

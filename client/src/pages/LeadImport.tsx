@@ -90,54 +90,58 @@ export default function LeadImport() {
   };
 
   const mapRowToLead = (row: any): { lead: any; error: string | null } => {
-    const firstName = row['first name'] || row['firstname'] || row['first_name'] ||
-      row['owner 1 first name'] || row['owner1 first name'] || row['owner_1_first_name'] ||
-      row['owner first name'] || row['contact first name'] || '';
-    const lastName = row['last name'] || row['lastname'] || row['last_name'] ||
-      row['owner 1 last name'] || row['owner1 last name'] || row['owner_1_last_name'] ||
-      row['owner last name'] || row['contact last name'] ||
-      row['owner 1'] || row['owner'] || row['company'] || row['business name'] || '';
-    const email = (row['email'] || '').split(',')[0].trim();
-    const phone = (row['mobile'] || row['phone'] || row['phone number'] || row['phone_number'] ||
-      row['cell'] || row['cell phone'] || row['landline'] || '').split(',')[0].trim();
-    const source = row['source'] || row['lead source'] || row['lead_source'] || 'CSV Import';
+    // Support both exact-case and lowercase header variants
+    const get = (key: string) => row[key] || row[key.toLowerCase()] || '';
+
+    const firstName = get('Owner 1 First Name') || get('first name') || get('firstname') || get('first_name') || get('owner first name') || get('contact first name');
+    const lastName = get('Owner 1 Last Name') || get('last name') || get('lastname') || get('last_name') || get('owner last name') || get('contact last name') || get('owner 1') || get('owner') || get('company') || get('business name');
+    const email = (get('Email') || get('email')).split(',')[0].trim();
+    // Mobile first, then Landline as fallback
+    const rawPhone = get('Mobile') || get('mobile') || get('phone') || get('phone number') || get('phone_number') || get('cell') || get('cell phone');
+    const rawLandline = get('Landline') || get('landline');
+    const phone = (rawPhone || rawLandline).split(',')[0].trim();
+    const source = get('source') || get('lead source') || get('lead_source') || 'CSV Import';
 
     // Build notes from property data if present
-    const propertyAddress = row['address'] || '';
-    const propertyCity = row['city'] || '';
-    const propertyState = row['state'] || '';
-    const propertyZip = row['zip'] || row['zip code'] || '';
-    const propertyType = row['property type'] || '';
-    const estValue = row['est. value'] || row['estimated value'] || '';
-    const estEquity = row['est. equity'] || row['estimated equity'] || '';
+    const propertyAddress = get('Address') || get('address');
+    const propertyCity = get('City') || get('city');
+    const propertyState = get('State') || get('state');
+    const propertyZip = get('Zip') || get('zip') || get('zip code');
+    const propertyType = get('Property Type') || get('property type');
+    const estValue = get('Est. Value') || get('est. value') || get('estimated value');
+    const estEquity = get('Est. Equity') || get('est. equity') || get('estimated equity');
     const propertyNotes = [
       propertyAddress && `Address: ${propertyAddress}${propertyCity ? ', ' + propertyCity : ''}${propertyState ? ', ' + propertyState : ''}${propertyZip ? ' ' + propertyZip : ''}`,
       propertyType && `Type: ${propertyType}`,
       estValue && `Est. Value: ${estValue}`,
       estEquity && `Est. Equity: ${estEquity}`
     ].filter(Boolean).join(' | ');
-    const notes = row['notes'] || row['note'] || propertyNotes || '';
+    const notes = get('notes') || get('note') || propertyNotes;
 
-    // Resolve name
-    let resolvedFirst = firstName;
-    let resolvedLast = lastName;
+    // Resolve name — handle LLCs / companies where first name is blank
+    let resolvedFirst = firstName.trim();
+    let resolvedLast = lastName.trim();
+
     if (!resolvedFirst && !resolvedLast) {
-      const fullName = row['name'] || row['full name'] || row['owner name'] || row['contact'] || '';
+      // Try generic name columns
+      const fullName = (get('name') || get('full name') || get('owner name') || get('contact')).trim();
       if (fullName) {
-        const parts = fullName.trim().split(/\s+/);
-        resolvedFirst = parts[0] || '';
-        resolvedLast = parts.slice(1).join(' ') || parts[0] || '';
+        const parts = fullName.split(/\s+/);
+        resolvedFirst = parts[0];
+        resolvedLast = parts.slice(1).join(' ') || parts[0];
       }
     }
 
     if (!resolvedFirst && !resolvedLast) {
-      return { lead: null, error: 'Missing first or last name' };
+      return { lead: null, error: 'Missing name' };
     }
+
+    // If only last name (e.g. LLC name), use it as both first and last
     if (!resolvedFirst) resolvedFirst = resolvedLast;
     if (!resolvedLast) resolvedLast = resolvedFirst;
 
     if (!email && !phone) {
-      return { lead: null, error: `Missing both email and phone for ${resolvedFirst} ${resolvedLast}` };
+      return { lead: null, error: `No contact info for ${resolvedFirst} ${resolvedLast}` };
     }
 
     // Format phone to E.164
@@ -154,7 +158,7 @@ export default function LeadImport() {
         firstName: resolvedFirst,
         lastName: resolvedLast,
         email: email || undefined,
-        phone: formattedPhone || '+10000000000', // fallback if no phone
+        phone: formattedPhone || undefined,
         source,
         notes: notes || undefined,
       },
@@ -207,14 +211,24 @@ export default function LeadImport() {
         return;
       }
 
-      // Send all valid leads in one bulk request
-      const result = await bulkImport.mutateAsync({
-        agencyId: 1,
-        clientId: selectedClientId,
-        leads: validLeads,
-      });
+      // Send leads in batches of 500 to avoid timeouts
+      const BATCH_SIZE = 500;
+      let totalImported = 0;
+      const batchCount = Math.ceil(validLeads.length / BATCH_SIZE);
 
-      const success = result.imported;
+      for (let i = 0; i < validLeads.length; i += BATCH_SIZE) {
+        const batch = validLeads.slice(i, i + BATCH_SIZE);
+        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+        toast.info(`Importing batch ${batchNum} of ${batchCount}...`);
+        const result = await bulkImport.mutateAsync({
+          agencyId: 1,
+          clientId: selectedClientId,
+          leads: batch,
+        });
+        totalImported += result.imported;
+      }
+
+      const success = totalImported;
       const failed = errors.length;
 
       setResults({ success, failed, errors });

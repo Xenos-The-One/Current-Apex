@@ -236,7 +236,7 @@ export const leadsRouter = router({
         firstName: z.string(),
         lastName: z.string(),
         email: z.string().optional(),
-        phone: z.string(),
+        phone: z.string().optional(),
         source: z.string(),
         loanType: z.string().optional(),
         propertyAddress: z.string().optional(),
