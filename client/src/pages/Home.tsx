@@ -1,17 +1,42 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogIn, BookOpen, TrendingUp, Zap } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { LogIn, BookOpen, TrendingUp, Zap, Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 const LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663346016577/LMov9oD5hWD87TsDa4kZ8o/GradientLogoBlue2Green_5403585a.png";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 export default function Home() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
+
+  // Login form state
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState("");
+
+  const loginMutation = trpc.onboarding.loginWithPassword.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Welcome back, ${data.name || ""}!`);
+      window.location.href = "/";
+    },
+    onError: (err) => {
+      setLoginError(err.message || "Invalid email or password");
+    },
+  });
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError("");
+    loginMutation.mutate({ email, password });
+  };
 
   // Check if this is a first-time sub-account login (email_password method, no onboarding progress)
   const isSubAccount = user?.loginMethod === "email_password";
@@ -82,65 +107,129 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section - Login Focused */}
-      <section className="py-20 md:py-32">
+      {/* Hero + Login */}
+      <section className="py-16 md:py-24">
         <div className="container">
-          <div className="max-w-4xl mx-auto text-center space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-              <img src={LOGO_URL} alt="" className="w-4 h-4 object-contain" />
-              <span>AI-Powered Lead Management Platform</span>
+          <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+            {/* Left: headline */}
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                <img src={LOGO_URL} alt="" className="w-4 h-4 object-contain" />
+                <span>AI-Powered Lead Management Platform</span>
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+                Welcome to{" "}
+                <span className="text-primary">Sterling Marketing</span>
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                Your complete CRM solution for managing leads, campaigns, and appointments.
+                Log in to access your dashboard and start managing your pipeline.
+              </p>
+              <div className="grid grid-cols-3 gap-4 pt-2">
+                <div className="text-center p-3 rounded-lg bg-card border">
+                  <TrendingUp className="w-5 h-5 text-primary mx-auto mb-1" />
+                  <p className="text-xs text-muted-foreground">Lead Management</p>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-card border">
+                  <Zap className="w-5 h-5 text-primary mx-auto mb-1" />
+                  <p className="text-xs text-muted-foreground">AI Automation</p>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-card border">
+                  <BookOpen className="w-5 h-5 text-primary mx-auto mb-1" />
+                  <p className="text-xs text-muted-foreground">Analytics</p>
+                </div>
+              </div>
             </div>
 
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-              Welcome to{" "}
-              <span className="text-primary">Sterling Marketing</span>
-            </h1>
-
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Your complete CRM solution for managing leads, campaigns, and appointments. 
-              Login to access your dashboard and start managing your pipeline.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Button size="lg" className="text-lg px-12 py-6" asChild>
-                <a href={getLoginUrl()}>
-                  <LogIn className="w-5 h-5 mr-2" />
-                  Login to Your CRM
-                </a>
-              </Button>
-            </div>
-
-            <div className="pt-8 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
-              <Card className="border-2 hover:border-primary/50 transition-colors">
-                <CardHeader className="text-center">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                    <TrendingUp className="w-6 h-6 text-primary" />
+            {/* Right: login card */}
+            <Card className="shadow-xl border-2">
+              <CardHeader className="text-center pb-2">
+                <img src={LOGO_URL} alt="" className="w-12 h-12 object-contain mx-auto mb-2" />
+                <CardTitle className="text-2xl">Sign In</CardTitle>
+                <CardDescription>Access your Sterling Marketing CRM</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5 pt-2">
+                {/* Email/password form */}
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email">Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={e => { setEmail(e.target.value); setLoginError(""); }}
+                        className="pl-9"
+                        required
+                        autoComplete="email"
+                      />
+                    </div>
                   </div>
-                  <CardTitle className="text-lg">Lead Management</CardTitle>
-                  <CardDescription>Track and convert leads efficiently</CardDescription>
-                </CardHeader>
-              </Card>
-
-              <Card className="border-2 hover:border-primary/50 transition-colors">
-                <CardHeader className="text-center">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                    <Zap className="w-6 h-6 text-primary" />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={e => { setPassword(e.target.value); setLoginError(""); }}
+                        className="pl-9 pr-10"
+                        required
+                        autoComplete="current-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(v => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        tabIndex={-1}
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
-                  <CardTitle className="text-lg">AI Automation</CardTitle>
-                  <CardDescription>Automated follow-ups and campaigns</CardDescription>
-                </CardHeader>
-              </Card>
+                  {loginError && (
+                    <p className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">{loginError}</p>
+                  )}
+                  <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
+                    {loginMutation.isPending ? (
+                      <span className="flex items-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Signing in…
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <LogIn className="w-4 h-4" />
+                        Sign In
+                      </span>
+                    )}
+                  </Button>
+                </form>
 
-              <Card className="border-2 hover:border-primary/50 transition-colors">
-                <CardHeader className="text-center">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                    <BookOpen className="w-6 h-6 text-primary" />
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
                   </div>
-                  <CardTitle className="text-lg">Analytics</CardTitle>
-                  <CardDescription>Real-time performance insights</CardDescription>
-                </CardHeader>
-              </Card>
-            </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">or</span>
+                  </div>
+                </div>
+
+                <Button variant="outline" className="w-full bg-background" asChild>
+                  <a href={getLoginUrl()}>
+                    <img src={LOGO_URL} alt="" className="w-4 h-4 object-contain mr-2" />
+                    Continue with Manus
+                  </a>
+                </Button>
+
+                <p className="text-center text-xs text-muted-foreground">
+                  Don't have an account? Contact your agency administrator.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>

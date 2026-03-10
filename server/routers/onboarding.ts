@@ -8,6 +8,9 @@ import { getDb } from "../db";
 import { users, accountInvitations, subAccountCredentials, clients, agencies } from "../../drizzle/schema";
 import { sendEmail } from "../email-service";
 import { upsertUser as upsertSeoUser, getUserByOpenId, ensureLinkedSeoClient, getFirstAdminSeoUser } from "../seo-db";
+import { sdk } from "../_core/sdk";
+import { getSessionCookieOptions } from "../_core/cookies";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 
 export const onboardingRouter = router({
   /**
@@ -323,6 +326,56 @@ export const onboardingRouter = router({
         message: "Account activated successfully! You can now log in.",
         email: invitation.email,
         name: `${invitation.firstName} ${invitation.lastName}`,
+      };
+    }),
+
+  /**
+   * Email + password login for sub-account users (those invited by an admin).
+   * Verifies the bcrypt hash stored in sub_account_credentials, then issues
+   * the same session cookie that the OAuth callback uses.
+   */
+  loginWithPassword: publicProcedure
+    .input(z.object({
+      email: z.string().email(),
+      password: z.string().min(1),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, input.email))
+        .limit(1);
+      if (!user) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
+      }
+      if (user.loginMethod !== "email_password") {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Please use the Manus login button for this account" });
+      }
+      const [cred] = await db
+        .select()
+        .from(subAccountCredentials)
+        .where(eq(subAccountCredentials.userId, user.id))
+        .limit(1);
+      if (!cred || !cred.isActive) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Account not yet activated. Please check your email for the activation link." });
+      }
+      const valid = await bcrypt.compare(input.password, cred.passwordHash);
+      if (!valid) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
+      }
+      const sessionToken = await sdk.createSessionToken(user.openId, {
+        name: user.name || "",
+        expiresInMs: ONE_YEAR_MS,
+      });
+      const cookieOptions = getSessionCookieOptions(ctx.req);
+      ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+      await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.id, user.id));
+      return {
+        success: true,
+        name: user.name,
+        role: user.role,
       };
     }),
 

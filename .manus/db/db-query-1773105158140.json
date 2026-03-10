@@ -1,0 +1,9 @@
+{
+  "query": "\nALTER TABLE email_campaigns \n  ADD COLUMN IF NOT EXISTS agency_id INT NULL,\n  ADD COLUMN IF NOT EXISTS scheduled_date TIMESTAMP NULL,\n  ADD COLUMN IF NOT EXISTS open_count INT DEFAULT 0,\n  ADD COLUMN IF NOT EXISTS click_count INT DEFAULT 0;\n\nALTER TABLE sms_campaigns \n  ADD COLUMN IF NOT EXISTS agency_id INT NULL,\n  ADD COLUMN IF NOT EXISTS scheduled_date TIMESTAMP NULL,\n  ADD COLUMN IF NOT EXISTS delivered_count INT DEFAULT 0,\n  ADD COLUMN IF NOT EXISTS total_recipients INT DEFAULT 0,\n  ADD COLUMN IF NOT EXISTS scheduled_for TIMESTAMP NULL,\n  ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP NULL,\n  ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP NULL;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nALTER TABLE email_campaigns \n  ADD COLUMN IF NOT EXISTS agency_id INT NULL,\n  ADD COLUMN IF NOT EXISTS scheduled_date TIMESTAMP NULL,\n  ADD COLUMN IF NOT EXISTS open_count INT DEFAULT 0,\n  ADD COLUMN IF NOT EXISTS click_count INT DEFAULT 0;\n\nALTER TABLE sms_campaigns \n  ADD COLUMN IF NOT EXISTS agency_id INT NULL,\n  ADD COLUMN IF NOT EXISTS scheduled_date TIMESTAMP NULL,\n  ADD COLUMN IF NOT EXISTS delivered_count INT DEFAULT 0,\n  ADD COLUMN IF NOT EXISTS total_recipients INT DEFAULT 0,\n  ADD COLUMN IF NOT EXISTS scheduled_for TIMESTAMP NULL,\n  ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP NULL,\n  ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP NULL;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2865
+}

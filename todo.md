@@ -393,3 +393,13 @@
 ## Round 36: Conversations + Follow-Ups Fixes
 - [x] Conversations: Add "New Conversation" button (the + icon) that opens a composer dialog to start SMS or email with any contact/lead
 - [x] Follow-Ups: Expand Today's Top Follow-Ups banner from 2 to 3 suggestions
+
+## Pre-Launch Sprint (Tonight)
+
+- [x] Add loginWithPassword tRPC procedure (bcrypt.compare + session cookie)
+- [x] Add email/password login form on Home page for sub-account users
+- [x] Add Email campaign scheduling UI (datetime-local picker + scheduledDate field)
+- [x] Add SMS campaign scheduling UI (datetime-local picker + scheduledDate field)
+- [x] Campaign scheduler cron job created (fires due campaigns every minute)
+- [x] Wire initializeCronJobs() into server startup (was never being called — critical fix!)
+- [x] All 82 tests passing

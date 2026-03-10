@@ -1,0 +1,205 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'email_campaigns' ORDER BY ORDINAL_POSITION; SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sms_campaigns' ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'email_campaigns' ORDER BY ORDINAL_POSITION; SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sms_campaigns' ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "agencyId"
+    },
+    {
+      "COLUMN_NAME": "createdByUserId"
+    },
+    {
+      "COLUMN_NAME": "name"
+    },
+    {
+      "COLUMN_NAME": "subject"
+    },
+    {
+      "COLUMN_NAME": "fromName"
+    },
+    {
+      "COLUMN_NAME": "fromEmail"
+    },
+    {
+      "COLUMN_NAME": "content"
+    },
+    {
+      "COLUMN_NAME": "templateId"
+    },
+    {
+      "COLUMN_NAME": "status"
+    },
+    {
+      "COLUMN_NAME": "audienceFilter"
+    },
+    {
+      "COLUMN_NAME": "scheduledAt"
+    },
+    {
+      "COLUMN_NAME": "sentAt"
+    },
+    {
+      "COLUMN_NAME": "totalRecipients"
+    },
+    {
+      "COLUMN_NAME": "totalSent"
+    },
+    {
+      "COLUMN_NAME": "totalOpened"
+    },
+    {
+      "COLUMN_NAME": "totalClicked"
+    },
+    {
+      "COLUMN_NAME": "totalBounced"
+    },
+    {
+      "COLUMN_NAME": "totalUnsubscribed"
+    },
+    {
+      "COLUMN_NAME": "sendgridCampaignId"
+    },
+    {
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "COLUMN_NAME": "scheduled_date"
+    },
+    {
+      "COLUMN_NAME": "agency_id"
+    },
+    {
+      "COLUMN_NAME": "open_count"
+    },
+    {
+      "COLUMN_NAME": "click_count"
+    },
+    {
+      "COLUMN_NAME": "client_id"
+    },
+    {
+      "COLUMN_NAME": "recipient_filter"
+    },
+    {
+      "COLUMN_NAME": "recipient_status"
+    },
+    {
+      "COLUMN_NAME": "sent_count"
+    },
+    {
+      "COLUMN_NAME": "failed_count"
+    },
+    {
+      "COLUMN_NAME": "sent_date"
+    },
+    {
+      "COLUMN_NAME": "created_by"
+    },
+    {
+      "COLUMN_NAME": "COLUMN_NAME"
+    },
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "agencyId"
+    },
+    {
+      "COLUMN_NAME": "createdByUserId"
+    },
+    {
+      "COLUMN_NAME": "name"
+    },
+    {
+      "COLUMN_NAME": "message"
+    },
+    {
+      "COLUMN_NAME": "fromNumber"
+    },
+    {
+      "COLUMN_NAME": "status"
+    },
+    {
+      "COLUMN_NAME": "audienceFilter"
+    },
+    {
+      "COLUMN_NAME": "scheduledAt"
+    },
+    {
+      "COLUMN_NAME": "sentAt"
+    },
+    {
+      "COLUMN_NAME": "totalRecipients"
+    },
+    {
+      "COLUMN_NAME": "totalSent"
+    },
+    {
+      "COLUMN_NAME": "totalDelivered"
+    },
+    {
+      "COLUMN_NAME": "totalFailed"
+    },
+    {
+      "COLUMN_NAME": "twilioMessageServiceSid"
+    },
+    {
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "COLUMN_NAME": "scheduled_date"
+    },
+    {
+      "COLUMN_NAME": "agency_id"
+    },
+    {
+      "COLUMN_NAME": "delivered_count"
+    },
+    {
+      "COLUMN_NAME": "total_recipients"
+    },
+    {
+      "COLUMN_NAME": "scheduled_for"
+    },
+    {
+      "COLUMN_NAME": "sent_at"
+    },
+    {
+      "COLUMN_NAME": "completed_at"
+    },
+    {
+      "COLUMN_NAME": "client_id"
+    },
+    {
+      "COLUMN_NAME": "recipient_filter"
+    },
+    {
+      "COLUMN_NAME": "recipient_status"
+    },
+    {
+      "COLUMN_NAME": "sent_count"
+    },
+    {
+      "COLUMN_NAME": "failed_count"
+    },
+    {
+      "COLUMN_NAME": "sent_date"
+    },
+    {
+      "COLUMN_NAME": "created_by"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\nagencyId\ncreatedByUserId\nname\nsubject\nfromName\nfromEmail\ncontent\ntemplateId\nstatus\naudienceFilter\nscheduledAt\nsentAt\ntotalRecipients\ntotalSent\ntotalOpened\ntotalClicked\ntotalBounced\ntotalUnsubscribed\nsendgridCampaignId\ncreatedAt\nupdatedAt\nscheduled_date\nagency_id\nopen_count\nclick_count\nclient_id\nrecipient_filter\nrecipient_status\nsent_count\nfailed_count\nsent_date\ncreated_by\nCOLUMN_NAME\nid\nagencyId\ncreatedByUserId\nname\nmessage\nfromNumber\nstatus\naudienceFilter\nscheduledAt\nsentAt\ntotalRecipients\ntotalSent\ntotalDelivered\ntotalFailed\ntwilioMessageServiceSid\ncreatedAt\nupdatedAt\nscheduled_date\nagency_id\ndelivered_count\ntotal_recipients\nscheduled_for\nsent_at\ncompleted_at\nclient_id\nrecipient_filter\nrecipient_status\nsent_count\nfailed_count\nsent_date\ncreated_by\n",
+  "stderr": "",
+  "execution_time_ms": 65
+}

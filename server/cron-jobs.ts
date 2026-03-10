@@ -24,6 +24,7 @@ import { processRefiDrip } from './refi-drip';
 import { buildWeeklyContentCalendar } from './agents/viral-topic-agent';
 import { processApprovedPackages, fireScheduledPosts } from './agents/social-posting-agent';
 import { sendDailyContentDigest } from './jobs/daily-content-digest';
+import { processScheduledCampaigns } from './jobs/campaign-scheduler';
 
 /**
  * Initialize all cron jobs
@@ -409,6 +410,15 @@ export function initializeCronJobs() {
     }
   }, { timezone: 'America/New_York' });
 
+  // Campaign Scheduler: Every minute — fires scheduled email/SMS campaigns whose time has arrived
+  cron.schedule('* * * * *', async () => {
+    try {
+      await processScheduledCampaigns();
+    } catch (error) {
+      console.error('[Cron] Campaign scheduler failed:', error);
+    }
+  });
+
   console.log('[Cron] All cron jobs initialized successfully');
   console.log('[Cron] - Scheduled Vapi calls: DISABLED (Tim handles manually)');
   console.log('[Cron] - Webinar reminders: Every 5 minutes');
@@ -422,4 +432,5 @@ export function initializeCronJobs() {
   console.log('[Cron] - Viral topic research: Every Monday 6 AM PST');
   console.log('[Cron] - Social posting agent: Every 30 minutes');
   console.log('[Cron] - Scheduled posts executor: Every 5 minutes');
+  console.log('[Cron] - Campaign scheduler: Every minute (email + SMS)');
 }

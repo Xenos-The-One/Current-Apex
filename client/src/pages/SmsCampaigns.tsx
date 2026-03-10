@@ -35,6 +35,7 @@ export default function SMSCampaigns() {
         recipientFilter: "all",
         recipientStatus: "",
         sendNow: false,
+        scheduleFor: "",
       });
     },
     onError: (error: any) => {
@@ -48,6 +49,7 @@ export default function SMSCampaigns() {
     recipientFilter: "all" as "all" | "status" | "custom",
     recipientStatus: "",
     sendNow: false,
+    scheduleFor: "", // datetime-local string
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -70,6 +72,7 @@ export default function SMSCampaigns() {
       recipientFilter: formData.recipientFilter,
       recipientStatus: formData.recipientStatus || undefined,
       sendNow: formData.sendNow,
+      scheduledDate: formData.scheduleFor ? new Date(formData.scheduleFor) : undefined,
     });
   };
 
@@ -211,23 +214,44 @@ export default function SMSCampaigns() {
                 </div>
               )}
 
-              <div className="flex items-center gap-4 pt-4 border-t">
-                <Button type="submit" disabled={createCampaign.isPending || isOverLimit}>
-                  {createCampaign.isPending ? "Creating..." : "Save as Draft"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="default"
-                  className="bg-green-600 hover:bg-green-700"
-                  disabled={createCampaign.isPending || isOverLimit}
-                  onClick={() => {
-                    setFormData({ ...formData, sendNow: true });
-                    setTimeout(() => handleSubmit(new Event("submit") as any), 100);
-                  }}
-                >
-                  <Send className="w-4 h-4 mr-2" />
-                  Send Now
-                </Button>
+              <div className="space-y-3 pt-4 border-t">
+                <div>
+                  <Label htmlFor="scheduleFor" className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" />
+                    Schedule for Later (optional)
+                  </Label>
+                  <Input
+                    id="scheduleFor"
+                    type="datetime-local"
+                    value={formData.scheduleFor}
+                    onChange={e => setFormData({ ...formData, scheduleFor: e.target.value, sendNow: false })}
+                    min={new Date().toISOString().slice(0, 16)}
+                    className="mt-1"
+                  />
+                  {formData.scheduleFor && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Campaign will be sent at {new Date(formData.scheduleFor).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button type="submit" disabled={createCampaign.isPending || isOverLimit}>
+                    {createCampaign.isPending ? "Creating..." : formData.scheduleFor ? "Schedule Campaign" : "Save as Draft"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="default"
+                    className="bg-green-600 hover:bg-green-700"
+                    disabled={createCampaign.isPending || isOverLimit}
+                    onClick={() => {
+                      setFormData({ ...formData, sendNow: true, scheduleFor: "" });
+                      setTimeout(() => handleSubmit(new Event("submit") as any), 100);
+                    }}
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    Send Now
+                  </Button>
+                </div>
               </div>
             </form>
           </CardContent>
