@@ -112,6 +112,18 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
 }
 
+/**
+ * Update a user's openId — used when a Google OAuth login comes in for an
+ * existing email/password account. Replaces the placeholder openId with the
+ * real Google identity so future logins work seamlessly.
+ */
+export async function updateUserOpenId(userId: number, newOpenId: string, loginMethod: string | null) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({ openId: newOpenId, loginMethod }).where(eq(users.id, userId));
+  console.log(`[Database] Updated openId for user ${userId} to ${newOpenId} (loginMethod: ${loginMethod})`);
+}
+
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
   if (!db) {
@@ -129,13 +141,6 @@ export async function getUserById(id: number) {
   if (!db) return undefined;
   
   const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
-}
-
-export async function getUserByEmail(email: string) {
-  const db = await getDb();
-  if (!db) return undefined;
-  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
 
@@ -220,6 +225,22 @@ export async function updateClient(id: number, data: Partial<InsertClient>) {
   if (!db) throw new Error("Database not available");
   
   await db.update(clients).set(data).where(eq(clients.id, id));
+}
+
+export async function getClientByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(clients).where(eq(clients.email, email)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
 }
 
 export async function getClientByUserId(userId: number) {

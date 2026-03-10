@@ -91,7 +91,7 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
     }
   };
 
-  const isAdminView = (user?.role === "admin" || user?.role === "super_admin") && !isImpersonating;
+  const isAdminView = user?.role === "admin" || user?.role === "super_admin" && !isImpersonating;
 
   const { data: adminLeads, isLoading: adminLoading } = trpc.leads.list.useQuery(
     {

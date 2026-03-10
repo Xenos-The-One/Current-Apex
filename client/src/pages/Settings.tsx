@@ -31,58 +31,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-// ─── Facebook Page Access Token (saved to DB) ──────────────────────────────
-function FacebookTokenInput() {
-  const [value, setValue] = useState("");
-  const [show, setShow] = useState(false);
-  const { data: existing } = trpc.agencyConfig.get.useQuery({ key: "FACEBOOK_PAGE_ACCESS_TOKEN" });
-  const setConfig = trpc.agencyConfig.set.useMutation({
-    onSuccess: () => toast.success("Facebook Page Access Token saved!"),
-    onError: () => toast.error("Failed to save token — please try again."),
-  });
-  const displayValue = value || (existing?.value ? "••••••••••••••••" : "");
-  return (
-    <div className="space-y-1.5">
-      <Label className="flex items-center gap-2">
-        <Key className="w-3.5 h-3.5 text-muted-foreground" />
-        Page Access Token
-      </Label>
-      <p className="text-xs text-muted-foreground">
-        Required to fetch lead contact details (name, phone, email) from Meta when a new lead arrives.
-        {existing?.value && <span className="ml-1 text-green-600 font-medium">✓ Token saved</span>}
-      </p>
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Input
-            type={show ? "text" : "password"}
-            value={value}
-            onChange={e => setValue(e.target.value)}
-            placeholder={existing?.value ? "Token already saved — paste to update" : "Paste Facebook Page Access Token"}
-            className="pr-10 font-mono text-sm"
-          />
-          <button
-            type="button"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            onClick={() => setShow(s => !s)}
-          >
-            {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
-        </div>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={!value.trim() || setConfig.isPending}
-          onClick={() => setConfig.mutate({ key: "FACEBOOK_PAGE_ACCESS_TOKEN", value: value.trim() })}
-          className="flex-shrink-0 gap-1.5"
-        >
-          <Save className="w-3.5 h-3.5" />
-          {setConfig.isPending ? "Saving..." : "Save"}
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 // ─── Masked secret input ────────────────────────────────────────────────────
 function SecretInput({
   label,
@@ -690,7 +638,6 @@ export default function Settings() {
                     placeholder="manus_crm_verify"
                   />
                 </div>
-                <FacebookTokenInput />
                 <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
                   <p className="font-medium text-foreground">Setup steps:</p>
                   <ol className="list-decimal list-inside space-y-0.5">

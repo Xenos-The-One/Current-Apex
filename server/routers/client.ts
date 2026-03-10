@@ -197,22 +197,23 @@ export const clientRouter = router({
   getLead: protectedProcedure
     .input(z.object({ leadId: z.number() }))
     .query(async ({ ctx, input }) => {
+      const client = await resolveClient(ctx);
+      if (!client) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Client profile not found",
+        });
+      }
+
       const lead = await getLeadById(input.leadId);
+      // Admins can view any lead; clients can only view their own
       if (!lead) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Lead not found" });
       }
-      // Admins can view any lead without needing a client profile
-      if (isAdminUser(ctx.user.role)) {
-        return lead;
-      }
-      // Clients can only view their own leads
-      const client = await resolveClient(ctx);
-      if (!client) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
-      }
-      if (lead.clientId !== client.id) {
+      if (!isAdminUser(ctx.user.role) && lead.clientId !== client.id) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Lead not found" });
       }
+
       return lead;
     }),
 

@@ -43,24 +43,9 @@ const trpcClient = trpc.createClient({
       url: "/api/trpc",
       transformer: superjson,
       fetch(input, init) {
-        // Inject impersonation header when admin is viewing a client's account
-        const extraHeaders: Record<string, string> = {};
-        try {
-          const saved = localStorage.getItem("impersonating_client");
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            if (parsed?.clientId) {
-              extraHeaders["x-impersonate-client-id"] = String(parsed.clientId);
-            }
-          }
-        } catch {}
         return globalThis.fetch(input, {
           ...(init ?? {}),
           credentials: "include",
-          headers: {
-            ...(init?.headers as Record<string, string> ?? {}),
-            ...extraHeaders,
-          },
         });
       },
     }),
