@@ -60,6 +60,18 @@ export function serveStatic(app: Express) {
 
   app.use(express.static(distPath));
 
+  // /api/app serves the React SPA directly — the Manus hosting platform does NOT
+  // intercept /api/* routes, so sub-account users (Kyle, Tim, LOAs) can access
+  // the full app after logging in via /api/client-login.
+  const indexHtml = path.resolve(distPath, "index.html");
+  app.get("/api/app", (_req, res) => {
+    res.sendFile(indexHtml);
+  });
+  // Also handle all sub-paths under /api/app/* so React Router works
+  app.get("/api/app/*", (_req, res) => {
+    res.sendFile(indexHtml);
+  });
+
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));

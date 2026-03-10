@@ -1,0 +1,18 @@
+{
+  "query": "SELECT id, openId, email, name, role, loginMethod FROM users WHERE email = 'info@optimallendingsolutions.com';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, openId, email, name, role, loginMethod FROM users WHERE email = 'info@optimallendingsolutions.com';",
+  "rows": [
+    {
+      "id": "510411",
+      "openId": "sub_870b0ba8a4d4e8eeb7afc375cc88e61e",
+      "email": "info@optimallendingsolutions.com",
+      "name": "Kyle Dombecki",
+      "role": "client_user",
+      "loginMethod": "email_password"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\topenId\temail\tname\trole\tloginMethod\n510411\tsub_870b0ba8a4d4e8eeb7afc375cc88e61e\tinfo@optimallendingsolutions.com\tKyle Dombecki\tclient_user\temail_password\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

@@ -872,8 +872,8 @@ export default function DashboardLayout({
     // Always redirect to /login — never to Manus OAuth.
     // Sub-account users (Kyle, Tim, LOAs) use email+password at /login.
     // Admin users can also log in there or use the Manus button on the homepage.
-    if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-      window.location.replace("/login");
+    if (typeof window !== "undefined" && !window.location.pathname.startsWith("/api/client-login")) {
+      window.location.replace("/api/client-login");
     }
     return <DashboardLayoutSkeleton />;
   }

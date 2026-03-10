@@ -1,0 +1,10 @@
+{
+  "query": "SELECT id, openId, email, name, role, loginMethod FROM users WHERE email = 'info@optimallendingsolutions.com';\nSELECT id, name, userId, email FROM clients WHERE email = 'info@optimallendingsolutions.com' OR userId IN (SELECT id FROM users WHERE email = 'info@optimallendingsolutions.com');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, openId, email, name, role, loginMethod FROM users WHERE email = 'info@optimallendingsolutions.com';\nSELECT id, name, userId, email FROM clients WHERE email = 'info@optimallendingsolutions.com' OR userId IN (SELECT id FROM users WHERE email = 'info@optimallendingsolutions.com');",
+  "returncode": 1,
+  "logs": [
+    "id\topenId\temail\tname\trole\tloginMethod",
+    "510411\tsub_870b0ba8a4d4e8eeb7afc375cc88e61e\tinfo@optimallendingsolutions.com\tKyle Dombecki\tclient_user\temail_password",
+    "ERROR 1054 (42S22) at line 2: Unknown column 'userid' in 'where clause'"
+  ]
+}
