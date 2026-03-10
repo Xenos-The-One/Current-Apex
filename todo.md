@@ -409,3 +409,13 @@
 - [ ] Fix deployment crash: puppeteer-core ERR_MODULE_NOT_FOUND in production build
 - [ ] Add Square payment integration (replace Stripe references in UI)
 - [ ] Add Integrations tab to Settings page (Twilio, SendGrid, Vapi, Square credentials)
+
+## Round 38: Follow-Ups Banner + Settings Visibility
+
+- [ ] Follow-Ups banner: show all 3 suggestions (items 1, 2, and 3)
+- [ ] Settings: ensure it is visible and accessible in the sidebar navigation
+
+## Round 38: Follow-Ups Banner + Settings Nav
+
+- [x] Follow-Ups banner: show all 3 suggestions (updated DB leads to have new/contacted/qualified statuses)
+- [x] Settings: added /settings route to App.tsx and linked sidebar to it (both admin and client sidebars)

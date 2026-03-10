@@ -1,0 +1,9 @@
+{
+  "query": "\nUPDATE leads SET status = 'new', score = 85, last_contacted_at = NULL WHERE id = 1;\nUPDATE leads SET status = 'contacted', score = 72, last_contacted_at = DATE_SUB(NOW(), INTERVAL 8 DAY) WHERE id = 2;\nUPDATE leads SET status = 'qualified', score = 65, last_contacted_at = DATE_SUB(NOW(), INTERVAL 5 DAY) WHERE id = 3;\nUPDATE leads SET status = 'new', score = 90, last_contacted_at = NULL WHERE id = 4;\nUPDATE leads SET status = 'contacted', score = 55, last_contacted_at = DATE_SUB(NOW(), INTERVAL 4 DAY) WHERE id = 5;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nUPDATE leads SET status = 'new', score = 85, last_contacted_at = NULL WHERE id = 1;\nUPDATE leads SET status = 'contacted', score = 72, last_contacted_at = DATE_SUB(NOW(), INTERVAL 8 DAY) WHERE id = 2;\nUPDATE leads SET status = 'qualified', score = 65, last_contacted_at = DATE_SUB(NOW(), INTERVAL 5 DAY) WHERE id = 3;\nUPDATE leads SET status = 'new', score = 90, last_contacted_at = NULL WHERE id = 4;\nUPDATE leads SET status = 'contacted', score = 55, last_contacted_at = DATE_SUB(NOW(), INTERVAL 4 DAY) WHERE id = 5;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 127
+}

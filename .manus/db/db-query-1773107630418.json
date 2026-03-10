@@ -1,0 +1,60 @@
+{
+  "query": "SELECT id, first_name, last_name, status, score, last_contacted_at, createdAt, client_id FROM leads WHERE client_id = 1 LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, first_name, last_name, status, score, last_contacted_at, createdAt, client_id FROM leads WHERE client_id = 1 LIMIT 20;",
+  "rows": [
+    {
+      "id": "1",
+      "first_name": "Sarah",
+      "last_name": "Johnson",
+      "status": "new",
+      "score": "0",
+      "last_contacted_at": "NULL",
+      "createdAt": "2026-03-08 04:41:04",
+      "client_id": "1"
+    },
+    {
+      "id": "2",
+      "first_name": "Marcus",
+      "last_name": "Williams",
+      "status": "appointment_set",
+      "score": "0",
+      "last_contacted_at": "NULL",
+      "createdAt": "2026-03-08 04:41:04",
+      "client_id": "1"
+    },
+    {
+      "id": "3",
+      "first_name": "Jennifer",
+      "last_name": "Davis",
+      "status": "qualified",
+      "score": "0",
+      "last_contacted_at": "NULL",
+      "createdAt": "2026-03-08 04:41:04",
+      "client_id": "1"
+    },
+    {
+      "id": "4",
+      "first_name": "Robert",
+      "last_name": "Chen",
+      "status": "new",
+      "score": "0",
+      "last_contacted_at": "NULL",
+      "createdAt": "2026-03-08 04:41:04",
+      "client_id": "1"
+    },
+    {
+      "id": "5",
+      "first_name": "Amanda",
+      "last_name": "Torres",
+      "status": "contacted",
+      "score": "0",
+      "last_contacted_at": "NULL",
+      "createdAt": "2026-03-08 04:41:04",
+      "client_id": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tfirst_name\tlast_name\tstatus\tscore\tlast_contacted_at\tcreatedAt\tclient_id\n1\tSarah\tJohnson\tnew\t0\tNULL\t2026-03-08 04:41:04\t1\n2\tMarcus\tWilliams\tappointment_set\t0\tNULL\t2026-03-08 04:41:04\t1\n3\tJennifer\tDavis\tqualified\t0\tNULL\t2026-03-08 04:41:04\t1\n4\tRobert\tChen\tnew\t0\tNULL\t2026-03-08 04:41:04\t1\n5\tAmanda\tTorres\tcontacted\t0\tNULL\t2026-03-08 04:41:04\t1\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

@@ -1,0 +1,9 @@
+{
+  "query": "\nUPDATE leads SET status = 'new', last_contact_date = NULL, createdAt = DATE_SUB(NOW(), INTERVAL 3 DAY) WHERE client_id = 1 AND id = (SELECT id FROM (SELECT id FROM leads WHERE client_id = 1 ORDER BY id LIMIT 1 OFFSET 0) t);\nUPDATE leads SET status = 'contacted', last_contact_date = DATE_SUB(NOW(), INTERVAL 5 DAY), createdAt = DATE_SUB(NOW(), INTERVAL 10 DAY) WHERE client_id = 1 AND id = (SELECT id FROM (SELECT id FROM leads WHERE client_id = 1 ORDER BY id LIMIT 1 OFFSET 1) t);\nUPDATE leads SET status = 'qualified', last_contact_date = DATE_SUB(NOW(), INTERVAL 3 DAY), createdAt = DATE_SUB(NOW(), INTERVAL 15 DAY) WHERE client_id = 1 AND id = (SELECT id FROM (SELECT id FROM leads WHERE client_id = 1 ORDER BY id LIMIT 1 OFFSET 2) t);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nUPDATE leads SET status = 'new', last_contact_date = NULL, createdAt = DATE_SUB(NOW(), INTERVAL 3 DAY) WHERE client_id = 1 AND id = (SELECT id FROM (SELECT id FROM leads WHERE client_id = 1 ORDER BY id LIMIT 1 OFFSET 0) t);\nUPDATE leads SET status = 'contacted', last_contact_date = DATE_SUB(NOW(), INTERVAL 5 DAY), createdAt = DATE_SUB(NOW(), INTERVAL 10 DAY) WHERE client_id = 1 AND id = (SELECT id FROM (SELECT id FROM leads WHERE client_id = 1 ORDER BY id LIMIT 1 OFFSET 1) t);\nUPDATE leads SET status = 'qualified', last_contact_date = DATE_SUB(NOW(), INTERVAL 3 DAY), createdAt = DATE_SUB(NOW(), INTERVAL 15 DAY) WHERE client_id = 1 AND id = (SELECT id FROM (SELECT id FROM leads WHERE client_id = 1 ORDER BY id LIMIT 1 OFFSET 2) t);\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 90
+}

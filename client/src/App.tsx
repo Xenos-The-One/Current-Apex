@@ -78,6 +78,7 @@ import ClientWebsite from "./pages/ClientWebsite";
 import PaymentsPage from "./pages/PaymentsPage";
 // OnboardingSnapshot removed — /onboarding-snapshot now redirects to /admin
 import ContactsHub from "./pages/ContactsHub";
+import SettingsPage from "./pages/Settings";
 import ActivityHub from "./pages/ActivityHub";
 import MarketingHub from "./pages/MarketingHub";
 import ReportingHub from "./pages/ReportingHub";
@@ -212,6 +213,7 @@ function Router() {
       <Route path="/calendar" component={ClientCalendar} />
       <Route path="/website" component={ClientWebsite} />
       <Route path="/payments" component={PaymentsPage} />
+      <Route path="/settings" component={SettingsPage} />
       {/* ── Portal routes: registered BEFORE /seo/:rest* to avoid SeoLayout wrapping ── */}
       <Route path="/seo/portal/login"><Suspense fallback={<PortalFallback />}><PortalLogin /></Suspense></Route>
       <Route path="/seo/portal/content/:id"><Suspense fallback={<PortalFallback />}><PortalContentDetail /></Suspense></Route>

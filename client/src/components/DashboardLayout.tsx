@@ -194,6 +194,7 @@ const adminMenuSections: MenuSection[] = [
     items: [
       // Single entry — tabs: Content Studio | Inbox | Email Templates | Notifications
       { icon: Settings, label: "Tools", path: "/tools" },
+      { icon: Settings, label: "Settings", path: "/settings" },
     ],
   },
 ];
@@ -245,7 +246,7 @@ const clientMenuSections: MenuSection[] = [
       { icon: TrendingUp, label: "Reports", path: "/reports" },
       { icon: MapPin, label: "Market Analytics", path: "/market-analytics" },
       { icon: Globe, label: "Website", path: "/website" },
-      { icon: Settings, label: "Settings", path: "/account" },
+      { icon: Settings, label: "Settings", path: "/settings" },
     ],
   },
 ];

@@ -1,0 +1,55 @@
+{
+  "query": "SELECT id, first_name, last_name, status, score, last_contact_date, createdAt FROM leads WHERE client_id = 1 ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, first_name, last_name, status, score, last_contact_date, createdAt FROM leads WHERE client_id = 1 ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "first_name": "Sarah",
+      "last_name": "Johnson",
+      "status": "new",
+      "score": "85",
+      "last_contact_date": "NULL",
+      "createdAt": "2026-03-08 04:41:04"
+    },
+    {
+      "id": "2",
+      "first_name": "Marcus",
+      "last_name": "Williams",
+      "status": "contacted",
+      "score": "72",
+      "last_contact_date": "2026-03-02 01:54:42",
+      "createdAt": "2026-03-08 04:41:04"
+    },
+    {
+      "id": "3",
+      "first_name": "Jennifer",
+      "last_name": "Davis",
+      "status": "qualified",
+      "score": "65",
+      "last_contact_date": "2026-03-05 01:54:42",
+      "createdAt": "2026-03-08 04:41:04"
+    },
+    {
+      "id": "4",
+      "first_name": "Robert",
+      "last_name": "Chen",
+      "status": "new",
+      "score": "90",
+      "last_contact_date": "NULL",
+      "createdAt": "2026-03-08 04:41:04"
+    },
+    {
+      "id": "5",
+      "first_name": "Amanda",
+      "last_name": "Torres",
+      "status": "contacted",
+      "score": "55",
+      "last_contact_date": "2026-03-06 01:54:42",
+      "createdAt": "2026-03-08 04:41:04"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tfirst_name\tlast_name\tstatus\tscore\tlast_contact_date\tcreatedAt\n1\tSarah\tJohnson\tnew\t85\tNULL\t2026-03-08 04:41:04\n2\tMarcus\tWilliams\tcontacted\t72\t2026-03-02 01:54:42\t2026-03-08 04:41:04\n3\tJennifer\tDavis\tqualified\t65\t2026-03-05 01:54:42\t2026-03-08 04:41:04\n4\tRobert\tChen\tnew\t90\tNULL\t2026-03-08 04:41:04\n5\tAmanda\tTorres\tcontacted\t55\t2026-03-06 01:54:42\t2026-03-08 04:41:04\n",
+  "stderr": "",
+  "execution_time_ms": 64
+}
