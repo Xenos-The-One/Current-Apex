@@ -14,6 +14,7 @@ import {
 import { leads, leadActivities } from "../../drizzle/schema";
 import { eq, and, desc, isNull, lt, or, sql, gte, gt } from "drizzle-orm";
 import { sendSMS } from "../twilio";
+import { sendEmail as sendEmailService } from "../email-service";
 
 const ADMIN_ROLES = ["admin", "super_admin", "agency_owner"];
 
@@ -71,8 +72,8 @@ function buildSuggestions(clientLeads: any[], includeSnoozed = false): Suggestio
     // Skip closed leads
     if (lead.status === "closed_won" || lead.status === "closed_lost") continue;
 
-    // 1. NEW leads not contacted within 24 hours (HIGH urgency)
-    if (lead.status === "new" && daysSinceCreated >= 1) {
+    // 1. NEW leads — always suggest follow-up immediately (speed-to-lead is critical)
+    if (lead.status === "new") {
       suggestions.push({
         leadId: lead.id,
         leadName: `${lead.firstName} ${lead.lastName || ""}`.trim(),
@@ -80,8 +81,10 @@ function buildSuggestions(clientLeads: any[], includeSnoozed = false): Suggestio
         email: lead.email,
         status: lead.status,
         source: lead.source,
-        urgency: daysSinceCreated >= 3 ? "high" : "medium",
-        reason: `New lead waiting ${daysSinceCreated} day${daysSinceCreated > 1 ? "s" : ""} for first contact`,
+        urgency: daysSinceCreated >= 3 ? "high" : daysSinceCreated >= 1 ? "medium" : "high",
+        reason: daysSinceCreated === 0
+          ? `New lead just added — contact within 5 minutes for best conversion`
+          : `New lead waiting ${daysSinceCreated} day${daysSinceCreated > 1 ? "s" : ""} for first contact`,
         suggestedAction: lead.phone
           ? `Call ${lead.firstName} at ${lead.phone} — first contact is critical within 24 hours`
           : `Email ${lead.firstName} — no phone number available, send introductory email`,
@@ -559,6 +562,51 @@ ${activitySummary || "No recent activity"}`,
       snoozedCount,
     };
   }),
+
+  // ─── Send an email directly from the follow-ups panel ──────────────────
+  sendFollowUpEmail: protectedProcedure
+    .input(
+      z.object({
+        leadId: z.number(),
+        subject: z.string().min(1).max(200),
+        body: z.string().min(1).max(10000),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const client = await resolveClientForFollowUps(ctx);
+      if (!client) throw new TRPCError({ code: "FORBIDDEN", message: "No client profile linked." });
+
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const [lead] = await db.select().from(leads).where(eq(leads.id, input.leadId)).limit(1);
+      if (!lead) throw new TRPCError({ code: "NOT_FOUND", message: "Lead not found" });
+      if (!lead.email) throw new TRPCError({ code: "BAD_REQUEST", message: "Lead has no email address" });
+
+      const result = await sendEmailService({
+        to: lead.email,
+        subject: input.subject,
+        html: input.body.replace(/\n/g, "<br>"),
+      });
+
+      if (!result.success) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: result.error || "Email failed to send",
+        });
+      }
+
+      // Update lastContactDate and log activity
+      await updateLead(input.leadId, { lastContactDate: new Date() });
+      await createLeadActivity({
+        leadId: input.leadId,
+        activityType: "email",
+        description: `Email sent: "${input.subject}"`,
+        performedBy: ctx.user.id,
+      });
+
+      return { success: true, demo: result.demo };
+    }),
 
   // ─── Send an SMS directly from the follow-ups page ───────────────────────
   sendFollowUpSMS: protectedProcedure

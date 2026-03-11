@@ -506,3 +506,9 @@
 - [x] Add AI Coach to AdManager page
 - [x] Fix JSX comment syntax errors in Dashboard, ClientDashboard, AdManager
 - [x] Fix agencyId null error in sales-followup-agent
+
+## Round 50: Action Center Removal + Suggested Follow-Ups Fix
+- [x] Remove Action Center section from ClientDashboard.tsx
+- [x] Fix SuggestedFollowUpsPanel to always show all 3 follow-up types (Call, SMS, Email) per lead
+- [x] Make new leads appear immediately in Suggested Follow-Ups (not just after 24h)
+- [x] Add sendFollowUpEmail procedure to follow-ups router

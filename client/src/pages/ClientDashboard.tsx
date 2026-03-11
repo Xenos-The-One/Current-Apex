@@ -17,7 +17,6 @@ import {
   BarChart3,
   FileText,
   ExternalLink,
-  Flame,
   Target,
   DollarSign,
   Calendar,
@@ -444,40 +443,6 @@ export default function ClientDashboard() {
     );
   }
 
-  /* ─── Build action items ─── */
-  const actionItems = [];
-  if (stats.newLeads > 0) {
-    actionItems.push({
-      icon: <Flame className="h-4 w-4 text-orange-500" />,
-      label: `${stats.newLeads} new lead${stats.newLeads > 1 ? "s" : ""} to contact`,
-      href: "/leads",
-      priority: "high" as const,
-    });
-  }
-  if (stats.pendingApprovalsCount > 0) {
-    actionItems.push({
-      icon: <FileText className="h-4 w-4 text-blue-500" />,
-      label: `${stats.pendingApprovalsCount} content item${stats.pendingApprovalsCount > 1 ? "s" : ""} awaiting your approval`,
-      href: "/apex-content",
-      priority: "medium" as const,
-    });
-  }
-  if (stats.scheduledAppointments > 0) {
-    actionItems.push({
-      icon: <Calendar className="h-4 w-4 text-green-500" />,
-      label: `${stats.scheduledAppointments} upcoming appointment${stats.scheduledAppointments > 1 ? "s" : ""}`,
-      href: "/appointments",
-      priority: "low" as const,
-    });
-  }
-  if (stats.hotLeads > 0) {
-    actionItems.push({
-      icon: <Target className="h-4 w-4 text-red-500" />,
-      label: `${stats.hotLeads} hot lead${stats.hotLeads > 1 ? "s" : ""} ready to close`,
-      href: "/leads",
-      priority: "high" as const,
-    });
-  }
 
   return (
     <DashboardLayout>
@@ -498,31 +463,7 @@ export default function ClientDashboard() {
           </Badge>
         </div>
 
-        {/* Action Center */}
-        {actionItems.length > 0 && (
-          <Card className="border-l-4 border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/20">
-            <CardContent className="py-3 px-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Zap className="h-4 w-4 text-amber-600" />
-                <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">Action Center</span>
-                <Badge variant="outline" className="ml-auto text-xs">{actionItems.length} items</Badge>
-              </div>
-              <div className="space-y-1.5">
-                {actionItems.map((item, i) => (
-                  <Link key={i} href={item.href}>
-                    <button className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-amber-100/50 dark:hover:bg-amber-900/20 transition-colors text-left group">
-                      {item.icon}
-                      <span className="text-sm flex-1">{item.label}</span>
-                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </button>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* SLA Alerts */}
+                {/* SLA Alerts */}
         {slaAlerts && (slaAlerts.newNotContacted > 0 || slaAlerts.noActivityIn7Days > 0 || slaAlerts.coldLeads > 0) && (
           <Card className="border-l-4 border-l-red-500 bg-red-50/50 dark:bg-red-950/20">
             <CardContent className="py-3 px-4">
