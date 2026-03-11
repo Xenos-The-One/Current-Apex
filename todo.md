@@ -575,3 +575,17 @@
 - [x] Fix leads list pagination — was capped at 50, now shows 100/page with full page controls and server-side search for large imports like Kyle's 14,027 leads
 - [x] Add Tags filter dropdown to leads list (filter by Broward/Palm Beach/multifamily tags)
 - [x] Add bulk status update — select multiple leads and change status in one click
+- [ ] Fix Facebook webhook: swap old broken handler for correct page-config-aware handler
+- [ ] Add formId column to facebook_page_configs for per-form campaign routing
+- [ ] Ensure VAPI calls enabled for Kyle (60001) and Tim (60002)
+- [ ] Add per-client automation config to facebook_page_configs (SMS template, VAPI assistant ID)
+- [ ] Build Facebook Lead Routing admin UI (manage page/form → client + campaign mappings)
+- [ ] Add test webhook endpoint to simulate Facebook leads for Kyle and Tim
+- [x] PWA: Created sw.js service worker (push notifications, offline fallback, cache)
+- [x] PWA: Created manifest.json with all icon sizes and app shortcuts
+- [x] PWA: Generated app icons (72px–512px) and badge icon, uploaded to CDN
+- [x] PWA: Added manifest + Apple/PWA meta tags to index.html
+- [x] PWA: PWAInstallBanner, IOSInstallBanner, PushNotificationPrompt components wired into CRMLayout
+- [ ] PWA: VAPID keys need to be set by Thailer (VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VITE_VAPID_PUBLIC_KEY)
+- [x] Facebook webhook: Fixed broken handler — now uses page configs, fetches real lead data, triggers automation
+- [x] Facebook webhook: Added per-page automation controls (VAPI on/off, SMS on/off, template, tag)

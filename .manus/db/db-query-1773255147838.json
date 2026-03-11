@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, name, vapi_calls_enabled FROM clients WHERE id IN (60001, 60002)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, name, vapi_calls_enabled FROM clients WHERE id IN (60001, 60002)",
+  "rows": [
+    {
+      "id": "60001",
+      "name": "Optimal Lending Solutions",
+      "vapi_calls_enabled": "1"
+    },
+    {
+      "id": "60002",
+      "name": "Premier Mortgage Resources",
+      "vapi_calls_enabled": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tvapi_calls_enabled\n60001\tOptimal Lending Solutions\t1\n60002\tPremier Mortgage Resources\t0\n",
+  "stderr": "",
+  "execution_time_ms": 68
+}

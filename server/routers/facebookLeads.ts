@@ -144,11 +144,25 @@ export const facebookLeadsRouter = router({
         pageAccessToken: z.string().min(10),
         clientId: z.number().optional(),
         agencyId: z.number().default(1),
+        // Automation settings
+        vapiAssistantId: z.string().optional(),
+        autoVapiCall: z.boolean().default(true),
+        autoSms: z.boolean().default(true),
+        smsTemplate: z.string().optional(),
+        leadTag: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
+
+      const automationFields = {
+        vapiAssistantId: input.vapiAssistantId ?? null,
+        autoVapiCall: input.autoVapiCall,
+        autoSms: input.autoSms,
+        smsTemplate: input.smsTemplate ?? null,
+        leadTag: input.leadTag ?? null,
+      };
 
       // Check if config already exists for this page
       const existing = await db
@@ -167,6 +181,7 @@ export const facebookLeadsRouter = router({
             clientId: input.clientId ?? null,
             agencyId: input.agencyId,
             isActive: true,
+            ...automationFields,
           })
           .where(eq(facebookPageConfigs.pageId, input.pageId));
       } else {
@@ -178,6 +193,7 @@ export const facebookLeadsRouter = router({
           clientId: input.clientId ?? null,
           agencyId: input.agencyId,
           isActive: true,
+          ...automationFields,
         });
       }
 

@@ -245,8 +245,30 @@ function FacebookPageConfigCard() {
   const deleteConfig = trpc.facebookLeads.deletePageConfig.useMutation({
     onSuccess: () => { toast.success("Config removed"); refetch(); },
   });
-  const [form, setForm] = useState({ pageId: "", pageName: "", pageAccessToken: "", clientId: "" });
+  const emptyForm = { pageId: "", pageName: "", pageAccessToken: "", clientId: "", vapiAssistantId: "", autoVapiCall: true, autoSms: true, smsTemplate: "", leadTag: "Facebook Ad Lead" };
+  const [form, setForm] = useState<typeof emptyForm>(emptyForm);
   const [showToken, setShowToken] = useState(false);
+  const [editingPageId, setEditingPageId] = useState<string | null>(null);
+
+  function startEdit(cfg: any) {
+    setEditingPageId(cfg.pageId);
+    setForm({
+      pageId: cfg.pageId,
+      pageName: cfg.pageName ?? "",
+      pageAccessToken: "", // don't pre-fill masked token
+      clientId: cfg.clientId ? String(cfg.clientId) : "",
+      vapiAssistantId: cfg.vapiAssistantId ?? "",
+      autoVapiCall: cfg.autoVapiCall !== false,
+      autoSms: cfg.autoSms !== false,
+      smsTemplate: cfg.smsTemplate ?? "",
+      leadTag: cfg.leadTag ?? "Facebook Ad Lead",
+    });
+  }
+
+  function cancelEdit() {
+    setEditingPageId(null);
+    setForm(emptyForm);
+  }
 
   return (
     <Card>
@@ -255,7 +277,7 @@ function FacebookPageConfigCard() {
           <Webhook className="w-4 h-4" /> Facebook Lead Ads
         </CardTitle>
         <CardDescription>
-          Configure Facebook Page Access Tokens per client. Leads from each page will automatically route to the correct client pipeline.
+          Configure page tokens and automation campaigns per client. Leads route automatically to the correct pipeline and trigger VAPI calls + SMS.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -266,7 +288,7 @@ function FacebookPageConfigCard() {
             <Input readOnly value={`${window.location.origin}/api/webhooks/facebook`} className="font-mono text-sm bg-muted" />
             <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/api/webhooks/facebook`); toast.success("Copied!"); }}>Copy</Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">Paste this into Facebook App → Webhooks → leadgen subscription.</p>
+          <p className="text-xs text-muted-foreground mt-1">Paste this into Facebook App → Webhooks → leadgen subscription. Verify token: <code className="bg-muted px-1 rounded">manus_crm_verify</code></p>
         </div>
 
         {/* Existing page configs */}
@@ -274,12 +296,33 @@ function FacebookPageConfigCard() {
           <div className="space-y-2">
             <Label>Connected Pages</Label>
             {configs.map(cfg => (
-              <div key={cfg.pageId} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
-                <div>
-                  <p className="font-medium">{cfg.pageName || cfg.pageId}</p>
-                  <p className="text-xs text-muted-foreground">Page ID: {cfg.pageId} · Token: {cfg.pageAccessToken} · Client: {clients?.find(c => c.id === cfg.clientId)?.name ?? "Unassigned"}</p>
+              <div key={cfg.pageId} className="rounded-lg border p-3 text-sm space-y-1.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-semibold">{cfg.pageName || cfg.pageId}</p>
+                    <p className="text-xs text-muted-foreground">Page ID: {cfg.pageId} · Client: {clients?.find(c => c.id === cfg.clientId)?.name ?? <span className="text-amber-500">Unassigned</span>}</p>
+                  </div>
+                  <div className="flex gap-1.5 shrink-0">
+                    <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => startEdit(cfg)}>Edit</Button>
+                    <Button variant="ghost" size="sm" className="text-destructive text-xs h-7" onClick={() => deleteConfig.mutate({ pageId: cfg.pageId })}>Remove</Button>
+                  </div>
                 </div>
-                <Button variant="ghost" size="sm" className="text-destructive" onClick={() => deleteConfig.mutate({ pageId: cfg.pageId })}>Remove</Button>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border ${(cfg as any).autoVapiCall !== false ? 'bg-green-500/10 text-green-600 border-green-200' : 'bg-muted text-muted-foreground'}`}>
+                    {(cfg as any).autoVapiCall !== false ? '✓' : '✗'} VAPI Call
+                  </span>
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border ${(cfg as any).autoSms !== false ? 'bg-blue-500/10 text-blue-600 border-blue-200' : 'bg-muted text-muted-foreground'}`}>
+                    {(cfg as any).autoSms !== false ? '✓' : '✗'} Auto SMS
+                  </span>
+                  {(cfg as any).leadTag && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border bg-purple-500/10 text-purple-600 border-purple-200">
+                      Tag: {(cfg as any).leadTag}
+                    </span>
+                  )}
+                </div>
+                {(cfg as any).smsTemplate && (
+                  <p className="text-xs text-muted-foreground bg-muted rounded px-2 py-1 font-mono truncate">{(cfg as any).smsTemplate}</p>
+                )}
               </div>
             ))}
           </div>
@@ -287,28 +330,34 @@ function FacebookPageConfigCard() {
 
         {/* Add / update page config */}
         <div className="rounded-lg border p-4 space-y-3">
-          <p className="text-sm font-medium">Add / Update Page Token</p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium">{editingPageId ? `Editing: ${editingPageId}` : "Add / Update Page Config"}</p>
+            {editingPageId && <Button variant="ghost" size="sm" className="text-xs h-7" onClick={cancelEdit}>Cancel</Button>}
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs">Facebook Page ID</Label>
-              <Input value={form.pageId} onChange={e => setForm(f => ({ ...f, pageId: e.target.value }))} placeholder="e.g. 500444413143324" className="mt-1 text-sm" />
+              <Input value={form.pageId} onChange={e => setForm(f => ({ ...f, pageId: e.target.value }))} placeholder="e.g. 500444413143324" className="mt-1 text-sm" disabled={!!editingPageId} />
             </div>
             <div>
               <Label className="text-xs">Page Name (optional)</Label>
               <Input value={form.pageName} onChange={e => setForm(f => ({ ...f, pageName: e.target.value }))} placeholder="e.g. Premier Mortgage" className="mt-1 text-sm" />
             </div>
           </div>
+
           <div>
-            <Label className="text-xs">Page Access Token</Label>
+            <Label className="text-xs">Page Access Token {editingPageId && <span className="text-muted-foreground">(leave blank to keep existing)</span>}</Label>
             <div className="flex gap-2 mt-1">
               <div className="relative flex-1">
-                <Input type={showToken ? "text" : "password"} value={form.pageAccessToken} onChange={e => setForm(f => ({ ...f, pageAccessToken: e.target.value }))} placeholder="EAALkIuCb5CM..." className="pr-10 font-mono text-sm" />
+                <Input type={showToken ? "text" : "password"} value={form.pageAccessToken} onChange={e => setForm(f => ({ ...f, pageAccessToken: e.target.value }))} placeholder={editingPageId ? "Leave blank to keep existing token" : "EAALkIuCb5CM..."} className="pr-10 font-mono text-sm" />
                 <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" onClick={() => setShowToken(s => !s)}>
                   {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
           </div>
+
           <div>
             <Label className="text-xs">Assign to Client</Label>
             <Select value={form.clientId} onValueChange={v => setForm(f => ({ ...f, clientId: v }))}>
@@ -318,8 +367,61 @@ function FacebookPageConfigCard() {
               </SelectContent>
             </Select>
           </div>
-          <Button size="sm" disabled={!form.pageId || !form.pageAccessToken || saveConfig.isPending} onClick={() => saveConfig.mutate({ pageId: form.pageId, pageName: form.pageName || undefined, pageAccessToken: form.pageAccessToken, clientId: form.clientId ? Number(form.clientId) : undefined, agencyId })} className="gap-1.5">
-            <Save className="w-3.5 h-3.5" /> {saveConfig.isPending ? "Saving..." : "Save Page Config"}
+
+          {/* Automation settings */}
+          <div className="rounded-md bg-muted/40 border p-3 space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Automation Campaign</p>
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="checkbox" checked={form.autoVapiCall} onChange={e => setForm(f => ({ ...f, autoVapiCall: e.target.checked }))} className="w-4 h-4 rounded" />
+                <span>Auto VAPI Call <span className="text-xs text-muted-foreground">(5 min after lead arrives)</span></span>
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="checkbox" checked={form.autoSms} onChange={e => setForm(f => ({ ...f, autoSms: e.target.checked }))} className="w-4 h-4 rounded" />
+                <span>Auto SMS <span className="text-xs text-muted-foreground">(after-hours only)</span></span>
+              </label>
+            </div>
+            <div>
+              <Label className="text-xs">Lead Tag</Label>
+              <Input value={form.leadTag} onChange={e => setForm(f => ({ ...f, leadTag: e.target.value }))} placeholder="Facebook Ad Lead" className="mt-1 text-sm" />
+              <p className="text-xs text-muted-foreground mt-0.5">Tag automatically applied to all leads from this page.</p>
+            </div>
+            <div>
+              <Label className="text-xs">Custom SMS Template <span className="text-muted-foreground">(optional)</span></Label>
+              <textarea
+                value={form.smsTemplate}
+                onChange={e => setForm(f => ({ ...f, smsTemplate: e.target.value }))}
+                placeholder={`Hi {{firstName}}! Thanks for reaching out. Book here: {{bookingUrl}} — {{clientName}}`}
+                className="mt-1 w-full text-sm rounded-md border bg-background px-3 py-2 resize-none h-20 font-mono"
+              />
+              <p className="text-xs text-muted-foreground mt-0.5">Placeholders: <code className="bg-muted px-1 rounded">{'{{firstName}}'}</code> <code className="bg-muted px-1 rounded">{'{{clientName}}'}</code> <code className="bg-muted px-1 rounded">{'{{bookingUrl}}'}</code></p>
+            </div>
+            <div>
+              <Label className="text-xs">VAPI Assistant ID Override <span className="text-muted-foreground">(optional)</span></Label>
+              <Input value={form.vapiAssistantId} onChange={e => setForm(f => ({ ...f, vapiAssistantId: e.target.value }))} placeholder="Leave blank to use global Facebook assistant" className="mt-1 text-sm font-mono" />
+            </div>
+          </div>
+
+          <Button
+            size="sm"
+            disabled={!form.pageId || (!editingPageId && !form.pageAccessToken) || saveConfig.isPending}
+            onClick={() => {
+              saveConfig.mutate({
+                pageId: form.pageId,
+                pageName: form.pageName || undefined,
+                pageAccessToken: form.pageAccessToken || (editingPageId ? "KEEP_EXISTING" : ""),
+                clientId: form.clientId ? Number(form.clientId) : undefined,
+                agencyId,
+                vapiAssistantId: form.vapiAssistantId || undefined,
+                autoVapiCall: form.autoVapiCall,
+                autoSms: form.autoSms,
+                smsTemplate: form.smsTemplate || undefined,
+                leadTag: form.leadTag || undefined,
+              });
+            }}
+            className="gap-1.5"
+          >
+            <Save className="w-3.5 h-3.5" /> {saveConfig.isPending ? "Saving..." : editingPageId ? "Update Config" : "Save Page Config"}
           </Button>
         </div>
       </CardContent>

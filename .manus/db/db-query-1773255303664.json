@@ -1,0 +1,9 @@
+{
+  "query": "\nUPDATE facebook_page_configs\nSET \n  auto_vapi_call = TRUE,\n  auto_sms = TRUE,\n  lead_tag = 'Facebook Ad Lead',\n  sms_template = 'Hi {{firstName}}! Thanks for reaching out. We''d love to help you with your mortgage needs. Book a free consultation here: {{bookingUrl}} — or we''ll call you shortly! - {{clientName}}'\nWHERE page_id = '500444413143324';\n\nUPDATE facebook_page_configs\nSET \n  auto_vapi_call = TRUE,\n  auto_sms = TRUE,\n  lead_tag = 'Facebook Ad Lead',\n  sms_template = 'Hi {{firstName}}! Thanks for your interest in Optimal Lending Solutions. Book a free consultation here: {{bookingUrl}} — or we''ll call you shortly! - Kyle Dombecki'\nWHERE page_id = '61586221872067';\n\nUPDATE clients SET vapi_calls_enabled = TRUE WHERE id IN (60001, 60002)\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nUPDATE facebook_page_configs\nSET \n  auto_vapi_call = TRUE,\n  auto_sms = TRUE,\n  lead_tag = 'Facebook Ad Lead',\n  sms_template = 'Hi {{firstName}}! Thanks for reaching out. We''d love to help you with your mortgage needs. Book a free consultation here: {{bookingUrl}} — or we''ll call you shortly! - {{clientName}}'\nWHERE page_id = '500444413143324';\n\nUPDATE facebook_page_configs\nSET \n  auto_vapi_call = TRUE,\n  auto_sms = TRUE,\n  lead_tag = 'Facebook Ad Lead',\n  sms_template = 'Hi {{firstName}}! Thanks for your interest in Optimal Lending Solutions. Book a free consultation here: {{bookingUrl}} — or we''ll call you shortly! - Kyle Dombecki'\nWHERE page_id = '61586221872067';\n\nUPDATE clients SET vapi_calls_enabled = TRUE WHERE id IN (60001, 60002)\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 116
+}

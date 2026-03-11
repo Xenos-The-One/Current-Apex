@@ -1,0 +1,9 @@
+{
+  "query": "\nALTER TABLE facebook_page_configs\n  ADD COLUMN vapi_assistant_id VARCHAR(128) NULL,\n  ADD COLUMN auto_vapi_call BOOLEAN NOT NULL DEFAULT TRUE,\n  ADD COLUMN auto_sms BOOLEAN NOT NULL DEFAULT TRUE,\n  ADD COLUMN sms_template TEXT NULL,\n  ADD COLUMN lead_tag VARCHAR(128) NULL\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nALTER TABLE facebook_page_configs\n  ADD COLUMN vapi_assistant_id VARCHAR(128) NULL,\n  ADD COLUMN auto_vapi_call BOOLEAN NOT NULL DEFAULT TRUE,\n  ADD COLUMN auto_sms BOOLEAN NOT NULL DEFAULT TRUE,\n  ADD COLUMN sms_template TEXT NULL,\n  ADD COLUMN lead_tag VARCHAR(128) NULL\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1124
+}

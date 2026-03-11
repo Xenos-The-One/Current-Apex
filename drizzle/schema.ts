@@ -1307,6 +1307,12 @@ export const facebookPageConfigs = mysqlTable("facebook_page_configs", {
   pageName: varchar("page_name", { length: 255 }),
   pageAccessToken: text("page_access_token").notNull(),
   isActive: boolean("is_active").default(true).notNull(),
+  // Per-page automation settings
+  vapiAssistantId: varchar("vapi_assistant_id", { length: 128 }),   // Override global VAPI assistant for this page
+  autoVapiCall: boolean("auto_vapi_call").default(true).notNull(),   // Enable/disable auto VAPI call for this page
+  autoSms: boolean("auto_sms").default(true).notNull(),              // Enable/disable auto SMS for this page
+  smsTemplate: text("sms_template"),                                  // Custom SMS body (use {{firstName}}, {{bookingUrl}} placeholders)
+  leadTag: varchar("lead_tag", { length: 128 }),                     // Tag to auto-apply to leads from this page
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });

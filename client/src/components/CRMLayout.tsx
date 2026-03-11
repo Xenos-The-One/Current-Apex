@@ -32,6 +32,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { PWAInstallBanner, PushNotificationPrompt, IOSInstallBanner } from "./PWABanner";
 import { Link, useLocation } from "wouter";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Badge } from "./ui/badge";
@@ -252,6 +253,11 @@ export default function CRMLayout({ children, agencyId }: CRMLayoutProps) {
             )}
           </Button>
         </header>
+
+        {/* PWA Banners — install prompt + push notification opt-in */}
+        <PWAInstallBanner />
+        <IOSInstallBanner />
+        <PushNotificationPrompt />
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto">
