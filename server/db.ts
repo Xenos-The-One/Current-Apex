@@ -548,27 +548,65 @@ export async function recalculateAllLeadScores(agencyId: number) {
 
 export async function createLeadActivity(activity: {
   leadId: number;
-  activityType: "call" | "email" | "sms" | "note" | "status_change" | "appointment";
+  agencyId?: number;
+  activityType: "call" | "email" | "sms" | "note" | "task" | "appointment" | "status_change" | "score_change" | "import" | "ai_call";
   description?: string;
+  subject?: string;
+  metadata?: Record<string, unknown>;
   vapiCallId?: string;
   callDuration?: number;
   callRecordingUrl?: string;
   performedBy?: number;
 }) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  await db.insert(leadActivities).values(activity);
+  // Use raw SQL to match the actual live DB schema (leadId, type, content columns)
+  const mysql2 = await import('mysql2/promise');
+  const conn = await mysql2.createConnection(process.env.DATABASE_URL!);
+  try {
+    await conn.execute(
+      `INSERT INTO lead_activities (leadId, agencyId, userId, type, subject, content, metadata, createdAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [
+        activity.leadId,
+        activity.agencyId ?? null,
+        activity.performedBy ?? null,
+        activity.activityType,
+        activity.subject ?? null,
+        activity.description ?? null,
+        activity.metadata ? JSON.stringify(activity.metadata) : null,
+      ]
+    );
+  } finally {
+    await conn.end();
+  }
   
   // Recalculate lead score after new activity
   await updateLeadScore(activity.leadId);
 }
 
 export async function getLeadActivities(leadId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return await db.select().from(leadActivities).where(eq(leadActivities.leadId, leadId)).orderBy(desc(leadActivities.createdAt));
+  // Use raw SQL to match the actual live DB schema
+  const mysql2 = await import('mysql2/promise');
+  const conn = await mysql2.createConnection(process.env.DATABASE_URL!);
+  try {
+    const [rows] = await conn.execute(
+      `SELECT id, leadId, agencyId, userId, type as activityType, subject, content as description, metadata, createdAt
+       FROM lead_activities WHERE leadId = ? ORDER BY createdAt DESC`,
+      [leadId]
+    ) as any[];
+    return rows as Array<{
+      id: number;
+      leadId: number;
+      agencyId: number | null;
+      userId: number | null;
+      activityType: string;
+      subject: string | null;
+      description: string | null;
+      metadata: unknown;
+      createdAt: Date;
+    }>;
+  } finally {
+    await conn.end();
+  }
 }
 
 // ============= SOCIAL MEDIA POST FUNCTIONS =============

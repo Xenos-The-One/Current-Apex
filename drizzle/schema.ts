@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, decimal } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, decimal, json } from "drizzle-orm/mysql-core";
 
 // Export campaign tracking tables
 export * from "./schema-campaigns";
@@ -177,13 +177,13 @@ export const leads = mysqlTable("leads", {
  */
 export const leadActivities = mysqlTable("lead_activities", {
   id: int("id").autoincrement().primaryKey(),
-  leadId: int("lead_id").notNull().references(() => leads.id),
-  activityType: mysqlEnum("activity_type", ["call", "email", "sms", "note", "status_change", "appointment"]).notNull(),
-  description: text("description"),
-  vapiCallId: varchar("vapi_call_id", { length: 255 }), // For AI voice calls
-  callDuration: int("call_duration"), // seconds
-  callRecordingUrl: text("call_recording_url"),
-  performedBy: int("performed_by").references(() => users.id),
+  leadId: int("leadId").notNull().references(() => leads.id),
+  agencyId: int("agencyId").references(() => agencies.id),
+  userId: int("userId").references(() => users.id),
+  activityType: mysqlEnum("type", ["call", "email", "sms", "note", "task", "appointment", "status_change", "score_change", "import", "ai_call"]).notNull(),
+  subject: varchar("subject", { length: 255 }),
+  description: text("content"),
+  metadata: json("metadata"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

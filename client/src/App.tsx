@@ -25,7 +25,7 @@ import NewSocialPost from "./pages/NewSocialPost";
 import AIScriptGenerator from "./pages/AIScriptGenerator";
 import EmailCampaigns from "./pages/EmailCampaigns";
 import SMSCampaigns from "./pages/SmsCampaigns";
-import ContentApprovals from "./pages/ContentApprovals";
+const ContentApprovals = lazy(() => import("./pages/ContentApprovals"));
 import MyContent from "./pages/MyContent";
 import IndigoLabsLanding from "./pages/IndigoLabsLanding";
 import Analytics from "./pages/Analytics";

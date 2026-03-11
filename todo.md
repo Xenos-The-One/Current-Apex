@@ -455,3 +455,8 @@
 - [x] Added Landline as fallback phone when Mobile is empty
 - [x] Added batching (500 rows per request) to prevent timeouts on large CSVs like the 7,027-row Palm Beach file
 - [x] Simulation confirmed: 6,478 of 7,027 rows will import (549 skipped — no email AND no phone)
+
+## Round 44: Client View & Schema Drift Fixes
+- [x] Fix "Lead Not Found" in client view — wire x-impersonate-client-id header from localStorage to tRPC client
+- [x] Fix lead_activities schema drift — update schema.ts and db.ts to match live DB column names (leadId, type, content)
+- [x] Fix createLeadActivity and getLeadActivities to use raw SQL matching live DB

@@ -55,11 +55,30 @@ queryClient.getMutationCache().subscribe(event => {
   }
 });
 
+// Read impersonation state from localStorage (same key used by ImpersonationContext)
+const IMPERSONATION_STORAGE_KEY = "impersonating_client";
+
+function getImpersonationHeaders(): Record<string, string> {
+  try {
+    const saved = localStorage.getItem(IMPERSONATION_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.clientId) {
+        return { "x-impersonate-client-id": String(parsed.clientId) };
+      }
+    }
+  } catch {}
+  return {};
+}
+
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
       url: "/api/trpc",
       transformer: superjson,
+      headers() {
+        return getImpersonationHeaders();
+      },
       fetch(input, init) {
         return globalThis.fetch(input, {
           ...(init ?? {}),
