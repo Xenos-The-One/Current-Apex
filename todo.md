@@ -527,3 +527,8 @@
 - [x] Add crm.extendedStats backend procedure (active leads, show rate, revenue, SEO, engagement, top 10%)
 - [x] Build Client Performance stats section on ClientDashboard with 6 stat cards
 - [x] Add Top 10% Client badge when conversion rate >= 15%, show rate >= 70%, or 5+ closed deals
+
+## Round 54: Suggested Follow-Ups Always Show 3
+- [x] Root cause: agency owner_id was 1 but logged-in user id is 450215 — updated DB
+- [x] Added getAllAgencies fallback in getSuggested and getAllSuggested for admin users
+- [x] Panel now correctly shows 2 leads (Thailer Somerville, John Moreno) with Call/SMS/Email buttons

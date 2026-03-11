@@ -8,6 +8,7 @@ import {
   getLeadsByClientId,
   getLeadsByAgencyId,
   getAgencyByOwnerId,
+  getAllAgencies,
   getLeadActivities,
   getDb,
   createLeadActivity,
@@ -209,7 +210,12 @@ export const followUpsRouter = router({
       // Admin/agency_owner without impersonation — show leads across their entire agency
       const isAdmin = ADMIN_ROLES.includes(ctx.user.role);
       if (isAdmin) {
-        const agency = await getAgencyByOwnerId(ctx.user.id);
+        let agency = await getAgencyByOwnerId(ctx.user.id);
+        if (!agency) {
+          // Fallback: use the first available agency (handles seed data where owner_id may differ)
+          const allAgencies = await getAllAgencies();
+          if (allAgencies.length > 0) agency = allAgencies[0];
+        }
         if (agency) {
           clientLeads = await getLeadsByAgencyId(agency.id);
         }
@@ -265,7 +271,11 @@ export const followUpsRouter = router({
       if (!client) {
         const isAdmin = ADMIN_ROLES.includes(ctx.user.role);
         if (isAdmin) {
-          const agency = await getAgencyByOwnerId(ctx.user.id);
+          let agency = await getAgencyByOwnerId(ctx.user.id);
+          if (!agency) {
+            const allAgencies = await getAllAgencies();
+            if (allAgencies.length > 0) agency = allAgencies[0];
+          }
           if (agency) clientLeads = await getLeadsByAgencyId(agency.id);
         }
         if (clientLeads.length === 0) {
