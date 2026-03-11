@@ -37,6 +37,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Link } from "wouter";
 import { useState } from "react";
 import { MessageSquare, PhoneCall, Mail, Loader2 } from "lucide-react";
+import React from "react";
 import { toast } from "sonner";
 
 /* ─── Suggested Follow-ups Component ─── */
@@ -243,6 +244,60 @@ function SuggestedFollowUps() {
             )}
           </div>
         ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ─── AI Success Coach Widget ─── */
+function buildCoachInsights(stats: any, slaAlerts: any): Array<{ text: React.ReactNode }> {
+  if (!stats) return [];
+  const insights: Array<{ text: React.ReactNode }> = [];
+  const newLeads = stats.newLeads ?? 0;
+  insights.push({ text: (<><strong className="text-foreground">{newLeads}</strong> new lead{newLeads !== 1 ? "s" : ""} need first contact. Speed-to-lead under 5 minutes increases conversion by ~40%.</>) });
+  const qualified = stats.qualified ?? 0;
+  insights.push({ text: (<><strong className="text-foreground">{qualified}</strong> qualified lead{qualified !== 1 ? "s" : ""} — prioritize booking calls within 24 hours.</>) });
+  const closedWon = stats.closedWon ?? 0;
+  insights.push({ text: (<><strong className="text-foreground">{closedWon}</strong> closed deal{closedWon !== 1 ? "s" : ""}. {closedWon === 0 ? "Consider requesting testimonials to increase trust." : "Request testimonials from closed clients to build social proof."}</>) });
+  const contacted = stats.contacted ?? 0;
+  insights.push({ text: (<>Follow up with <strong className="text-foreground">{contacted}</strong> &ldquo;Contacted&rdquo; lead{contacted !== 1 ? "s" : ""} after 48 hours if no response.</>) });
+  const appointmentSet = stats.appointmentSet ?? 0;
+  insights.push({ text: (<>Focus on moving leads from Qualified &rarr; Appointment Set to unlock revenue. <strong className="text-foreground">{appointmentSet}</strong> lead{appointmentSet !== 1 ? "s" : ""} currently in that stage.</>) });
+  if (slaAlerts?.coldLeads > 0) {
+    insights.push({ text: (<><strong className="text-foreground">{slaAlerts.coldLeads}</strong> cold lead{slaAlerts.coldLeads !== 1 ? "s" : ""} with no activity in 14+ days — re-engage with a rate drop alert or personalized SMS.</>) });
+  }
+  return insights;
+}
+
+function AISuccessCoachWidget({ stats, slaAlerts, onRefresh }: { stats: any; slaAlerts: any; onRefresh?: () => void }) {
+  const [refreshKey, setRefreshKey] = useState(0);
+  const insights = buildCoachInsights(stats, slaAlerts);
+  function handleGenerate() {
+    if (onRefresh) onRefresh();
+    setRefreshKey(k => k + 1);
+    toast.success("Suggestions refreshed with latest pipeline data");
+  }
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+          AI Success Coach
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <ul key={refreshKey} className="space-y-3">
+          {insights.map((insight, i) => (
+            <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground leading-relaxed">
+              <span className="mt-[7px] h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
+              <span>{insight.text}</span>
+            </li>
+          ))}
+        </ul>
+        <Button className="w-full" size="sm" onClick={handleGenerate}>
+          <RefreshCw className="h-3.5 w-3.5 mr-2" />
+          Generate New Suggestions
+        </Button>
       </CardContent>
     </Card>
   );
@@ -769,6 +824,9 @@ export default function ClientDashboard() {
                 )}
               </CardContent>
             </Card>
+
+            {/* AI Success Coach */}
+            <AISuccessCoachWidget stats={stats} slaAlerts={slaAlerts} />
 
             {/* AI SEO Stats */}
             {seoStats && (

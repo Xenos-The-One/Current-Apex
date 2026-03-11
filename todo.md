@@ -470,3 +470,9 @@
 - [x] Wire all new routes in App.tsx
 - [x] Fix conversations router agencyId resolution for client_user role (was returning 0)
 - [x] Fix lead_activities schema drift in sales-followup-agent and client-nurture-agent
+
+## Round 47: AI Success Coach Dashboard Widget
+- [ ] Embed AI Success Coach panel as right-side widget on Client Dashboard
+
+## Round 47: AI Success Coach Dashboard Widget
+- [x] Embed AI Success Coach panel as right-side widget on Client Dashboard (reuses existing stats/slaAlerts queries, no extra API calls)
