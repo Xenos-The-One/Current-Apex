@@ -512,3 +512,8 @@
 - [x] Fix SuggestedFollowUpsPanel to always show all 3 follow-up types (Call, SMS, Email) per lead
 - [x] Make new leads appear immediately in Suggested Follow-Ups (not just after 24h)
 - [x] Add sendFollowUpEmail procedure to follow-ups router
+
+## Round 51: ClientDashboard AI Coach + Follow-Ups Fix
+- [x] Remove duplicate AI Coach panel (inline AISuccessCoachWidget) from main content area of ClientDashboard
+- [x] Remove inline SuggestedFollowUps component from main content area of ClientDashboard
+- [x] Right sidebar retains single AISuccessCoachPanel + SuggestedFollowUpsPanel

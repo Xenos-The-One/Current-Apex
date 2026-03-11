@@ -681,9 +681,6 @@ export default function ClientDashboard() {
           </Card>
         </div>
 
-        {/* Suggested Follow-ups */}
-        <SuggestedFollowUps />
-
         {/* Recent Leads + Side Widgets */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Recent Leads */}
@@ -768,9 +765,6 @@ export default function ClientDashboard() {
                 )}
               </CardContent>
             </Card>
-
-            {/* AI Success Coach */}
-            <AISuccessCoachWidget stats={stats} slaAlerts={slaAlerts} />
 
             {/* AI SEO Stats */}
             {seoStats && (
