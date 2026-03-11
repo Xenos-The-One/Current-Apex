@@ -517,3 +517,8 @@
 - [x] Remove duplicate AI Coach panel (inline AISuccessCoachWidget) from main content area of ClientDashboard
 - [x] Remove inline SuggestedFollowUps component from main content area of ClientDashboard
 - [x] Right sidebar retains single AISuccessCoachPanel + SuggestedFollowUpsPanel
+
+## Round 52: Suggested Follow-Ups Always Show 3
+- [x] Fix getSuggested to handle admin/agency_owner users by fetching leads via agencyId
+- [x] Fix getAllSuggested to handle admin/agency_owner users the same way
+- [x] Panel now shows leads with Call/SMS/Email buttons for agency owners on main dashboard

@@ -6,6 +6,8 @@ import {
   getClientByUserId,
   getClientById,
   getLeadsByClientId,
+  getLeadsByAgencyId,
+  getAgencyByOwnerId,
   getLeadActivities,
   getDb,
   createLeadActivity,
@@ -201,25 +203,34 @@ export const followUpsRouter = router({
   // ─── Dashboard widget: top 10 suggestions ────────────────────────────────
   getSuggested: protectedProcedure.query(async ({ ctx }) => {
     const client = await resolveClientForFollowUps(ctx);
-    // Admin users without a linked client record — return empty gracefully
+    let clientLeads: any[] = [];
+
     if (!client) {
-      return { suggestions: [], summary: "No client profile linked. Use Admin Dashboard to manage leads." };
-    }
-
-    const db = await getDb();
-    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-
-    const clientLeads = await db
-      .select()
-      .from(leads)
-      .where(eq(leads.clientId, client.id))
-      .orderBy(desc(leads.createdAt));
-
-    if (clientLeads.length === 0) {
-      return {
-        suggestions: [],
-        summary: "No leads found. Start capturing leads to see follow-up suggestions.",
-      };
+      // Admin/agency_owner without impersonation — show leads across their entire agency
+      const isAdmin = ADMIN_ROLES.includes(ctx.user.role);
+      if (isAdmin) {
+        const agency = await getAgencyByOwnerId(ctx.user.id);
+        if (agency) {
+          clientLeads = await getLeadsByAgencyId(agency.id);
+        }
+      }
+      if (clientLeads.length === 0) {
+        return { suggestions: [], summary: "No leads found. Add leads to see follow-up suggestions." };
+      }
+    } else {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      clientLeads = await db
+        .select()
+        .from(leads)
+        .where(eq(leads.clientId, client.id))
+        .orderBy(desc(leads.createdAt));
+      if (clientLeads.length === 0) {
+        return {
+          suggestions: [],
+          summary: "No leads found. Start capturing leads to see follow-up suggestions.",
+        };
+      }
     }
 
     const allSuggestions = buildSuggestions(clientLeads);
@@ -250,27 +261,33 @@ export const followUpsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const client = await resolveClientForFollowUps(ctx);
+      let clientLeads: any[] = [];
       if (!client) {
-        return { suggestions: [], summary: "No client profile linked.", counts: { high: 0, medium: 0, low: 0, total: 0 }, completionRate: 0, snoozedCount: 0 };
-      }
-
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-
-      const clientLeads = await db
-        .select()
-        .from(leads)
-        .where(eq(leads.clientId, client.id))
-        .orderBy(desc(leads.createdAt));
-
-      if (clientLeads.length === 0) {
-        return {
-          suggestions: [],
-          summary: "No leads found.",
-          counts: { high: 0, medium: 0, low: 0, total: 0 },
-          completionRate: 0,
-          snoozedCount: 0,
-        };
+        const isAdmin = ADMIN_ROLES.includes(ctx.user.role);
+        if (isAdmin) {
+          const agency = await getAgencyByOwnerId(ctx.user.id);
+          if (agency) clientLeads = await getLeadsByAgencyId(agency.id);
+        }
+        if (clientLeads.length === 0) {
+          return { suggestions: [], summary: "No leads found.", counts: { high: 0, medium: 0, low: 0, total: 0 }, completionRate: 0, snoozedCount: 0 };
+        }
+      } else {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+        clientLeads = await db
+          .select()
+          .from(leads)
+          .where(eq(leads.clientId, client.id))
+          .orderBy(desc(leads.createdAt));
+        if (clientLeads.length === 0) {
+          return {
+            suggestions: [],
+            summary: "No leads found.",
+            counts: { high: 0, medium: 0, low: 0, total: 0 },
+            completionRate: 0,
+            snoozedCount: 0,
+          };
+        }
       }
 
       const allSuggestions = buildSuggestions(clientLeads);

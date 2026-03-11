@@ -1,0 +1,106 @@
+{
+  "query": "SHOW COLUMNS FROM leads LIKE '%status%'; SHOW COLUMNS FROM leads LIKE '%contact%'; SHOW COLUMNS FROM leads LIKE '%name%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SHOW COLUMNS FROM leads LIKE '%status%'; SHOW COLUMNS FROM leads LIKE '%contact%'; SHOW COLUMNS FROM leads LIKE '%name%';",
+  "rows": [
+    {
+      "Field": "status",
+      "Type": "enum('new','contacted','qualified','appointment_set','converted','lost','nurturing')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "new",
+      "Extra": ""
+    },
+    {
+      "Field": "Field",
+      "Type": "Type",
+      "Null": "Null",
+      "Key": "Key",
+      "Default": "Default",
+      "Extra": "Extra"
+    },
+    {
+      "Field": "contact_type",
+      "Type": "enum('borrower','re_agent','attorney','insurance','title_co','builder','lender','other')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "borrower",
+      "Extra": ""
+    },
+    {
+      "Field": "last_contacted_at",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "last_contact_date",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "Field",
+      "Type": "Type",
+      "Null": "Null",
+      "Key": "Key",
+      "Default": "Default",
+      "Extra": "Extra"
+    },
+    {
+      "Field": "first_name",
+      "Type": "varchar(100)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "last_name",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "ad_name",
+      "Type": "varchar(500)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "adset_name",
+      "Type": "varchar(500)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "campaign_name",
+      "Type": "varchar(500)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "form_name",
+      "Type": "varchar(500)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nstatus\tenum('new','contacted','qualified','appointment_set','converted','lost','nurturing')\tNO\t\tnew\t\nField\tType\tNull\tKey\tDefault\tExtra\ncontact_type\tenum('borrower','re_agent','attorney','insurance','title_co','builder','lender','other')\tNO\t\tborrower\t\nlast_contacted_at\ttimestamp\tYES\t\tNULL\t\nlast_contact_date\ttimestamp\tYES\t\tNULL\t\nField\tType\tNull\tKey\tDefault\tExtra\nfirst_name\tvarchar(100)\tNO\t\tNULL\t\nlast_name\tvarchar(100)\tYES\t\tNULL\t\nad_name\tvarchar(500)\tYES\t\tNULL\t\nadset_name\tvarchar(500)\tYES\t\tNULL\t\ncampaign_name\tvarchar(500)\tYES\t\tNULL\t\nform_name\tvarchar(500)\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 70
+}
