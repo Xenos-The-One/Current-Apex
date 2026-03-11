@@ -53,6 +53,7 @@ import { bulkPublishingRouter } from "./routers/seo/bulkPublishing";
 import { clientsRouter } from "./routers/clients";
 import { conversationsRouter } from "./routers/conversations";
 import { websiteGeneratorRouter } from "./routers/website-generator";
+import { accountSetupRouter } from "./routers/account-setup";
 
 export const appRouter = router({
   system: systemRouter,
@@ -107,6 +108,7 @@ export const appRouter = router({
   clients: clientsRouter,
   conversations: conversationsRouter,
   websiteGenerator: websiteGeneratorRouter,
+  accountSetup: accountSetupRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

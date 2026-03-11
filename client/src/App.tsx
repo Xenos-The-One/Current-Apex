@@ -12,6 +12,7 @@ import Info from "./pages/Info";
 import GetStarted from "./pages/GetStarted";
 import OnboardingSuccess from "./pages/OnboardingSuccess";
 import ClientOnboarding from "./pages/ClientOnboarding";
+import AccountSetup from "./pages/AccountSetup";
 import AdminDashboard from "./pages/AdminDashboard";
 import AgencyDetail from "./pages/AgencyDetail";
 import ClientDashboard from "./pages/ClientDashboard";
@@ -208,7 +209,7 @@ function Router() {
       <Route path="/activate-account" component={ActivateAccount} />
       <Route path="/launchpad" component={() => { if (typeof window !== 'undefined') window.location.replace('/account-setup'); return null; }} />
       <Route path="/client-onboarding" component={ClientOnboarding} />
-      <Route path="/account-setup" component={ClientOnboarding} />
+      <Route path="/account-setup" component={AccountSetup} />
       <Route path="/onboarding-snapshot" component={() => { if (typeof window !== 'undefined') window.location.replace('/admin'); return null; }} />
       <Route path="/book/:slug" component={PublicBooking} />
       <Route path="/partner-portal" component={PartnerPortal} />

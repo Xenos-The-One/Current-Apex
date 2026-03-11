@@ -1312,3 +1312,87 @@ export const facebookPageConfigs = mysqlTable("facebook_page_configs", {
 });
 export type FacebookPageConfig = typeof facebookPageConfigs.$inferSelect;
 export type InsertFacebookPageConfig = typeof facebookPageConfigs.$inferInsert;
+
+/**
+ * Client Account Setup
+ * Stores all credentials and preferences collected during the Account Setup tab.
+ * Sensitive fields (passwords, tokens) are stored encrypted at the application layer.
+ */
+export const clientAccountSetup = mysqlTable("client_account_setup", {
+  id: int("id").autoincrement().primaryKey(),
+  clientId: int("client_id").notNull().references(() => clients.id),
+
+  // Social Media Logins
+  fbEmail: varchar("fb_email", { length: 320 }),
+  fbPassword: text("fb_password"),
+  fbPageId: varchar("fb_page_id", { length: 64 }),
+  fbPageName: varchar("fb_page_name", { length: 255 }),
+  fbAccessToken: text("fb_access_token"),
+
+  igUsername: varchar("ig_username", { length: 100 }),
+  igPassword: text("ig_password"),
+
+  linkedinEmail: varchar("linkedin_email", { length: 320 }),
+  linkedinPassword: text("linkedin_password"),
+  linkedinPageUrl: varchar("linkedin_page_url", { length: 500 }),
+
+  tiktokUsername: varchar("tiktok_username", { length: 100 }),
+  tiktokPassword: text("tiktok_password"),
+
+  youtubeEmail: varchar("youtube_email", { length: 320 }),
+  youtubePassword: text("youtube_password"),
+  youtubeChannelUrl: varchar("youtube_channel_url", { length: 500 }),
+
+  twitterUsername: varchar("twitter_username", { length: 100 }),
+  twitterPassword: text("twitter_password"),
+
+  // Website / CMS Access
+  websiteUrl: varchar("website_url", { length: 500 }),
+  websitePlatform: varchar("website_platform", { length: 50 }),
+  websiteAdminUrl: varchar("website_admin_url", { length: 500 }),
+  websiteAdminEmail: varchar("website_admin_email", { length: 320 }),
+  websiteAdminPassword: text("website_admin_password"),
+  ftpHost: varchar("ftp_host", { length: 255 }),
+  ftpUsername: varchar("ftp_username", { length: 255 }),
+  ftpPassword: text("ftp_password"),
+  hostingProvider: varchar("hosting_provider", { length: 100 }),
+  hostingEmail: varchar("hosting_email", { length: 320 }),
+  hostingPassword: text("hosting_password"),
+  domainRegistrar: varchar("domain_registrar", { length: 100 }),
+  domainEmail: varchar("domain_email", { length: 320 }),
+  domainPassword: text("domain_password"),
+
+  // Ad Account Access
+  metaAdAccountId: varchar("meta_ad_account_id", { length: 100 }),
+  metaAdEmail: varchar("meta_ad_email", { length: 320 }),
+  metaAdPassword: text("meta_ad_password"),
+  metaBusinessManagerId: varchar("meta_bm_id", { length: 100 }),
+
+  googleAdsCustomerId: varchar("google_ads_customer_id", { length: 50 }),
+  googleAdsEmail: varchar("google_ads_email", { length: 320 }),
+  googleAdsPassword: text("google_ads_password"),
+  googleAnalyticsId: varchar("google_analytics_id", { length: 50 }),
+  googleSearchConsoleAccess: boolean("google_search_console_access").default(false),
+
+  tiktokAdsAccountId: varchar("tiktok_ads_account_id", { length: 100 }),
+  tiktokAdsEmail: varchar("tiktok_ads_email", { length: 320 }),
+  tiktokAdsPassword: text("tiktok_ads_password"),
+
+  // Website Preferences (for new website builds)
+  wantsNewWebsite: boolean("wants_new_website").default(false),
+  websiteGoal: varchar("website_goal", { length: 50 }),
+  websiteStyle: varchar("website_style", { length: 50 }),
+  websitePages: text("website_pages"),
+  websiteFeatures: text("website_features"),
+  websiteColorPrimary: varchar("website_color_primary", { length: 20 }),
+  websiteColorSecondary: varchar("website_color_secondary", { length: 20 }),
+  websiteExamples: text("website_examples"),
+  websiteAdditionalNotes: text("website_additional_notes"),
+
+  setupCompletedAt: timestamp("setup_completed_at"),
+  lastUpdatedSection: varchar("last_updated_section", { length: 50 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type ClientAccountSetup = typeof clientAccountSetup.$inferSelect;
+export type InsertClientAccountSetup = typeof clientAccountSetup.$inferInsert;

@@ -532,3 +532,43 @@
 - [x] Root cause: agency owner_id was 1 but logged-in user id is 450215 — updated DB
 - [x] Added getAllAgencies fallback in getSuggested and getAllSuggested for admin users
 - [x] Panel now correctly shows 2 leads (Thailer Somerville, John Moreno) with Call/SMS/Email buttons
+
+## Round 55: Account Setup Tab
+- [ ] Audit current Account Setup / Settings page
+- [ ] Add DB columns for social media credentials (FB, IG, LinkedIn, TikTok, YouTube, X/Twitter)
+- [ ] Add DB columns for website credentials (CMS login, FTP, WordPress, hosting)
+- [ ] Add DB columns for ad account credentials (Google Ads, Meta Ads, TikTok Ads)
+- [ ] Add DB columns for website preferences questionnaire
+- [ ] Add backend procedures: getAccountSetup, saveAccountSetup
+- [ ] Build Account Setup UI with 4 sections: Social Media, Website Access, Ad Accounts, Website Preferences
+- [ ] Secure credential storage (encrypt sensitive fields)
+
+## Round 55 (Completed): Comprehensive Account Setup Tab
+- [x] Created client_account_setup table in live DB via raw SQL
+- [x] Added clientAccountSetup table definition to drizzle/schema.ts
+- [x] Built accountSetupRouter with 6 procedures: getSetup, saveSocialMedia, saveWebsiteAccess, saveAdAccounts, saveWebsitePreferences, markComplete
+- [x] Registered accountSetupRouter in server/routers.ts
+- [x] Built comprehensive AccountSetup.tsx page with 4 sections:
+  - Social Media: Facebook, Instagram, LinkedIn, TikTok, YouTube, Twitter/X (with password show/hide)
+  - Website Access: CMS/WordPress, FTP, Hosting, Domain Registrar
+  - Ad Accounts: Meta Ads, Google Ads (with Analytics + Search Console), TikTok Ads
+  - Website Preferences: goal, style, pages, features, colors, examples, notes
+- [x] Updated App.tsx to use new AccountSetup page at /account-setup route
+- [x] Added security notice banner on credential sections
+- [x] Added progress tracking with visual step indicators (4 tabs with completion checkmarks)
+- [x] Added "Mark Setup Complete" button when all sections filled
+- [x] Added completion banner showing setup date
+- [x] All 4 vitest tests pass
+
+## Round 55 (Completed): Comprehensive Account Setup Tab
+- [x] Created client_account_setup table in live DB via raw SQL
+- [x] Added clientAccountSetup table definition to drizzle/schema.ts
+- [x] Built accountSetupRouter with 6 procedures: getSetup, saveSocialMedia, saveWebsiteAccess, saveAdAccounts, saveWebsitePreferences, markComplete
+- [x] Registered accountSetupRouter in server/routers.ts
+- [x] Built comprehensive AccountSetup.tsx page with 4 sections
+- [x] Updated App.tsx to use new AccountSetup page at /account-setup route
+- [x] Added security notice banner on credential sections
+- [x] Added progress tracking with visual step indicators (4 tabs with completion checkmarks)
+- [x] Added "Mark Setup Complete" button when all sections filled
+- [x] Added completion banner showing setup date
+- [x] All 4 vitest tests pass
