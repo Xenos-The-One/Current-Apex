@@ -200,13 +200,13 @@ export class SalesFollowUpAgent {
           break;
       }
       
-      // Log activity - use valid activityType enum values
+      // Log activity using raw SQL helper to avoid schema drift
       const activityType = followUp.channel === 'vapi' ? 'call' as const : followUp.channel === 'sms' ? 'sms' as const : 'email' as const;
-      await db.insert(leadActivities).values({
+      const { createLeadActivity } = await import('../db');
+      await createLeadActivity({
         leadId: followUp.leadId,
         activityType,
         description: `Follow-up step ${followUp.step} via ${followUp.channel}`,
-        createdAt: new Date()
       });
       
     } catch (error) {

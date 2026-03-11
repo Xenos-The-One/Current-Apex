@@ -1,0 +1,25 @@
+{
+  "query": "SELECT id, name, agency_id FROM clients LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, name, agency_id FROM clients LIMIT 10;",
+  "rows": [
+    {
+      "id": "60001",
+      "name": "Optimal Lending Solutions",
+      "agency_id": "1"
+    },
+    {
+      "id": "60002",
+      "name": "Premier Mortgage Resources",
+      "agency_id": "1"
+    },
+    {
+      "id": "90001",
+      "name": "Tariq Test Account",
+      "agency_id": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tagency_id\n60001\tOptimal Lending Solutions\t1\n60002\tPremier Mortgage Resources\t1\n90001\tTariq Test Account\t1\n",
+  "stderr": "",
+  "execution_time_ms": 94
+}

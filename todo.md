@@ -460,3 +460,13 @@
 - [x] Fix "Lead Not Found" in client view — wire x-impersonate-client-id header from localStorage to tRPC client
 - [x] Fix lead_activities schema drift — update schema.ts and db.ts to match live DB column names (leadId, type, content)
 - [x] Fix createLeadActivity and getLeadActivities to use raw SQL matching live DB
+
+## Round 45: Client Dashboard Navigation (LoanOS Gap Analysis #1)
+- [x] Build AI Success Coach page (/ai-coach) with dismissible recommendation cards
+- [x] Build Follow-Up Actions page (/follow-up-actions) with no-show/cancellation/stale lead categories
+- [x] Build Ads Performance page (/ads-performance) with client-facing read-only metrics
+- [x] Build SEO Insights page (/seo-insights) with keyword rankings and content performance
+- [x] Update client sidebar to 13-item spec (Dashboard, Contacts, Conversations, Pipeline, Calendar, Follow-Up Actions, AI Success Coach, Ads Performance, Website, SEO Insights, Content Approvals, Reports, Settings)
+- [x] Wire all new routes in App.tsx
+- [x] Fix conversations router agencyId resolution for client_user role (was returning 0)
+- [x] Fix lead_activities schema drift in sales-followup-agent and client-nurture-agent

@@ -200,8 +200,9 @@ export class ClientNurtureAgent {
       html: htmlBody
     });
     
-    // Log activity - use valid activityType enum value
-    await db.insert(leadActivities).values({
+    // Log activity using raw SQL helper to avoid schema drift
+    const { createLeadActivity } = await import('../db');
+    await createLeadActivity({
       leadId: lead.id,
       activityType: 'email',
       description: `Nurture email sent: ${campaignKey} day${email.dayOffset}`,
@@ -270,8 +271,9 @@ Do not include a subject line, just the email body.`;
           html: emailBody
         });
         
-        // Log activity - use valid activityType enum value
-        await db.insert(leadActivities).values({
+        // Log activity using raw SQL helper to avoid schema drift
+        const { createLeadActivity } = await import('../db');
+        await createLeadActivity({
           leadId: lead.id,
           activityType: 'email',
           description: 'AI-generated re-engagement email sent',

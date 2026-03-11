@@ -19,12 +19,14 @@ import {
   LayoutDashboard,
   LogOut,
   Mail,
+  Megaphone,
   MessageSquare,
   Phone,
   Search,
   Settings,
   Share2,
   Sparkles,
+  UserX,
   Users,
   Workflow,
   Zap,
@@ -67,21 +69,22 @@ function getAdminNav(): NavItem[] {
   ];
 }
 
-// ─── Client Navigation (matches skill spec exactly) ────────────────────────
+// ─── Client Navigation (LoanOS product plan — 13 items) ───────────────────
 function getClientNav(): NavItem[] {
   return [
-    { label: "Dashboard", href: "/dashboard", icon: Home },
-    { label: "Account Setup", href: "/account-setup", icon: ClipboardList },
-    { label: "Pipeline", href: "/pipeline", icon: Users },
-    { label: "Borrower Database", href: "/borrowers", icon: BookOpen },
-    { label: "Referral Partners", href: "/referral-partners", icon: Users },
-    { label: "Appointments", href: "/appointments", icon: Calendar },
-    { label: "Follow-Ups", href: "/follow-ups", icon: Bell },
+    { label: "Dashboard", href: "/client-dashboard", icon: Home },
+    { label: "Contacts", href: "/contacts", icon: Users },
     { label: "Conversations", href: "/conversations", icon: MessageSquare },
-    { label: "Campaigns", href: "/campaigns", icon: Mail },
-    { label: "Automations", href: "/automations", icon: Workflow },
-    { label: "Analytics", href: "/analytics", icon: BarChart3 },
-    { label: "Notifications", href: "/notifications", icon: Bell },
+    { label: "Pipeline", href: "/pipeline", icon: BarChart3 },
+    { label: "Calendar", href: "/appointments", icon: Calendar },
+    { label: "Follow-Up Actions", href: "/follow-up-actions", icon: UserX },
+    { label: "AI Success Coach", href: "/ai-coach", icon: Sparkles },
+    { label: "Ads Performance", href: "/ads-performance", icon: Megaphone },
+    { label: "Website", href: "/website", icon: Globe },
+    { label: "SEO Insights", href: "/seo-insights", icon: Search },
+    { label: "Content Approvals", href: "/content-approvals", icon: FileText },
+    { label: "Reports", href: "/reports", icon: BarChart3 },
+    { label: "Settings", href: "/settings", icon: Settings },
   ];
 }
 

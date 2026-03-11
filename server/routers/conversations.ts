@@ -3,6 +3,19 @@ import { z } from "zod";
 import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
 
+/** Resolve the effective agencyId — falls back to client's agency when frontend passes 0 */
+async function resolveAgencyId(ctx: any, inputAgencyId: number): Promise<number> {
+  if (inputAgencyId > 0) return inputAgencyId;
+  const db = await getDb();
+  if (!db) return 1;
+  const [rows] = await (db as any).execute(
+    "SELECT agency_id FROM clients WHERE user_id = ? LIMIT 1",
+    [ctx.user.id]
+  );
+  const agencyId = (rows as any[])[0]?.agency_id;
+  return agencyId && agencyId > 0 ? agencyId : 1;
+}
+
 export const conversationsRouter = router({
   list: protectedProcedure
     .input(
@@ -16,9 +29,10 @@ export const conversationsRouter = router({
         offset: z.number().default(0),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const agencyId = await resolveAgencyId(ctx, input.agencyId);
 
       let query = `
         SELECT c.*, 
@@ -28,7 +42,7 @@ export const conversationsRouter = router({
         LEFT JOIN leads l ON c.leadId = l.id
         WHERE c.agencyId = ?
       `;
-      const params: any[] = [input.agencyId];
+      const params: any[] = [agencyId];
 
       if (input.channel) {
         query += " AND c.channel = ?";
@@ -65,13 +79,14 @@ export const conversationsRouter = router({
         limit: z.number().default(100),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const agencyId = await resolveAgencyId(ctx, input.agencyId);
 
       const [rows] = await (db as any).execute(
         `SELECT * FROM conversation_messages WHERE conversationId = ? AND agencyId = ? ORDER BY createdAt ASC LIMIT ?`,
-        [input.conversationId, input.agencyId, input.limit]
+        [input.conversationId, agencyId, input.limit]
       );
       return rows as any[];
     }),
@@ -87,15 +102,16 @@ export const conversationsRouter = router({
     .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const agencyId = await resolveAgencyId(ctx, input.agencyId);
 
       const [result] = await (db as any).execute(
         `INSERT INTO conversation_messages (conversationId, agencyId, direction, content, status, sentByUserId, createdAt) VALUES (?, ?, 'outbound', ?, 'sent', ?, NOW())`,
-        [input.conversationId, input.agencyId, input.content, ctx.user.id]
+        [input.conversationId, agencyId, input.content, ctx.user.id]
       );
 
       await (db as any).execute(
         `UPDATE conversations SET lastMessageAt = NOW(), lastMessagePreview = ?, updatedAt = NOW() WHERE id = ? AND agencyId = ?`,
-        [input.content.slice(0, 200), input.conversationId, input.agencyId]
+        [input.content.slice(0, 200), input.conversationId, agencyId]
       );
 
       return { id: (result as any).insertId };
@@ -103,36 +119,39 @@ export const conversationsRouter = router({
 
   markRead: protectedProcedure
     .input(z.object({ id: z.number(), agencyId: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const agencyId = await resolveAgencyId(ctx, input.agencyId);
       await (db as any).execute(
         `UPDATE conversations SET isRead = 1, updatedAt = NOW() WHERE id = ? AND agencyId = ?`,
-        [input.id, input.agencyId]
+        [input.id, agencyId]
       );
       return { success: true };
     }),
 
   markUnread: protectedProcedure
     .input(z.object({ id: z.number(), agencyId: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const agencyId = await resolveAgencyId(ctx, input.agencyId);
       await (db as any).execute(
         `UPDATE conversations SET isRead = 0, updatedAt = NOW() WHERE id = ? AND agencyId = ?`,
-        [input.id, input.agencyId]
+        [input.id, agencyId]
       );
       return { success: true };
     }),
 
   archive: protectedProcedure
     .input(z.object({ id: z.number(), agencyId: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const agencyId = await resolveAgencyId(ctx, input.agencyId);
       await (db as any).execute(
         `UPDATE conversations SET isArchived = 1, updatedAt = NOW() WHERE id = ? AND agencyId = ?`,
-        [input.id, input.agencyId]
+        [input.id, agencyId]
       );
       return { success: true };
     }),
@@ -148,14 +167,15 @@ export const conversationsRouter = router({
         contactEmail: z.string().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const agencyId = await resolveAgencyId(ctx, input.agencyId);
 
       const [result] = await (db as any).execute(
         `INSERT INTO conversations (agencyId, leadId, channel, contactName, contactPhone, contactEmail, lastMessageAt, isRead, isArchived, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, NOW(), 0, 0, NOW(), NOW())`,
         [
-          input.agencyId,
+          agencyId,
           input.leadId || null,
           input.channel,
           input.contactName || null,
@@ -168,9 +188,10 @@ export const conversationsRouter = router({
 
   getStats: protectedProcedure
     .input(z.object({ agencyId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const agencyId = await resolveAgencyId(ctx, input.agencyId);
 
       const [rows] = await (db as any).execute(
         `SELECT 
@@ -180,7 +201,7 @@ export const conversationsRouter = router({
           SUM(CASE WHEN channel = 'email' AND isArchived = 0 THEN 1 ELSE 0 END) as email,
           SUM(CASE WHEN isArchived = 1 THEN 1 ELSE 0 END) as archived
         FROM conversations WHERE agencyId = ?`,
-        [input.agencyId]
+        [agencyId]
       );
       return (rows as any[])[0];
     }),

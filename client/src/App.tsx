@@ -216,6 +216,11 @@ function Router() {
       <Route path="/website" component={ClientWebsite} />
       <Route path="/payments" component={PaymentsPage} />
       <Route path="/settings" component={SettingsPage} />
+      <Route path="/client-dashboard" component={ClientDashboard} />
+      <Route path="/ai-coach" component={lazy(() => import('./pages/AISuccessCoach'))} />
+      <Route path="/follow-up-actions" component={lazy(() => import('./pages/FollowUpActions'))} />
+      <Route path="/ads-performance" component={lazy(() => import('./pages/AdsPerformance'))} />
+      <Route path="/seo-insights" component={lazy(() => import('./pages/SEOInsights'))} />
       {/* ── Portal routes: registered BEFORE /seo/:rest* to avoid SeoLayout wrapping ── */}
       <Route path="/seo/portal/login"><Suspense fallback={<PortalFallback />}><PortalLogin /></Suspense></Route>
       <Route path="/seo/portal/content/:id"><Suspense fallback={<PortalFallback />}><PortalContentDetail /></Suspense></Route>
