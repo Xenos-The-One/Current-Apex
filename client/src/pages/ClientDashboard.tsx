@@ -346,6 +346,7 @@ export default function ClientDashboard() {
   const { user, loading: authLoading } = useAuth();
   const [dateRange, setDateRange] = useState<"today" | "this_week" | "this_month" | "last_30_days" | "last_90_days" | "ytd">("this_month");
   const { data: stats, isLoading: statsLoading } = trpc.crm.dashboardStats.useQuery(undefined, { retry: false });
+  const { data: extStats } = trpc.crm.extendedStats.useQuery(undefined, { retry: false });
   const { data: clientInfo, isLoading: clientLoading } = trpc.crm.getMyInfo.useQuery(undefined, { retry: false });
   const { data: slaAlerts } = trpc.crm.getSlaAlerts.useQuery(undefined, { retry: false, refetchInterval: 5 * 60 * 1000 });
   const { data: rangeStats } = trpc.crm.dashboardStatsByRange.useQuery({ range: dateRange }, { retry: false });
@@ -560,6 +561,83 @@ export default function ClientDashboard() {
             </div>
           </div>
         </div>
+
+        {/* ── Client Performance Stats ── */}
+        {extStats && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-muted-foreground">Client Performance</h2>
+              {extStats.isTop10Percent && (
+                <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 rounded-full px-3 py-1">
+                  <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                  <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">Top 10% Client</span>
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
+              <div className="stat-card flex flex-col gap-1">
+                <div className="flex items-center gap-1.5">
+                  <Users className="h-4 w-4 text-blue-500" />
+                  <span className="text-[11px] text-muted-foreground">Active Leads</span>
+                </div>
+                <div className="text-2xl font-bold text-blue-600">{extStats.activeLeads}</div>
+                <div className="text-[10px] text-muted-foreground">{extStats.totalLeads} total</div>
+              </div>
+              <div className="stat-card flex flex-col gap-1">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <span className="text-[11px] text-muted-foreground">Show Rate</span>
+                </div>
+                <div className="text-2xl font-bold text-green-600">{extStats.showRate}%</div>
+                <div className="text-[10px] text-muted-foreground">{extStats.completedAppointments}/{extStats.totalAppointments} appts</div>
+              </div>
+              <div className="stat-card flex flex-col gap-1">
+                <div className="flex items-center gap-1.5">
+                  <DollarSign className="h-4 w-4 text-emerald-500" />
+                  <span className="text-[11px] text-muted-foreground">Revenue Generated</span>
+                </div>
+                <div className="text-2xl font-bold text-emerald-600">
+                  ${extStats.estimatedRevenue >= 1000
+                    ? `${(extStats.estimatedRevenue / 1000).toFixed(1)}k`
+                    : extStats.estimatedRevenue.toLocaleString()}
+                </div>
+                <div className="text-[10px] text-muted-foreground">{extStats.closedWon} closed deals</div>
+              </div>
+              <div className="stat-card flex flex-col gap-1">
+                <div className="flex items-center gap-1.5">
+                  <TrendingUp className="h-4 w-4 text-violet-500" />
+                  <span className="text-[11px] text-muted-foreground">SEO Performance</span>
+                </div>
+                <div className="text-2xl font-bold text-violet-600">
+                  {extStats.seoScore > 0
+                    ? `${extStats.seoScore}%`
+                    : extStats.seoPublished > 0
+                    ? `${extStats.seoPublished}`
+                    : "—"}
+                </div>
+                <div className="text-[10px] text-muted-foreground">
+                  {extStats.seoScore > 0 ? "quality score" : extStats.seoPublished > 0 ? "published posts" : "No SEO data yet"}
+                </div>
+              </div>
+              <div className="stat-card flex flex-col gap-1">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="h-4 w-4 text-pink-500" />
+                  <span className="text-[11px] text-muted-foreground">Total Engagement</span>
+                </div>
+                <div className="text-2xl font-bold text-pink-600">{extStats.totalEngagement}</div>
+                <div className="text-[10px] text-muted-foreground">lead interactions</div>
+              </div>
+              <div className="stat-card flex flex-col gap-1">
+                <div className="flex items-center gap-1.5">
+                  <Target className="h-4 w-4 text-orange-500" />
+                  <span className="text-[11px] text-muted-foreground">Conversion Rate</span>
+                </div>
+                <div className="text-2xl font-bold text-orange-600">{extStats.conversionRate}%</div>
+                <div className="text-[10px] text-muted-foreground">{extStats.closedWon} won</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Quick Actions */}
         <Card>

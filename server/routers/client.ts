@@ -5,6 +5,9 @@ import {
   getClientByUserId,
   getClientById,
   getAgencyById,
+  getAgencyByOwnerId,
+  getClientsByAgencyId,
+  getLeadsByAgencyId,
   getLeadsByClientId,
   createLead,
   updateLead,
@@ -846,4 +849,123 @@ export const clientRouter = router({
       }
       return { total: totalLeads, byType };
     }),
+
+  // ─── Extended stats for client dashboard ─────────────────────────────────
+  extendedStats: protectedProcedure.query(async ({ ctx }) => {
+    const IS_ADMIN = ADMIN_ROLES.includes(ctx.user.role);
+    let allLeads: any[] = [];
+    let allClients: any[] = [];
+
+    if (IS_ADMIN) {
+      const agency = await getAgencyByOwnerId(ctx.user.id);
+      if (agency) {
+        allLeads = await getLeadsByAgencyId(agency.id);
+        allClients = await getClientsByAgencyId(agency.id);
+      }
+    } else {
+      let client = await getClientByUserId(ctx.user.id);
+      if (!client) client = await ensureClientProfile(ctx.user) ?? undefined;
+      if (client) {
+        allLeads = await getLeadsByClientId(client.id);
+        allClients = [client];
+      }
+    }
+
+    // Active leads
+    const activeStatuses = ["new", "contacted", "qualified", "appointment_set"];
+    const activeLeads = allLeads.filter((l: any) => activeStatuses.includes(l.status)).length;
+
+    // Show rate
+    const db = await getDb();
+    let showRate = 0;
+    let totalAppointments = 0;
+    let completedAppointments = 0;
+    if (db) {
+      let apptRows: any[] = [];
+      if (IS_ADMIN) {
+        const agency = await getAgencyByOwnerId(ctx.user.id);
+        if (agency) apptRows = await db.select().from(appointments).where(eq(appointments.agencyId, agency.id));
+      } else if (allClients[0]?.agencyId) {
+        apptRows = await db.select().from(appointments).where(eq(appointments.agencyId, allClients[0].agencyId));
+      }
+      totalAppointments = apptRows.length;
+      completedAppointments = apptRows.filter((a: any) => a.status === "completed").length;
+      showRate = totalAppointments > 0 ? Math.round((completedAppointments / totalAppointments) * 100) : 0;
+    }
+
+    // Revenue
+    const closedWon = allLeads.filter((l: any) => l.status === "closed_won").length;
+    const estimatedRevenue = allLeads
+      .filter((l: any) => l.status === "closed_won")
+      .reduce((sum: number, l: any) => sum + (l.dealValue || 3000), 0) || closedWon * 3000;
+
+    // SEO performance
+    let seoScore = 0;
+    let seoViews = 0;
+    let seoClicks = 0;
+    let seoPublished = 0;
+    try {
+      const { getSeoClientByCrmId, getDb: getSeoDb } = await import("../seo-db");
+      const { content: contentTable, contentAnalytics, contentQualityScores } = await import("../../drizzle/seo-schema");
+      const { eq: eqSeo } = await import("drizzle-orm");
+      const seoDb = await getSeoDb();
+      if (seoDb) {
+        const allContent: any[] = [];
+        for (const c of allClients) {
+          const sc = await getSeoClientByCrmId(c.id);
+          if (sc) {
+            const rows = await seoDb.select().from(contentTable).where(eqSeo(contentTable.clientId, sc.id));
+            allContent.push(...rows);
+          }
+        }
+        if (allContent.length > 0) {
+          const contentIds = new Set(allContent.map((c: any) => c.id));
+          const [analytics, scores] = await Promise.all([
+            seoDb.select().from(contentAnalytics),
+            seoDb.select().from(contentQualityScores),
+          ]);
+          const ca = analytics.filter((a: any) => contentIds.has(a.contentId));
+          const cs = scores.filter((s: any) => contentIds.has(s.contentId));
+          seoViews = ca.reduce((sum: number, a: any) => sum + (a.views || 0), 0);
+          seoClicks = ca.reduce((sum: number, a: any) => sum + (a.clicks || 0), 0);
+          seoScore = cs.length > 0 ? Math.round(cs.reduce((sum: number, s: any) => sum + s.overallScore, 0) / cs.length) : 0;
+          seoPublished = allContent.filter((c: any) => c.status === "published").length;
+        }
+      }
+    } catch (_) { /* SEO DB not available */ }
+
+    // Total engagement (lead activities)
+    let totalEngagement = 0;
+    if (db) {
+      const { leadActivities } = await import("../../drizzle/schema");
+      const { inArray } = await import("drizzle-orm");
+      const leadIds = allLeads.map((l: any) => l.id);
+      if (leadIds.length > 0) {
+        const actRows = await db.select({ cnt: count() }).from(leadActivities).where(inArray(leadActivities.leadId, leadIds));
+        totalEngagement = Number(actRows[0]?.cnt || 0);
+      }
+    }
+
+    // Top 10% badge
+    const conversionRate = allLeads.length > 0 ? Math.round((closedWon / allLeads.length) * 100) : 0;
+    const isTop10Percent = conversionRate >= 15 || showRate >= 70 || closedWon >= 5;
+
+    return {
+      activeLeads,
+      totalLeads: allLeads.length,
+      showRate,
+      totalAppointments,
+      completedAppointments,
+      estimatedRevenue,
+      closedWon,
+      seoScore,
+      seoViews,
+      seoClicks,
+      seoPublished,
+      totalEngagement,
+      conversionRate,
+      isTop10Percent,
+      clientCount: allClients.length,
+    };
+  }),
 });

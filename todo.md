@@ -522,3 +522,8 @@
 - [x] Fix getSuggested to handle admin/agency_owner users by fetching leads via agencyId
 - [x] Fix getAllSuggested to handle admin/agency_owner users the same way
 - [x] Panel now shows leads with Call/SMS/Email buttons for agency owners on main dashboard
+
+## Round 53: Client Dashboard Statistics
+- [x] Add crm.extendedStats backend procedure (active leads, show rate, revenue, SEO, engagement, top 10%)
+- [x] Build Client Performance stats section on ClientDashboard with 6 stat cards
+- [x] Add Top 10% Client badge when conversion rate >= 15%, show rate >= 70%, or 5+ closed deals
