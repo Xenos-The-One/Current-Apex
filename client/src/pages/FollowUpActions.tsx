@@ -1,5 +1,7 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import AISuccessCoachPanel from "@/components/AISuccessCoachPanel";
+import SuggestedFollowUpsPanel from "@/components/SuggestedFollowUpsPanel";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -179,7 +181,8 @@ export default function FollowUpActions() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-5 max-w-4xl mx-auto">
+      <div className="flex gap-4 p-6">
+        <div className="flex-1 min-w-0 space-y-5">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
@@ -328,6 +331,12 @@ export default function FollowUpActions() {
             </button>
           </p>
         )}
+      </div>
+        {/* Right sidebar: AI Coach */}
+        <div className="w-72 flex-shrink-0 space-y-4">
+          <AISuccessCoachPanel context="followups" />
+          <SuggestedFollowUpsPanel />
+        </div>
       </div>
     </DashboardLayout>
   );

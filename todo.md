@@ -476,3 +476,33 @@
 
 ## Round 47: AI Success Coach Dashboard Widget
 - [x] Embed AI Success Coach panel as right-side widget on Client Dashboard (reuses existing stats/slaAlerts queries, no extra API calls)
+
+## Round 48: AI Coach + Suggested Follow-ups on All Key Client Pages
+- [ ] Create reusable AISuccessCoachPanel component (extracted from ClientDashboard)
+- [ ] Create reusable SuggestedFollowUpsPanel component
+- [ ] Embed both panels on Pipeline page
+- [ ] Embed both panels on Follow-Up Actions page
+- [ ] Embed both panels on Campaigns page
+- [ ] Embed both panels on Content Approvals page
+- [ ] Embed both panels on Ads Performance page
+- [ ] Embed both panels on Conversations page
+
+## Round 49: AI Coach + Suggested Follow-ups Expansion
+- [x] Add AI Coach + Follow-Ups to main Dashboard (CRM agency view)
+- [x] Add AI Coach + Follow-Ups to ClientDashboard (client view)
+- [x] Add AI Coach to Campaigns page
+- [x] Add AI Coach to ContentApprovals page
+- [x] Add AI Coach to Conversations page (xl breakpoint sidebar)
+- [x] Add AI Coach to AdManager page
+- [x] Fix JSX comment syntax errors in Dashboard.tsx, ClientDashboard.tsx, AdManager.tsx
+- [x] Fix agencyId null error in sales-followup-agent (agency_id vs agencyId column name)
+
+## Round 49: AI Coach + Suggested Follow-ups Expansion
+- [x] Add AI Coach + Follow-Ups to main Dashboard (CRM agency view)
+- [x] Add AI Coach + Follow-Ups to ClientDashboard (client view)
+- [x] Add AI Coach to Campaigns page
+- [x] Add AI Coach to ContentApprovals page
+- [x] Add AI Coach to Conversations page
+- [x] Add AI Coach to AdManager page
+- [x] Fix JSX comment syntax errors in Dashboard, ClientDashboard, AdManager
+- [x] Fix agencyId null error in sales-followup-agent

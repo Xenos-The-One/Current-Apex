@@ -1,5 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
+import AISuccessCoachPanel from "@/components/AISuccessCoachPanel";
+import SuggestedFollowUpsPanel from "@/components/SuggestedFollowUpsPanel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -285,7 +287,7 @@ function AISuccessCoachWidget({ stats, slaAlerts, onRefresh }: { stats: any; sla
           AI Success Coach
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4" >
         <ul key={refreshKey} className="space-y-3">
           {insights.map((insight, i) => (
             <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground leading-relaxed">
@@ -479,7 +481,8 @@ export default function ClientDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-4">
+      <div className="flex gap-4">
+        <div className="flex-1 min-w-0 space-y-4" >
         {/* Header */}
         <div className="page-header">
           <div>
@@ -797,7 +800,7 @@ export default function ClientDashboard() {
           </Card>
 
           {/* Side Widgets */}
-          <div className="space-y-4">
+          <div className="space-y-4" >
             {/* Lead Sources */}
             <Card>
               <CardHeader className="pb-2">
@@ -868,7 +871,14 @@ export default function ClientDashboard() {
             )}
           </div>
         </div>
+        </div>
+        {/* Right sidebar: AI Coach + Follow-Ups */}
+        <div className="w-72 flex-shrink-0 space-y-4">
+          <AISuccessCoachPanel context="dashboard" />
+          <SuggestedFollowUpsPanel />
+        </div>
       </div>
     </DashboardLayout>
   );
 }
+

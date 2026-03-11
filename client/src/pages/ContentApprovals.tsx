@@ -13,6 +13,7 @@ import { FeedbackThread } from "@/components/FeedbackThread";
 import { useLocation } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
 import PortalLayout from "@/components/PortalLayout";
+import AISuccessCoachPanel from "@/components/AISuccessCoachPanel";
 
 export default function ContentApprovals() {
   const [selectedApproval, setSelectedApproval] = useState<any>(null);
@@ -641,8 +642,16 @@ export default function ContentApprovals() {
       </div>
   );
 
+  const withCoach = (
+    <div className="flex gap-4">
+      <div className="flex-1 min-w-0">{content}</div>
+      <div className="w-72 flex-shrink-0 py-8 pr-6 space-y-4">
+        <AISuccessCoachPanel context="content" />
+      </div>
+    </div>
+  );
   if (isPortal) {
     return <PortalLayout activePath="/seo/portal/approvals">{content}</PortalLayout>;
   }
-  return <DashboardLayout>{content}</DashboardLayout>;
+  return <DashboardLayout>{withCoach}</DashboardLayout>;
 }

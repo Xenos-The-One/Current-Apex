@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import AISuccessCoachPanel from "@/components/AISuccessCoachPanel";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -122,7 +123,8 @@ export default function AdsPerformance() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6 max-w-5xl mx-auto">
+      <div className="flex gap-4 p-6">
+        <div className="flex-1 min-w-0 space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
@@ -254,6 +256,11 @@ export default function AdsPerformance() {
             </div>
           </CardContent>
         </Card>
+      </div>
+        {/* Right sidebar: AI Coach */}
+        <div className="w-72 flex-shrink-0 space-y-4">
+          <AISuccessCoachPanel context="ads" />
+        </div>
       </div>
     </DashboardLayout>
   );

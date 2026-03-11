@@ -1,5 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import CRMLayout from "@/components/CRMLayout";
+import AISuccessCoachPanel from "@/components/AISuccessCoachPanel";
+import SuggestedFollowUpsPanel from "@/components/SuggestedFollowUpsPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -112,7 +114,8 @@ export default function Dashboard() {
 
   return (
     <CRMLayout agencyId={agencyId}>
-      <div className="p-6 space-y-6 fade-in">
+      <div className="flex gap-4 p-6">
+        <div className="flex-1 min-w-0 space-y-6 fade-in">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -283,6 +286,12 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
+        </div>
+      </div>
+        {/* Right sidebar: AI Coach + Follow-Ups */}
+        <div className="w-72 flex-shrink-0 space-y-4">
+          <AISuccessCoachPanel context="dashboard" />
+          <SuggestedFollowUpsPanel />
         </div>
       </div>
     </CRMLayout>

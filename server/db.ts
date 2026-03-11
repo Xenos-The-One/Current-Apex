@@ -562,12 +562,18 @@ export async function createLeadActivity(activity: {
   const mysql2 = await import('mysql2/promise');
   const conn = await mysql2.createConnection(process.env.DATABASE_URL!);
   try {
+    // If agencyId not provided, look it up from the lead record
+    let resolvedAgencyId = activity.agencyId ?? null;
+    if (!resolvedAgencyId) {
+      const [leadRows] = await conn.execute('SELECT agency_id FROM leads WHERE id = ? LIMIT 1', [activity.leadId]) as any[];
+      resolvedAgencyId = leadRows?.[0]?.agency_id ?? 1;
+    }
     await conn.execute(
       `INSERT INTO lead_activities (leadId, agencyId, userId, type, subject, content, metadata, createdAt)
        VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
       [
         activity.leadId,
-        activity.agencyId ?? null,
+        resolvedAgencyId,
         activity.performedBy ?? null,
         activity.activityType,
         activity.subject ?? null,

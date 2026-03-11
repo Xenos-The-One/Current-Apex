@@ -1,4 +1,6 @@
 import CRMLayout from "@/components/CRMLayout";
+import AISuccessCoachPanel from "@/components/AISuccessCoachPanel";
+import SuggestedFollowUpsPanel from "@/components/SuggestedFollowUpsPanel";
 import { useAgency } from "@/contexts/AgencyContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -269,7 +271,8 @@ export default function Pipeline() {
 
   return (
     <CRMLayout agencyId={agencyId}>
-      <div className="p-6 space-y-4 fade-in">
+      <div className="flex gap-4 p-6 h-full">
+        <div className="flex-1 min-w-0 space-y-4 fade-in">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
@@ -341,6 +344,12 @@ export default function Pipeline() {
               </div>
             );
           })}
+        </div>
+        </div>
+        {/* Right sidebar: AI Coach + Follow-Ups */}
+        <div className="w-72 flex-shrink-0 space-y-4 fade-in">
+          <AISuccessCoachPanel context="pipeline" />
+          <SuggestedFollowUpsPanel />
         </div>
       </div>
     </CRMLayout>

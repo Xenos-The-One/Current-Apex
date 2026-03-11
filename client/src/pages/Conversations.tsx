@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import AISuccessCoachPanel from "@/components/AISuccessCoachPanel";
 import { useAgency } from "@/contexts/AgencyContext";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -640,6 +641,10 @@ export default function Conversations() {
               )}
             </div>
           )}
+        </div>
+        {/* AI Coach sidebar */}
+        <div className="w-64 flex-shrink-0 border-l border-gray-200 bg-white overflow-y-auto p-4 hidden xl:block">
+          <AISuccessCoachPanel context="conversations" />
         </div>
       </div>
     </DashboardLayout>

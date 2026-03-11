@@ -1,0 +1,26 @@
+{
+  "query": "SHOW COLUMNS FROM leads WHERE Field IN ('agencyId', 'agency_id', 'clientId', 'client_id');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SHOW COLUMNS FROM leads WHERE Field IN ('agencyId', 'agency_id', 'clientId', 'client_id');",
+  "rows": [
+    {
+      "Field": "agency_id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "client_id",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nagency_id\tint\tNO\t\tNULL\t\nclient_id\tint\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 93
+}

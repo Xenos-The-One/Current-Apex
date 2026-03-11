@@ -217,6 +217,7 @@ function Router() {
       <Route path="/payments" component={PaymentsPage} />
       <Route path="/settings" component={SettingsPage} />
       <Route path="/client-dashboard" component={ClientDashboard} />
+      <Route path="/pipeline" component={lazy(() => import('./pages/Pipeline'))} />
       <Route path="/ai-coach" component={lazy(() => import('./pages/AISuccessCoach'))} />
       <Route path="/follow-up-actions" component={lazy(() => import('./pages/FollowUpActions'))} />
       <Route path="/ads-performance" component={lazy(() => import('./pages/AdsPerformance'))} />
