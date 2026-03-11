@@ -414,28 +414,59 @@ export async function bulkCreateLeads(
 ) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
-  const leadsToInsert = leadsData.map(lead => ({
-    ...lead,
-    agencyId,
+
+  if (leadsData.length === 0) return [];
+
+  // Use raw SQL to avoid Drizzle inserting columns that don't exist in the live DB
+  // (schema drift: live DB has extra columns added outside of migrations)
+  const mysql2 = await import('mysql2/promise');
+  const conn = await mysql2.createConnection(process.env.DATABASE_URL!);
+
+  const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+  // Build parameterised multi-row INSERT for only the columns we have
+  const rows: unknown[][] = leadsData.map(lead => [
     clientId,
-  }));
-  
-  await db.insert(leads).values(leadsToInsert);
-  
+    agencyId,
+    lead.firstName,
+    lead.lastName,
+    (lead as any).email ?? null,
+    (lead as any).phone ?? null,
+    'import', // DB enum: 'social_media','referral','webinar','import','manual','facebook_ads','website','cold_call','other'
+    (lead as any).notes ?? null,
+    (lead as any).loanType ?? null,
+    (lead as any).propertyAddress ?? null,
+    (lead as any).propertyCity ?? null,
+    (lead as any).propertyState ?? null,
+    (lead as any).propertyZip ?? null,
+    (lead as any).estimatedPurchasePrice ?? null,
+    (lead as any).referringAgent ?? null,
+    (lead as any).referringBrokerage ?? null,
+    now,
+    now,
+  ]);
+
+  const placeholders = rows.map(() => '(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').join(',');
+  const flat = rows.flat();
+
+  await conn.execute(
+    `INSERT INTO leads
+     (client_id, agency_id, first_name, last_name, email, phone, source, notes,
+      loan_type, property_address, property_city, property_state, property_zip,
+      loan_amount, assigned_to, company, createdAt, updatedAt)
+     VALUES ${placeholders}`,
+    flat
+  );
+
+  await conn.end();
+
   // Increment client lead count
   const client = await getClientById(clientId);
   if (client) {
-    await updateClient(clientId, { leadCount: (client.leadCount || 0) + leadsToInsert.length });
+    await updateClient(clientId, { leadCount: (client.leadCount || 0) + leadsData.length });
   }
-  
-  // Return the created leads (fetch them back)
-  const createdLeads = await db.select().from(leads)
-    .where(eq(leads.agencyId, agencyId))
-    .orderBy(desc(leads.createdAt))
-    .limit(leadsToInsert.length);
-  
-  return createdLeads;
+
+  return { count: leadsData.length };
 }
 
 // ============= SUBSCRIPTION TIER FUNCTIONS =============

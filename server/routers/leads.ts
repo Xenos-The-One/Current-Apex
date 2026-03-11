@@ -257,20 +257,12 @@ export const leadsRouter = router({
         input.leads
       );
 
-      // Log bulk import activity
-      if (results.length > 0) {
-        await createLeadActivity({
-          leadId: results[0].id,
-          activityType: "note",
-          description: `Bulk imported ${results.length} leads`,
-          performedBy: ctx.user.id,
-        });
-      }
+      const importedCount = (results as any).count ?? (Array.isArray(results) ? results.length : 0);
 
       return {
         success: true,
-        imported: results.length,
-        leads: results,
+        imported: importedCount,
+        leads: [],
       };
     }),
 
