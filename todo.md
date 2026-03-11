@@ -573,3 +573,5 @@
 - [x] Added completion banner showing setup date
 - [x] All 4 vitest tests pass
 - [x] Fix leads list pagination — was capped at 50, now shows 100/page with full page controls and server-side search for large imports like Kyle's 14,027 leads
+- [x] Add Tags filter dropdown to leads list (filter by Broward/Palm Beach/multifamily tags)
+- [x] Add bulk status update — select multiple leads and change status in one click

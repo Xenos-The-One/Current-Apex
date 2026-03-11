@@ -10,6 +10,7 @@ import {
   getLeadsByAgencyId,
   getLeadsByClientId,
   getLeadsByClientIdPaginated,
+  getDistinctLeadTags,
   createLead,
   updateLead,
   getLeadActivities,
@@ -20,7 +21,7 @@ import {
   ensureClientProfile,
 } from "../db";
 import { appointments, leads, contentApprovals, referralPartners } from "../../drizzle/schema";
-import { eq, and, count, or, like } from "drizzle-orm";
+import { eq, and, count, or, like, sql, inArray } from "drizzle-orm";
 import { pushAppointmentBooked } from "../push-triggers";
 
 // ─── Admin Impersonation Helper ──────────────────────────────────────────────
@@ -173,6 +174,7 @@ export const clientRouter = router({
       page: z.number().min(1).default(1),
       limit: z.number().min(1).max(200).default(100),
       search: z.string().optional(),
+      tag: z.string().optional(),
     }))
     .query(async ({ ctx, input }) => {
       const client = await resolveClient(ctx);
@@ -197,7 +199,8 @@ export const clientRouter = router({
         input.limit,
         offset,
         input.status,
-        input.search
+        input.search,
+        input.tag
       );
       return { leads: result.leads, total: result.total, page: input.page, limit: input.limit };
     }),
@@ -834,7 +837,42 @@ export const clientRouter = router({
       return { updated, total: input.leadIds.length };
     }),
 
-  // ─── Contact Type Counts (for sidebar subcategories) ─────────────────────
+  // ─── Bulk Status Update ───────────────────────────────────────────────────
+  bulkUpdateLeadStatus: protectedProcedure
+    .input(z.object({
+      leadIds: z.array(z.number()).min(1).max(500),
+      status: z.enum(["new", "contacted", "qualified", "appointment_set", "appointment_completed", "closed_won", "closed_lost"]),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const client = await resolveClient(ctx);
+      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      // Batch update in chunks of 100 to avoid huge IN clauses
+      let updated = 0;
+      const chunkSize = 100;
+      for (let i = 0; i < input.leadIds.length; i += chunkSize) {
+        const chunk = input.leadIds.slice(i, i + chunkSize);
+        const result = await db.update(leads)
+          .set({ status: input.status, updatedAt: new Date() })
+          .where(and(
+            inArray(leads.id, chunk),
+            eq(leads.clientId, client.id)
+          ));
+        updated += (result as any)[0]?.affectedRows ?? 0;
+      }
+      return { updated, total: input.leadIds.length };
+    }),
+
+  // ─── Get distinct lead tags for this client ───────────────────────────────
+  getMyLeadTags: protectedProcedure
+    .query(async ({ ctx }) => {
+      const client = await resolveClient(ctx);
+      if (!client) return [];
+      return getDistinctLeadTags(client.id);
+    }),
+
+  // ─── Contact Type Counts (for sidebar subcategories) ──────────────────────
   getContactTypeCounts: protectedProcedure
     .query(async ({ ctx }) => {
       const client = await resolveClient(ctx);

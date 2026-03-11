@@ -364,7 +364,8 @@ export async function getLeadsByClientIdPaginated(
   limit: number = 100,
   offset: number = 0,
   status?: string,
-  search?: string
+  search?: string,
+  tag?: string
 ) {
   const db = await getDb();
   if (!db) return { leads: [], total: 0 };
@@ -377,6 +378,10 @@ export async function getLeadsByClientIdPaginated(
       sql`(${leads.firstName} LIKE ${q} OR ${leads.lastName} LIKE ${q} OR ${leads.email} LIKE ${q} OR ${leads.phone} LIKE ${q} OR ${leads.company} LIKE ${q})`
     );
   }
+  if (tag) {
+    // JSON_SEARCH returns non-null if the tag value exists anywhere in the JSON array
+    conditions.push(sql`JSON_SEARCH(${leads.tags}, 'one', ${tag}) IS NOT NULL`);
+  }
 
   const where = and(...conditions);
 
@@ -386,6 +391,26 @@ export async function getLeadsByClientIdPaginated(
   ]);
 
   return { leads: rows, total: countRows[0]?.total ?? 0 };
+}
+
+export async function getDistinctLeadTags(clientId: number): Promise<string[]> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    // Expand JSON array up to index 9 and collect distinct non-null values
+    const [rows] = await (db as any).$client.query(
+      `SELECT DISTINCT JSON_UNQUOTE(JSON_EXTRACT(tags, CONCAT('$[', n.n, ']'))) AS tag
+       FROM leads
+       JOIN (SELECT 0 n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4
+             UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) n
+       WHERE client_id = ? AND JSON_EXTRACT(tags, CONCAT('$[', n.n, ']')) IS NOT NULL
+       ORDER BY tag`,
+      [clientId]
+    );
+    return (rows as any[]).map((r: any) => r.tag).filter(Boolean);
+  } catch {
+    return [];
+  }
 }
 
 export async function getLeadsByAgencyId(agencyId: number) {

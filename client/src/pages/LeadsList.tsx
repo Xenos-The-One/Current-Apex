@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -8,18 +8,37 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { trpc } from "@/lib/trpc";
 import {
   Users, Phone, Mail, Search, Plus, Upload, TrendingDown,
   LayoutList, Kanban, DollarSign, UserCheck, UserX,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
+  Tag, ChevronDown, CheckSquare,
 } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { toast } from "sonner";
 import KanbanBoard from "@/components/KanbanBoard";
 
 const PAGE_SIZE = 100;
+
+const STATUS_OPTIONS = [
+  { value: "new", label: "New" },
+  { value: "contacted", label: "Contacted" },
+  { value: "qualified", label: "Qualified" },
+  { value: "appointment_set", label: "Appt Set" },
+  { value: "appointment_completed", label: "Appt Done" },
+  { value: "closed_won", label: "Won" },
+  { value: "closed_lost", label: "Lost" },
+] as const;
 
 function formatCurrency(amount: string | number | null | undefined): string {
   if (!amount) return "";
@@ -47,12 +66,26 @@ function getContactTypeLabel(type: string | null | undefined) {
   }
 }
 
+function getStatusColor(status: string) {
+  switch (status) {
+    case "new": return "bg-amber-500 text-white";
+    case "contacted": return "bg-blue-500 text-white";
+    case "qualified": return "bg-cyan-500 text-white";
+    case "appointment_set":
+    case "appointment_completed": return "bg-purple-500 text-white";
+    case "closed_won": return "bg-emerald-500 text-white";
+    case "closed_lost": return "bg-red-500 text-white";
+    default: return "";
+  }
+}
+
 export default function LeadsList({ initialContactType }: { initialContactType?: string } = {}) {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [contactTypeFilter, setContactTypeFilter] = useState<string>(initialContactType ?? "all");
   const [assignmentFilter, setAssignmentFilter] = useState<string>("all");
+  const [tagFilter, setTagFilter] = useState<string>("all");
   const [pipelineType, setPipelineType] = useState<"loan" | "sales">("loan");
   const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<number>>(new Set());
@@ -68,27 +101,22 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
   }, [searchQuery]);
 
   // Reset to page 1 when filters change
-  useEffect(() => { setCurrentPage(1); }, [statusFilter, debouncedSearch, contactTypeFilter, pipelineType]);
+  useEffect(() => { setCurrentPage(1); }, [statusFilter, debouncedSearch, contactTypeFilter, pipelineType, tagFilter]);
 
   // Sync filter when parent changes the initialContactType (tab navigation)
   useEffect(() => {
     if (initialContactType !== undefined) setContactTypeFilter(initialContactType);
   }, [initialContactType]);
 
-  // Bulk assign mutation
-  const bulkAssign = trpc.crm.bulkAssignLeads.useMutation({
-    onSuccess: (data) => {
-      toast.success(`${data.updated} lead${data.updated !== 1 ? "s" : ""} unassigned successfully`);
-      setSelectedLeadIds(new Set());
-      utils.crm.listMyLeads.invalidate();
-      utils.leads.list.invalidate();
-    },
-    onError: () => toast.error("Failed to update assignment"),
-  });
-
   const isAdminView = (user?.role === "admin" || user?.role === "super_admin") && !isImpersonating;
 
-  // ── Admin query (still uses old paginated leads.list) ──────────────────────
+  // ── Fetch distinct tags for the tag filter dropdown ────────────────────────
+  const { data: availableTags = [] } = trpc.crm.getMyLeadTags.useQuery(undefined, {
+    enabled: !isAdminView,
+    staleTime: 60_000, // cache for 1 min — tags don't change often
+  });
+
+  // ── Admin query ────────────────────────────────────────────────────────────
   const { data: adminLeads, isLoading: adminLoading } = trpc.leads.list.useQuery(
     {
       agencyId: 1,
@@ -103,13 +131,14 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
     enabled: !isAdminView,
   });
 
-  // ── Client query — now paginated ───────────────────────────────────────────
+  // ── Client query — paginated with tag + search server-side ────────────────
   const { data: clientLeadsData, isLoading: clientLoading } = trpc.crm.listMyLeads.useQuery(
     {
       status: statusFilter !== "all" ? statusFilter as any : undefined,
       page: currentPage,
       limit: PAGE_SIZE,
       search: debouncedSearch || undefined,
+      tag: tagFilter !== "all" ? tagFilter : undefined,
     },
     { enabled: !isAdminView }
   );
@@ -117,16 +146,37 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
   const isLoading = isAdminView ? adminLoading : clientLoading;
   const isReadOnly = clientInfo?.client.accessMode === "read_only";
 
-  // Normalise the two different response shapes into a common { leads, total }
   const rawLeads: any[] = isAdminView
     ? (adminLeads ?? [])
     : (clientLeadsData?.leads ?? []);
 
   const totalLeadsCount: number = isAdminView
-    ? (adminLeads?.length ?? 0)   // admin view doesn't return total yet — show what we have
+    ? (adminLeads?.length ?? 0)
     : (clientLeadsData?.total ?? 0);
 
-  // Status change mutation for Kanban drag-and-drop
+  // ── Bulk assign mutation ───────────────────────────────────────────────────
+  const bulkAssign = trpc.crm.bulkAssignLeads.useMutation({
+    onSuccess: (data) => {
+      toast.success(`${data.updated} lead${data.updated !== 1 ? "s" : ""} unassigned successfully`);
+      setSelectedLeadIds(new Set());
+      utils.crm.listMyLeads.invalidate();
+      utils.leads.list.invalidate();
+    },
+    onError: () => toast.error("Failed to update assignment"),
+  });
+
+  // ── Bulk status update mutation ────────────────────────────────────────────
+  const bulkStatusUpdate = trpc.crm.bulkUpdateLeadStatus.useMutation({
+    onSuccess: (data) => {
+      toast.success(`${data.updated} lead${data.updated !== 1 ? "s" : ""} updated successfully`);
+      setSelectedLeadIds(new Set());
+      utils.crm.listMyLeads.invalidate();
+      utils.leads.list.invalidate();
+    },
+    onError: () => toast.error("Failed to update lead status"),
+  });
+
+  // ── Status change mutation for Kanban drag-and-drop ───────────────────────
   const updateStatus = trpc.crm.updateLeadStatus.useMutation({
     onSettled: () => {
       if (isAdminView) utils.leads.list.invalidate();
@@ -139,18 +189,15 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
     updateStatus.mutate({ leadId, status: newStatus as any });
   };
 
-  // Client-side filtering (pipeline type, contact type, assignment — server handles status+search)
+  // Client-side filtering (pipeline type, contact type, assignment)
   const filteredLeads = useMemo(() => {
     return rawLeads.filter(lead => {
-      // Pipeline type filter
       const lpt = (lead as any).pipelineType || "loan";
       if (lpt !== pipelineType) return false;
-      // Contact type filter
       if (contactTypeFilter !== "all") {
         const ct = (lead as any).contactType || "borrower";
         if (ct !== contactTypeFilter) return false;
       }
-      // Assignment filter
       if (assignmentFilter === "unassigned") {
         if ((lead as any).assignedToUserId) return false;
       } else if (assignmentFilter === "assigned") {
@@ -196,18 +243,12 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
 
   const totalPages = Math.max(1, Math.ceil(totalLeadsCount / PAGE_SIZE));
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "new": return "bg-amber-500 text-white";
-      case "contacted": return "bg-blue-500 text-white";
-      case "qualified": return "bg-cyan-500 text-white";
-      case "appointment_set":
-      case "appointment_completed": return "bg-purple-500 text-white";
-      case "closed_won": return "bg-emerald-500 text-white";
-      case "closed_lost": return "bg-red-500 text-white";
-      default: return "";
-    }
-  };
+  const activeFilterCount = [
+    statusFilter !== "all",
+    tagFilter !== "all",
+    contactTypeFilter !== "all",
+    debouncedSearch,
+  ].filter(Boolean).length;
 
   return (
     <DashboardLayout>
@@ -227,6 +268,11 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
               )}
               {pipelineStats.avgProbability > 0 && (
                 <span className="text-xs text-muted-foreground">{pipelineStats.avgProbability}% avg prob</span>
+              )}
+              {activeFilterCount > 0 && (
+                <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
+                  {activeFilterCount} filter{activeFilterCount !== 1 ? "s" : ""} active
+                </Badge>
               )}
             </div>
           </div>
@@ -249,7 +295,7 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
         </div>
 
         {/* Pipeline Type Toggle */}
-        <Tabs value={pipelineType} onValueChange={(v) => { setPipelineType(v as "loan" | "sales"); setStatusFilter("all"); setContactTypeFilter("all"); }}>
+        <Tabs value={pipelineType} onValueChange={(v) => { setPipelineType(v as "loan" | "sales"); setStatusFilter("all"); setContactTypeFilter("all"); setTagFilter("all"); }}>
           <TabsList className="h-9">
             <TabsTrigger value="loan" className="gap-2">
               <DollarSign className="w-4 h-4" />
@@ -265,9 +311,9 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
         {/* Filters + View Toggle */}
         <Card>
           <CardContent className="pt-4 pb-4">
-            <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
+            <div className="flex flex-col md:flex-row gap-3 items-start md:items-center flex-wrap">
               {/* Search */}
-              <div className="flex-1 relative w-full">
+              <div className="flex-1 relative min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by name, email, phone, or company..."
@@ -277,25 +323,38 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
                 />
               </div>
               {/* Status filter */}
-              <div className="w-full md:w-40">
+              <div className="w-full md:w-36">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="h-9">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="new">New</SelectItem>
-                    <SelectItem value="contacted">Contacted</SelectItem>
-                    <SelectItem value="qualified">Qualified</SelectItem>
-                    <SelectItem value="appointment_set">Appt Set</SelectItem>
-                    <SelectItem value="appointment_completed">Appt Done</SelectItem>
-                    <SelectItem value="closed_won">Won</SelectItem>
-                    <SelectItem value="closed_lost">Lost</SelectItem>
+                    {STATUS_OPTIONS.map(s => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
+              {/* Tag filter — only shown for client view */}
+              {!isAdminView && (
+                <div className="w-full md:w-48">
+                  <Select value={tagFilter} onValueChange={setTagFilter}>
+                    <SelectTrigger className="h-9 gap-1.5">
+                      <Tag className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      <SelectValue placeholder="Filter by tag" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Tags</SelectItem>
+                      {availableTags.map(tag => (
+                        <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               {/* Contact type filter */}
-              <div className="w-full md:w-40">
+              <div className="w-full md:w-36">
                 <Select value={contactTypeFilter} onValueChange={setContactTypeFilter}>
                   <SelectTrigger className="h-9">
                     <SelectValue placeholder="Type" />
@@ -314,7 +373,7 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
                 </Select>
               </div>
               {/* Assignment filter */}
-              <div className="w-full md:w-40">
+              <div className="w-full md:w-36">
                 <Select value={assignmentFilter} onValueChange={setAssignmentFilter}>
                   <SelectTrigger className="h-9">
                     <SelectValue placeholder="Assignment" />
@@ -350,19 +409,58 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
             <p className="text-muted-foreground">Loading leads...</p>
           </div>
         ) : viewMode === "kanban" ? (
-          /* ─── Kanban View ─────────────────────────────────────────────── */
           <KanbanBoard
             leads={filteredLeads as any}
             onStatusChange={handleStatusChange}
             isReadOnly={isReadOnly}
           />
         ) : (
-          /* ─── List View ───────────────────────────────────────────────── */
           <>
+          {/* ── Bulk Action Bar ── */}
           {selectedLeadIds.size > 0 && (
             <div className="flex items-center gap-3 px-4 py-2.5 bg-primary/10 border border-primary/20 rounded-lg">
-              <span className="text-sm font-medium">{selectedLeadIds.size} lead{selectedLeadIds.size !== 1 ? "s" : ""} selected</span>
-              <div className="flex gap-2 ml-auto">
+              <CheckSquare className="w-4 h-4 text-primary shrink-0" />
+              <span className="text-sm font-medium">
+                {selectedLeadIds.size} lead{selectedLeadIds.size !== 1 ? "s" : ""} selected
+              </span>
+              <div className="flex gap-2 ml-auto flex-wrap">
+                {/* Bulk Status Update */}
+                {!isAdminView && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="h-7 text-xs gap-1.5"
+                        disabled={bulkStatusUpdate.isPending}
+                      >
+                        <CheckSquare className="w-3.5 h-3.5" />
+                        Set Status
+                        <ChevronDown className="w-3 h-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel className="text-xs">
+                        Update {selectedLeadIds.size} lead{selectedLeadIds.size !== 1 ? "s" : ""} to:
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {STATUS_OPTIONS.map(s => (
+                        <DropdownMenuItem
+                          key={s.value}
+                          onClick={() => bulkStatusUpdate.mutate({
+                            leadIds: Array.from(selectedLeadIds),
+                            status: s.value,
+                          })}
+                          className="gap-2"
+                        >
+                          <span className={`w-2 h-2 rounded-full ${getStatusColor(s.value).replace("text-white", "")}`} />
+                          {s.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                {/* Bulk Unassign */}
                 <Button
                   size="sm"
                   variant="outline"
@@ -371,7 +469,7 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
                   disabled={bulkAssign.isPending}
                 >
                   <UserX className="w-3.5 h-3.5" />
-                  Unassign Selected
+                  Unassign
                 </Button>
                 <Button
                   size="sm"
@@ -379,7 +477,7 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
                   className="h-7 text-xs"
                   onClick={() => setSelectedLeadIds(new Set())}
                 >
-                  Clear Selection
+                  Clear
                 </Button>
               </div>
             </div>
@@ -402,15 +500,13 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
                       ({totalLeadsCount.toLocaleString()} total)
                     </span>
                   )}
-                  {(statusFilter !== "all" || contactTypeFilter !== "all") && (
-                    <span className="text-xs text-muted-foreground">
-                      {statusFilter !== "all" && statusFilter.replace(/_/g, " ")}
-                      {statusFilter !== "all" && contactTypeFilter !== "all" && " · "}
-                      {contactTypeFilter !== "all" && getContactTypeLabel(contactTypeFilter)}
-                    </span>
+                  {tagFilter !== "all" && (
+                    <Badge variant="outline" className="text-[10px] h-5 gap-1 px-1.5">
+                      <Tag className="w-2.5 h-2.5" />
+                      {tagFilter}
+                    </Badge>
                   )}
                 </div>
-                {/* Page indicator */}
                 {totalPages > 1 && (
                   <span className="text-xs text-muted-foreground">
                     Page {currentPage} of {totalPages}
@@ -426,91 +522,124 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
                       <th className="w-8 pl-4"><span className="sr-only">Select</span></th>
                       <th className="text-left">Name</th>
                       <th className="text-left hidden sm:table-cell">Contact</th>
-                      <th className="text-left hidden md:table-cell">Source</th>
+                      <th className="text-left hidden md:table-cell">Source / Tags</th>
                       <th className="text-left">Status</th>
                       <th className="text-right hidden lg:table-cell">Value</th>
                     </tr>
                   </thead>
                   <tbody>
-                  {filteredLeads.map((lead) => (
-                    <tr key={lead.id}>
-                      <td className="pl-4">
-                        <Checkbox
-                          checked={selectedLeadIds.has(lead.id)}
-                          onCheckedChange={() => toggleSelect(lead.id)}
-                          onClick={(e) => e.stopPropagation()}
-                          aria-label={`Select ${lead.firstName} ${lead.lastName}`}
-                        />
-                      </td>
-                      <td>
-                        <Link href={`/leads/${lead.id}`}>
-                          <div className="hover:text-primary transition-colors cursor-pointer">
-                            <p className="font-medium text-sm">{lead.firstName} {lead.lastName}</p>
-                            {(lead as any).company && (
-                              <span className="text-[10px] text-muted-foreground">{(lead as any).company}</span>
+                  {filteredLeads.map((lead) => {
+                    const tags: string[] = Array.isArray(lead.tags) ? lead.tags : (lead.tags ? JSON.parse(lead.tags) : []);
+                    return (
+                      <tr key={lead.id}>
+                        <td className="pl-4">
+                          <Checkbox
+                            checked={selectedLeadIds.has(lead.id)}
+                            onCheckedChange={() => toggleSelect(lead.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label={`Select ${lead.firstName} ${lead.lastName}`}
+                          />
+                        </td>
+                        <td>
+                          <Link href={`/leads/${lead.id}`}>
+                            <div className="hover:text-primary transition-colors cursor-pointer">
+                              <p className="font-medium text-sm">{lead.firstName} {lead.lastName}</p>
+                              {(lead as any).company && (
+                                <span className="text-[10px] text-muted-foreground">{(lead as any).company}</span>
+                              )}
+                              {(lead as any).contactType && (lead as any).contactType !== "borrower" && !(lead as any).company && (
+                                <span className="text-[10px] text-violet-600">{getContactTypeLabel((lead as any).contactType)}</span>
+                              )}
+                            </div>
+                          </Link>
+                        </td>
+                        <td className="hidden sm:table-cell">
+                          <div className="space-y-0.5">
+                            {lead.email && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Mail className="w-3 h-3 shrink-0" />
+                                <span className="truncate max-w-[160px]">{lead.email}</span>
+                              </p>
                             )}
-                            {(lead as any).contactType && (lead as any).contactType !== "borrower" && !(lead as any).company && (
-                              <span className="text-[10px] text-violet-600">{getContactTypeLabel((lead as any).contactType)}</span>
+                            {lead.phone && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Phone className="w-3 h-3 shrink-0" />
+                                {lead.phone}
+                              </p>
                             )}
                           </div>
-                        </Link>
-                      </td>
-                      <td className="hidden sm:table-cell">
-                        <div className="space-y-0.5">
-                          {lead.email && (
-                            <p className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Mail className="w-3 h-3 shrink-0" />
-                              <span className="truncate max-w-[160px]">{lead.email}</span>
-                            </p>
-                          )}
-                          {lead.phone && (
-                            <p className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Phone className="w-3 h-3 shrink-0" />
-                              {lead.phone}
-                            </p>
-                          )}
-                        </div>
-                      </td>
-                      <td className="hidden md:table-cell">
-                        <div className="flex flex-wrap gap-1">
-                          {lead.source && (
-                            <span className="text-[11px] bg-muted px-1.5 py-0.5 rounded">{lead.source}</span>
-                          )}
-                          {(lead as any).refiProspect && (
-                            <span className="text-[11px] bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                              <TrendingDown className="w-2.5 h-2.5" />Refi
+                        </td>
+                        <td className="hidden md:table-cell">
+                          <div className="flex flex-wrap gap-1">
+                            {lead.source && (
+                              <span className="text-[11px] bg-muted px-1.5 py-0.5 rounded">{lead.source}</span>
+                            )}
+                            {(lead as any).refiProspect && (
+                              <span className="text-[11px] bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                                <TrendingDown className="w-2.5 h-2.5" />Refi
+                              </span>
+                            )}
+                            {tags.slice(0, 2).map(tag => (
+                              <button
+                                key={tag}
+                                onClick={() => setTagFilter(tag)}
+                                className="text-[10px] bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300 px-1.5 py-0.5 rounded flex items-center gap-0.5 hover:bg-violet-200 dark:hover:bg-violet-900 transition-colors"
+                                title={`Filter by "${tag}"`}
+                              >
+                                <Tag className="w-2 h-2" />
+                                {tag}
+                              </button>
+                            ))}
+                            {tags.length > 2 && (
+                              <span className="text-[10px] text-muted-foreground">+{tags.length - 2}</span>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          <Badge className={`text-[10px] ${getStatusColor(lead.status)}`}>
+                            {lead.status.replace(/_/g, " ")}
+                          </Badge>
+                        </td>
+                        <td className="text-right hidden lg:table-cell">
+                          {(lead as any).loanAmount && parseFloat(String((lead as any).loanAmount)) > 0 ? (
+                            <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                              {formatCurrency((lead as any).loanAmount)}
                             </span>
+                          ) : (
+                            (lead as any).assignedToUserId ? (
+                              <span className="text-[10px] text-muted-foreground flex items-center gap-1 justify-end">
+                                <UserCheck className="w-3 h-3" />Assigned
+                              </span>
+                            ) : null
                           )}
-                        </div>
-                      </td>
-                      <td>
-                        <Badge className={`text-[10px] ${getStatusColor(lead.status)}`}>
-                          {lead.status.replace(/_/g, " ")}
-                        </Badge>
-                      </td>
-                      <td className="text-right hidden lg:table-cell">
-                        {(lead as any).loanAmount && parseFloat(String((lead as any).loanAmount)) > 0 ? (
-                          <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                            {formatCurrency((lead as any).loanAmount)}
-                          </span>
-                        ) : (
-                          (lead as any).assignedToUserId ? (
-                            <span className="text-[10px] text-muted-foreground flex items-center gap-1 justify-end">
-                              <UserCheck className="w-3 h-3" />Assigned
-                            </span>
-                          ) : null
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                   </tbody>
                 </table>
               ) : (
                 <div className="text-center py-12 text-muted-foreground">
                   <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p className="font-medium">No leads found</p>
-                  {searchQuery || statusFilter !== "all" || contactTypeFilter !== "all" ? (
-                    <p className="text-sm mt-1">Try adjusting your filters</p>
+                  {searchQuery || statusFilter !== "all" || contactTypeFilter !== "all" || tagFilter !== "all" ? (
+                    <div className="mt-2 space-y-1">
+                      <p className="text-sm">Try adjusting your filters</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2 text-xs"
+                        onClick={() => {
+                          setSearchQuery("");
+                          setStatusFilter("all");
+                          setContactTypeFilter("all");
+                          setTagFilter("all");
+                          setAssignmentFilter("all");
+                        }}
+                      >
+                        Clear all filters
+                      </Button>
+                    </div>
                   ) : (
                     <>
                       <p className="text-sm mt-1">Get started by importing or adding leads</p>
@@ -544,9 +673,7 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
                 </span>
                 <div className="flex items-center gap-1">
                   <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-7 w-7"
+                    variant="outline" size="icon" className="h-7 w-7"
                     onClick={() => setCurrentPage(1)}
                     disabled={currentPage === 1}
                     title="First page"
@@ -554,16 +681,13 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
                     <ChevronsLeft className="w-3.5 h-3.5" />
                   </Button>
                   <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-7 w-7"
+                    variant="outline" size="icon" className="h-7 w-7"
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
                     title="Previous page"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </Button>
-                  {/* Page number buttons — show up to 5 around current */}
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
                     return start + i;
@@ -579,9 +703,7 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
                     </Button>
                   ))}
                   <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-7 w-7"
+                    variant="outline" size="icon" className="h-7 w-7"
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
                     title="Next page"
@@ -589,9 +711,7 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
                     <ChevronRight className="w-3.5 h-3.5" />
                   </Button>
                   <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-7 w-7"
+                    variant="outline" size="icon" className="h-7 w-7"
                     onClick={() => setCurrentPage(totalPages)}
                     disabled={currentPage === totalPages}
                     title="Last page"
