@@ -1,4 +1,4 @@
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql, count } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, 
@@ -357,6 +357,35 @@ export async function getLeadsByClientId(clientId: number) {
   if (!db) return [];
   
   return await db.select().from(leads).where(eq(leads.clientId, clientId)).orderBy(desc(leads.createdAt));
+}
+
+export async function getLeadsByClientIdPaginated(
+  clientId: number,
+  limit: number = 100,
+  offset: number = 0,
+  status?: string,
+  search?: string
+) {
+  const db = await getDb();
+  if (!db) return { leads: [], total: 0 };
+
+  const conditions: any[] = [eq(leads.clientId, clientId)];
+  if (status) conditions.push(eq(leads.status, status as any));
+  if (search) {
+    const q = `%${search}%`;
+    conditions.push(
+      sql`(${leads.firstName} LIKE ${q} OR ${leads.lastName} LIKE ${q} OR ${leads.email} LIKE ${q} OR ${leads.phone} LIKE ${q} OR ${leads.company} LIKE ${q})`
+    );
+  }
+
+  const where = and(...conditions);
+
+  const [rows, countRows] = await Promise.all([
+    db.select().from(leads).where(where).orderBy(desc(leads.createdAt)).limit(limit).offset(offset),
+    db.select({ total: count() }).from(leads).where(where),
+  ]);
+
+  return { leads: rows, total: countRows[0]?.total ?? 0 };
 }
 
 export async function getLeadsByAgencyId(agencyId: number) {

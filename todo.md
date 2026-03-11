@@ -572,3 +572,4 @@
 - [x] Added "Mark Setup Complete" button when all sections filled
 - [x] Added completion banner showing setup date
 - [x] All 4 vitest tests pass
+- [x] Fix leads list pagination — was capped at 50, now shows 100/page with full page controls and server-side search for large imports like Kyle's 14,027 leads

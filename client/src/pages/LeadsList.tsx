@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -11,12 +11,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc";
 import {
   Users, Phone, Mail, Search, Plus, Upload, TrendingDown,
-  LayoutList, Kanban, DollarSign, Percent, UserCheck, UserX,
+  LayoutList, Kanban, DollarSign, UserCheck, UserX,
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { toast } from "sonner";
 import KanbanBoard from "@/components/KanbanBoard";
+
+const PAGE_SIZE = 100;
 
 function formatCurrency(amount: string | number | null | undefined): string {
   if (!amount) return "";
@@ -46,22 +49,30 @@ function getContactTypeLabel(type: string | null | undefined) {
 
 export default function LeadsList({ initialContactType }: { initialContactType?: string } = {}) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [contactTypeFilter, setContactTypeFilter] = useState<string>(initialContactType ?? "all");
   const [assignmentFilter, setAssignmentFilter] = useState<string>("all");
   const [pipelineType, setPipelineType] = useState<"loan" | "sales">("loan");
   const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<number>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
   const { user } = useAuth();
   const { isImpersonating } = useImpersonation();
   const utils = trpc.useUtils();
 
-  // Sync filter when parent changes the initialContactType (tab navigation)
-  const [location] = useLocation();
+  // Debounce search to avoid firing a query on every keystroke
   useEffect(() => {
-    if (initialContactType !== undefined) {
-      setContactTypeFilter(initialContactType);
-    }
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 400);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setCurrentPage(1); }, [statusFilter, debouncedSearch, contactTypeFilter, pipelineType]);
+
+  // Sync filter when parent changes the initialContactType (tab navigation)
+  useEffect(() => {
+    if (initialContactType !== undefined) setContactTypeFilter(initialContactType);
   }, [initialContactType]);
 
   // Bulk assign mutation
@@ -74,6 +85,80 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
     },
     onError: () => toast.error("Failed to update assignment"),
   });
+
+  const isAdminView = (user?.role === "admin" || user?.role === "super_admin") && !isImpersonating;
+
+  // ── Admin query (still uses old paginated leads.list) ──────────────────────
+  const { data: adminLeads, isLoading: adminLoading } = trpc.leads.list.useQuery(
+    {
+      agencyId: 1,
+      status: statusFilter !== "all" ? statusFilter as any : undefined,
+      limit: PAGE_SIZE,
+      offset: (currentPage - 1) * PAGE_SIZE,
+    },
+    { enabled: isAdminView }
+  );
+
+  const { data: clientInfo } = trpc.crm.getMyInfo.useQuery(undefined, {
+    enabled: !isAdminView,
+  });
+
+  // ── Client query — now paginated ───────────────────────────────────────────
+  const { data: clientLeadsData, isLoading: clientLoading } = trpc.crm.listMyLeads.useQuery(
+    {
+      status: statusFilter !== "all" ? statusFilter as any : undefined,
+      page: currentPage,
+      limit: PAGE_SIZE,
+      search: debouncedSearch || undefined,
+    },
+    { enabled: !isAdminView }
+  );
+
+  const isLoading = isAdminView ? adminLoading : clientLoading;
+  const isReadOnly = clientInfo?.client.accessMode === "read_only";
+
+  // Normalise the two different response shapes into a common { leads, total }
+  const rawLeads: any[] = isAdminView
+    ? (adminLeads ?? [])
+    : (clientLeadsData?.leads ?? []);
+
+  const totalLeadsCount: number = isAdminView
+    ? (adminLeads?.length ?? 0)   // admin view doesn't return total yet — show what we have
+    : (clientLeadsData?.total ?? 0);
+
+  // Status change mutation for Kanban drag-and-drop
+  const updateStatus = trpc.crm.updateLeadStatus.useMutation({
+    onSettled: () => {
+      if (isAdminView) utils.leads.list.invalidate();
+      else utils.crm.listMyLeads.invalidate();
+    },
+    onError: () => toast.error("Failed to update lead status"),
+  });
+
+  const handleStatusChange = (leadId: number, newStatus: string) => {
+    updateStatus.mutate({ leadId, status: newStatus as any });
+  };
+
+  // Client-side filtering (pipeline type, contact type, assignment — server handles status+search)
+  const filteredLeads = useMemo(() => {
+    return rawLeads.filter(lead => {
+      // Pipeline type filter
+      const lpt = (lead as any).pipelineType || "loan";
+      if (lpt !== pipelineType) return false;
+      // Contact type filter
+      if (contactTypeFilter !== "all") {
+        const ct = (lead as any).contactType || "borrower";
+        if (ct !== contactTypeFilter) return false;
+      }
+      // Assignment filter
+      if (assignmentFilter === "unassigned") {
+        if ((lead as any).assignedToUserId) return false;
+      } else if (assignmentFilter === "assigned") {
+        if (!(lead as any).assignedToUserId) return false;
+      }
+      return true;
+    });
+  }, [rawLeads, contactTypeFilter, assignmentFilter, pipelineType]);
 
   const toggleSelect = (id: number) => {
     setSelectedLeadIds(prev => {
@@ -91,118 +176,8 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
     }
   };
 
-  const isAdminView = user?.role === "admin" || user?.role === "super_admin" && !isImpersonating;
-
-  const { data: adminLeads, isLoading: adminLoading } = trpc.leads.list.useQuery(
-    {
-      agencyId: 1,
-      status: statusFilter !== "all" ? statusFilter as any : undefined,
-    },
-    { enabled: isAdminView }
-  );
-
-  const { data: clientInfo } = trpc.crm.getMyInfo.useQuery(undefined, {
-    enabled: !isAdminView,
-  });
-
-  const { data: clientLeads, isLoading: clientLoading } = trpc.crm.listMyLeads.useQuery(
-    {
-      status: statusFilter !== "all" ? statusFilter as any : undefined,
-    },
-    { enabled: !isAdminView }
-  );
-
-  const leads = isAdminView ? adminLeads : clientLeads;
-  const isLoading = isAdminView ? adminLoading : clientLoading;
-  const isReadOnly = clientInfo?.client.accessMode === "read_only";
-
-  // Status change mutation for Kanban drag-and-drop
-  const updateStatus = trpc.crm.updateLeadStatus.useMutation({
-    onMutate: async ({ leadId, status }) => {
-      // Optimistic update
-      if (isAdminView) {
-        await utils.leads.list.cancel();
-        const prev = utils.leads.list.getData({ agencyId: 1, status: statusFilter !== "all" ? statusFilter as any : undefined });
-        if (prev) {
-          utils.leads.list.setData(
-            { agencyId: 1, status: statusFilter !== "all" ? statusFilter as any : undefined },
-            prev.map(l => l.id === leadId ? { ...l, status } : l)
-          );
-        }
-        return { prev };
-      } else {
-        await utils.crm.listMyLeads.cancel();
-        const prev = utils.crm.listMyLeads.getData({ status: statusFilter !== "all" ? statusFilter as any : undefined });
-        if (prev) {
-          utils.crm.listMyLeads.setData(
-            { status: statusFilter !== "all" ? statusFilter as any : undefined },
-            prev.map(l => l.id === leadId ? { ...l, status } : l)
-          );
-        }
-        return { prev };
-      }
-    },
-    onError: (_err, _vars, context: any) => {
-      toast.error("Failed to update lead status");
-      if (isAdminView && context?.prev) {
-        utils.leads.list.setData(
-          { agencyId: 1, status: statusFilter !== "all" ? statusFilter as any : undefined },
-          context.prev
-        );
-      } else if (context?.prev) {
-        utils.crm.listMyLeads.setData(
-          { status: statusFilter !== "all" ? statusFilter as any : undefined },
-          context.prev
-        );
-      }
-    },
-    onSettled: () => {
-      if (isAdminView) {
-        utils.leads.list.invalidate();
-      } else {
-        utils.crm.listMyLeads.invalidate();
-      }
-    },
-  });
-
-  const handleStatusChange = (leadId: number, newStatus: string) => {
-    updateStatus.mutate({ leadId, status: newStatus as any });
-  };
-
-  // Filter leads
-  const filteredLeads = useMemo(() => {
-    if (!leads) return [];
-    return leads.filter(lead => {
-      // Pipeline type filter
-      const lpt = (lead as any).pipelineType || "loan";
-      if (lpt !== pipelineType) return false;
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const match = lead.firstName.toLowerCase().includes(query) ||
-          lead.lastName.toLowerCase().includes(query) ||
-          lead.email?.toLowerCase().includes(query) ||
-          lead.phone?.includes(query);
-        if (!match) return false;
-      }
-      // Contact type filter
-      if (contactTypeFilter !== "all") {
-        const ct = (lead as any).contactType || "borrower";
-        if (ct !== contactTypeFilter) return false;
-      }
-      // Assignment filter
-      if (assignmentFilter === "unassigned") {
-        if ((lead as any).assignedToUserId) return false;
-      } else if (assignmentFilter === "assigned") {
-        if (!(lead as any).assignedToUserId) return false;
-      }
-      return true;
-    });
-  }, [leads, searchQuery, contactTypeFilter, assignmentFilter, pipelineType]);
-
   // Pipeline KPIs
   const pipelineStats = useMemo(() => {
-    if (!filteredLeads) return { total: 0, totalValue: 0, avgProbability: 0 };
     let totalValue = 0;
     let probSum = 0;
     let probCount = 0;
@@ -210,17 +185,16 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
       const amt = (lead as any).loanAmount ? parseFloat(String((lead as any).loanAmount)) : 0;
       if (!isNaN(amt)) totalValue += amt;
       const prob = (lead as any).probability;
-      if (prob != null && prob > 0) {
-        probSum += prob;
-        probCount++;
-      }
+      if (prob != null && prob > 0) { probSum += prob; probCount++; }
     }
     return {
-      total: filteredLeads.length,
+      total: totalLeadsCount,
       totalValue,
       avgProbability: probCount > 0 ? Math.round(probSum / probCount) : 0,
     };
-  }, [filteredLeads]);
+  }, [filteredLeads, totalLeadsCount]);
+
+  const totalPages = Math.max(1, Math.ceil(totalLeadsCount / PAGE_SIZE));
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -245,7 +219,9 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
               {pipelineType === "loan" ? "Loan Pipeline" : "Sales Pipeline"}
             </h1>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs text-muted-foreground">{pipelineStats.total} leads</span>
+              <span className="text-xs text-muted-foreground">
+                {totalLeadsCount.toLocaleString()} total leads
+              </span>
               {pipelineStats.totalValue > 0 && (
                 <span className="text-xs text-emerald-600 font-medium">{formatCurrency(pipelineStats.totalValue)}</span>
               )}
@@ -294,7 +270,7 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
               <div className="flex-1 relative w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by name, email, or phone..."
+                  placeholder="Search by name, email, phone, or company..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -416,9 +392,16 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
                   <Checkbox
                     checked={filteredLeads.length > 0 && selectedLeadIds.size === filteredLeads.length}
                     onCheckedChange={toggleSelectAll}
-                    aria-label="Select all leads"
+                    aria-label="Select all leads on this page"
                   />
-                  <span className="text-sm font-semibold">{filteredLeads?.length || 0} Lead{filteredLeads?.length !== 1 ? "s" : ""}</span>
+                  <span className="text-sm font-semibold">
+                    {filteredLeads.length} Lead{filteredLeads.length !== 1 ? "s" : ""} on page
+                  </span>
+                  {totalLeadsCount > PAGE_SIZE && (
+                    <span className="text-xs text-muted-foreground">
+                      ({totalLeadsCount.toLocaleString()} total)
+                    </span>
+                  )}
                   {(statusFilter !== "all" || contactTypeFilter !== "all") && (
                     <span className="text-xs text-muted-foreground">
                       {statusFilter !== "all" && statusFilter.replace(/_/g, " ")}
@@ -427,6 +410,12 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
                     </span>
                   )}
                 </div>
+                {/* Page indicator */}
+                {totalPages > 1 && (
+                  <span className="text-xs text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                )}
               </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -457,7 +446,10 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
                         <Link href={`/leads/${lead.id}`}>
                           <div className="hover:text-primary transition-colors cursor-pointer">
                             <p className="font-medium text-sm">{lead.firstName} {lead.lastName}</p>
-                            {(lead as any).contactType && (lead as any).contactType !== "borrower" && (
+                            {(lead as any).company && (
+                              <span className="text-[10px] text-muted-foreground">{(lead as any).company}</span>
+                            )}
+                            {(lead as any).contactType && (lead as any).contactType !== "borrower" && !(lead as any).company && (
                               <span className="text-[10px] text-violet-600">{getContactTypeLabel((lead as any).contactType)}</span>
                             )}
                           </div>
@@ -543,6 +535,72 @@ export default function LeadsList({ initialContactType }: { initialContactType?:
                 </div>
               )}
             </CardContent>
+
+            {/* ── Pagination Controls ── */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t">
+                <span className="text-xs text-muted-foreground">
+                  Showing {((currentPage - 1) * PAGE_SIZE + 1).toLocaleString()}–{Math.min(currentPage * PAGE_SIZE, totalLeadsCount).toLocaleString()} of {totalLeadsCount.toLocaleString()} leads
+                </span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    title="First page"
+                  >
+                    <ChevronsLeft className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    title="Previous page"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </Button>
+                  {/* Page number buttons — show up to 5 around current */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+                    return start + i;
+                  }).map(p => (
+                    <Button
+                      key={p}
+                      variant={p === currentPage ? "default" : "outline"}
+                      size="icon"
+                      className="h-7 w-7 text-xs"
+                      onClick={() => setCurrentPage(p)}
+                    >
+                      {p}
+                    </Button>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    title="Next page"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    title="Last page"
+                  >
+                    <ChevronsRight className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </Card>
           </>
         )}

@@ -9,6 +9,7 @@ import {
   getClientsByAgencyId,
   getLeadsByAgencyId,
   getLeadsByClientId,
+  getLeadsByClientIdPaginated,
   createLead,
   updateLead,
   getLeadActivities,
@@ -169,6 +170,9 @@ export const clientRouter = router({
   listMyLeads: protectedProcedure
     .input(z.object({
       status: z.enum(["new", "contacted", "qualified", "appointment_set", "appointment_completed", "closed_won", "closed_lost"]).optional(),
+      page: z.number().min(1).default(1),
+      limit: z.number().min(1).max(200).default(100),
+      search: z.string().optional(),
     }))
     .query(async ({ ctx, input }) => {
       const client = await resolveClient(ctx);
@@ -187,14 +191,15 @@ export const clientRouter = router({
         });
       }
 
-      const leads = await getLeadsByClientId(client.id);
-      
-      // Filter by status if provided
-      if (input.status) {
-        return leads.filter(lead => lead.status === input.status);
-      }
-      
-      return leads;
+      const offset = (input.page - 1) * input.limit;
+      const result = await getLeadsByClientIdPaginated(
+        client.id,
+        input.limit,
+        offset,
+        input.status,
+        input.search
+      );
+      return { leads: result.leads, total: result.total, page: input.page, limit: input.limit };
     }),
 
   getLead: protectedProcedure
