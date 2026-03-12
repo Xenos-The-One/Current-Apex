@@ -1,0 +1,18 @@
+{
+  "query": "SELECT u.id, u.name, u.email, u.role, u.login_method, sc.is_active FROM users u LEFT JOIN sub_account_credentials sc ON sc.user_id = u.id WHERE u.name LIKE '%Kyle%' OR u.email LIKE '%kyle%' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT u.id, u.name, u.email, u.role, u.login_method, sc.is_active FROM users u LEFT JOIN sub_account_credentials sc ON sc.user_id = u.id WHERE u.name LIKE '%Kyle%' OR u.email LIKE '%kyle%' LIMIT 5;",
+  "rows": [
+    {
+      "id": "540353",
+      "name": "Kyle Dombecki",
+      "email": "info@optimallendingsolutions.com",
+      "role": "client_user",
+      "login_method": "google",
+      "is_active": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\tlogin_method\tis_active\n540353\tKyle Dombecki\tinfo@optimallendingsolutions.com\tclient_user\tgoogle\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 64
+}

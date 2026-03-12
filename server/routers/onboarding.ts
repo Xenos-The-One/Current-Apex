@@ -484,11 +484,20 @@ export const onboardingRouter = router({
       const db = await getDb();
       if (!db) return { loginMethod: null };
       const [user] = await db
-        .select({ loginMethod: users.loginMethod })
+        .select({ id: users.id, loginMethod: users.loginMethod })
         .from(users)
         .where(eq(users.email, input.email))
         .limit(1);
-      return { loginMethod: user?.loginMethod ?? null };
+      if (!user) return { loginMethod: null };
+      // If the user has active password credentials, they can always use email+password
+      // regardless of what loginMethod field says (e.g. admin may have set a password for them)
+      const [creds] = await db
+        .select({ id: subAccountCredentials.id })
+        .from(subAccountCredentials)
+        .where(and(eq(subAccountCredentials.userId, user.id), eq(subAccountCredentials.isActive, true)))
+        .limit(1);
+      if (creds) return { loginMethod: 'email_password' };
+      return { loginMethod: user.loginMethod ?? null };
     }),
 
   /**
