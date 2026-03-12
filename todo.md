@@ -775,3 +775,13 @@
 - [x] Feature: CSV export button in list view header — downloads filtered opportunities as .csv file
 - [x] Backend: getAnalytics procedure added to pipelinesRouter
 - [x] All 179 tests passing
+
+## Bug Fix: /admin 404 Error
+- [x] Diagnose why /admin route returns 404 — not a real bug; URL was malformed by preview panel concatenation
+- [x] Confirmed /admin loads correctly (Admin Dashboard with clients, content oversight, invitations)
+
+## Pipeline Features Round 4 (COMPLETED)
+- [x] Overdue deal alerts: extended close date cron to also flag deals past close date (status open), sends separate "Overdue Deals" notification
+- [x] Pipeline goal setting: monthly_goal column added to pipelines table via SQL, setGoal/getGoal procedures added, analytics progress bar UI with color-coded progress (amber/blue/green)
+- [x] Opportunity quick-send: "Send SMS" + "Send Email" buttons in detail panel with inline compose UI, sends via Twilio/SendGrid, logs activity to timeline
+- [x] All 179 tests still passing

@@ -95,6 +95,10 @@ import {
   XCircle,
   BarChart3,
   FileDown,
+  Send,
+  Mail,
+  Phone,
+  Target,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 
@@ -486,6 +490,10 @@ function OpportunityDetail({
   const { data, isLoading } = trpc.pipelines.getOpportunity.useQuery({ id: oppId });
   const [note, setNote] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [showQuickSend, setShowQuickSend] = useState(false);
+  const [quickSendType, setQuickSendType] = useState<"sms" | "email">("sms");
+  const [quickSendMsg, setQuickSendMsg] = useState("");
+  const [quickSendSubject, setQuickSendSubject] = useState("");
 
   const addNoteMut = trpc.pipelines.addNote.useMutation({
     onSuccess: () => {
@@ -500,6 +508,17 @@ function OpportunityDetail({
     onSuccess: () => {
       toast.success("Opportunity deleted");
       onDeleted();
+    },
+    onError: e => toast.error(e.message),
+  });
+
+  const quickSendMut = trpc.pipelines.quickSend.useMutation({
+    onSuccess: () => {
+      toast.success("Message sent successfully");
+      setShowQuickSend(false);
+      setQuickSendMsg("");
+      setQuickSendSubject("");
+      utils.pipelines.getOpportunity.invalidate({ id: oppId });
     },
     onError: e => toast.error(e.message),
   });
@@ -595,6 +614,81 @@ function OpportunityDetail({
         currentContactId={(data as any).contactId}
         onLinked={() => utils.pipelines.getOpportunity.invalidate({ id: oppId })}
       />
+
+      {/* Quick Send Message */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 flex-1"
+            onClick={() => { setQuickSendType("sms"); setShowQuickSend(v => !v || quickSendType !== "sms"); }}
+          >
+            <Phone className="w-3.5 h-3.5" />
+            Send SMS
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 flex-1"
+            onClick={() => { setQuickSendType("email"); setShowQuickSend(v => !v || quickSendType !== "email"); }}
+          >
+            <Mail className="w-3.5 h-3.5" />
+            Send Email
+          </Button>
+        </div>
+        {showQuickSend && (
+          <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold flex items-center gap-1.5">
+                {quickSendType === "sms" ? <Phone className="w-3.5 h-3.5" /> : <Mail className="w-3.5 h-3.5" />}
+                {quickSendType === "sms" ? "Send SMS" : "Send Email"}
+              </p>
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setShowQuickSend(false)}>
+                <X className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+            {quickSendType === "email" && (
+              <Input
+                value={quickSendSubject}
+                onChange={e => setQuickSendSubject(e.target.value)}
+                placeholder="Subject line..."
+                className="h-8 text-sm"
+              />
+            )}
+            <Textarea
+              value={quickSendMsg}
+              onChange={e => setQuickSendMsg(e.target.value)}
+              placeholder={quickSendType === "sms" ? "Type your SMS message (max 160 chars)..." : "Type your email body..."}
+              rows={3}
+              className="text-sm resize-none"
+            />
+            {quickSendType === "sms" && quickSendMsg.length > 0 && (
+              <p className="text-xs text-muted-foreground text-right">{quickSendMsg.length}/160</p>
+            )}
+            {!(data as any).contactId && (
+              <p className="text-xs text-amber-500">⚠ Link a contact first to enable sending</p>
+            )}
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                className="h-8 gap-1.5 flex-1"
+                disabled={!quickSendMsg.trim() || quickSendMut.isPending || !(data as any).contactId}
+                onClick={() => quickSendMut.mutate({
+                  opportunityId: data.id,
+                  type: quickSendType,
+                  message: quickSendMsg.trim(),
+                  subject: quickSendType === "email" ? quickSendSubject || undefined : undefined,
+                })}
+              >
+                <Send className="w-3.5 h-3.5" />
+                {quickSendMut.isPending ? "Sending..." : "Send"}
+              </Button>
+              <Button variant="outline" size="sm" className="h-8" onClick={() => setShowQuickSend(false)}>Cancel</Button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Details */}
       <div className="space-y-2 text-sm">
@@ -863,6 +957,13 @@ function CreatePipelineInline({ onSuccess, onCancel }: { onSuccess: () => void; 
 // ─── Pipeline Analytics Component ────────────────────────────────────────────────────
 function PipelineAnalytics({ pipelineId, pipelineName }: { pipelineId: number; pipelineName: string }) {
   const { data, isLoading } = trpc.pipelines.getAnalytics.useQuery({ pipelineId });
+  const { data: goalData, refetch: refetchGoal } = trpc.pipelines.getGoal.useQuery({ pipelineId });
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [goalInput, setGoalInput] = useState("");
+  const setGoalMut = trpc.pipelines.setGoal.useMutation({
+    onSuccess: () => { toast.success("Goal saved"); setEditingGoal(false); refetchGoal(); },
+    onError: e => toast.error(e.message),
+  });
 
   if (isLoading) return <div className="flex items-center justify-center py-20 text-muted-foreground text-sm">Loading analytics...</div>;
   if (!data) return null;
@@ -870,9 +971,62 @@ function PipelineAnalytics({ pipelineId, pipelineName }: { pipelineId: number; p
   const { summary, stageStats, monthlyTrends } = data;
   const maxCount = Math.max(...stageStats.map(s => s.count), 1);
   const maxValue = Math.max(...stageStats.map(s => s.totalValue), 1);
+  const monthlyGoal = goalData?.monthlyGoal ?? null;
+  const currentMonthWon = (() => {
+    const now = new Date();
+    const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    return monthlyTrends.find(t => t.month === key)?.value ?? 0;
+  })();
+  const goalPct = monthlyGoal && monthlyGoal > 0 ? Math.min(100, Math.round((currentMonthWon / monthlyGoal) * 100)) : null;
 
   return (
     <div className="flex-1 overflow-auto space-y-6 pb-6">
+      {/* Monthly Goal Progress */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Target className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-semibold">Monthly Revenue Goal</h3>
+          </div>
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => { setGoalInput(String(monthlyGoal ?? "")); setEditingGoal(true); }}>
+            <Pencil className="w-3 h-3" />
+            {monthlyGoal ? "Edit Goal" : "Set Goal"}
+          </Button>
+        </div>
+        {editingGoal ? (
+          <div className="flex gap-2">
+            <Input
+              type="number"
+              value={goalInput}
+              onChange={e => setGoalInput(e.target.value)}
+              placeholder="e.g. 500000"
+              className="h-8 text-sm"
+              autoFocus
+            />
+            <Button size="sm" className="h-8" disabled={setGoalMut.isPending} onClick={() => setGoalMut.mutate({ pipelineId, monthlyGoal: parseFloat(goalInput) || 0 })}>Save</Button>
+            <Button variant="outline" size="sm" className="h-8" onClick={() => setEditingGoal(false)}>Cancel</Button>
+          </div>
+        ) : monthlyGoal ? (
+          <div className="space-y-2">
+            <div className="flex items-end justify-between text-sm">
+              <span className="text-muted-foreground">This month: <span className="font-bold text-foreground">{formatCurrency(String(currentMonthWon))}</span></span>
+              <span className="text-muted-foreground">Goal: <span className="font-bold text-foreground">{formatCurrency(String(monthlyGoal))}</span></span>
+            </div>
+            <div className="h-3 rounded-full bg-muted overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${goalPct! >= 100 ? "bg-emerald-500" : goalPct! >= 70 ? "bg-blue-500" : "bg-amber-500"}`}
+                style={{ width: `${goalPct}%` }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {goalPct! >= 100 ? "🎉 Goal achieved!" : `${goalPct}% of monthly goal reached`}
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No goal set. Click "Set Goal" to track monthly revenue progress.</p>
+        )}
+      </div>
+
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[

@@ -860,4 +860,89 @@ export const pipelinesRouter = router({
         monthlyTrends,
       };
     }),
+
+  // ── Set monthly revenue goal for a pipeline ───────────────────────────────
+  setGoal: protectedProcedure
+    .input(z.object({ pipelineId: z.number(), monthlyGoal: z.number().min(0) }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      await db
+        .update(pipelines)
+        .set({ monthlyGoal: input.monthlyGoal.toString() })
+        .where(eq(pipelines.id, input.pipelineId));
+      return { success: true };
+    }),
+
+  // ── Get monthly goal for a pipeline ──────────────────────────────────────
+  getGoal: protectedProcedure
+    .input(z.object({ pipelineId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const [pipeline] = await db
+        .select({ monthlyGoal: pipelines.monthlyGoal })
+        .from(pipelines)
+        .where(eq(pipelines.id, input.pipelineId))
+        .limit(1);
+      return { monthlyGoal: pipeline?.monthlyGoal ? parseFloat(pipeline.monthlyGoal) : null };
+    }),
+
+  // ── Quick-send SMS or email to linked contact ─────────────────────────────
+  quickSend: protectedProcedure
+    .input(z.object({
+      opportunityId: z.number(),
+      type: z.enum(["sms", "email"]),
+      message: z.string().min(1).max(1600),
+      subject: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const [opp] = await db
+        .select()
+        .from(opportunities)
+        .where(eq(opportunities.id, input.opportunityId))
+        .limit(1);
+      if (!opp) throw new TRPCError({ code: "NOT_FOUND", message: "Opportunity not found" });
+
+      // Look up contact phone/email from leads table if contactId is set
+      let phone: string | null = null;
+      let email: string | null = null;
+      if (opp.contactId) {
+        const { leads } = await import("../../drizzle/schema");
+        const [lead] = await db
+          .select({ phone: leads.phone, email: leads.email })
+          .from(leads)
+          .where(eq(leads.id, opp.contactId))
+          .limit(1);
+        phone = lead?.phone ?? null;
+        email = lead?.email ?? null;
+      }
+
+      if (input.type === "sms") {
+        if (!phone) throw new TRPCError({ code: "BAD_REQUEST", message: "No phone number on linked contact. Please link a contact with a phone number first." });
+        const { sendSMS } = await import("../twilio");
+        await sendSMS({ to: phone, body: input.message });
+      } else {
+        if (!email) throw new TRPCError({ code: "BAD_REQUEST", message: "No email on linked contact. Please link a contact with an email address first." });
+        const { sendEmail } = await import("../_core/email");
+        await sendEmail({
+          to: email,
+          subject: input.subject ?? `Message from ${opp.ownerName ?? "your advisor"}`,
+          html: `<p>${input.message.replace(/\n/g, "<br>")}</p>`,
+        });
+      }
+
+      // Log activity
+      await db.insert(opportunityActivities).values({
+        opportunityId: input.opportunityId,
+        type: input.type,
+        content: `${input.type.toUpperCase()} sent: ${input.message.slice(0, 120)}${input.message.length > 120 ? "..." : ""}`,
+        createdBy: ctx.user.id,
+        createdByName: ctx.user.name,
+      });
+
+      return { success: true };
+    }),
 });

@@ -10,6 +10,7 @@ export const pipelines = mysqlTable("pipelines", {
   isDefault: boolean("is_default").default(false),
   isActive: boolean("is_active").default(true),
   createdBy: int("created_by").notNull(),
+  monthlyGoal: decimal("monthly_goal", { precision: 12, scale: 2 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
 });
