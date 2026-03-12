@@ -5,7 +5,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
 import { getDb } from "../db";
-import { users, accountInvitations, subAccountCredentials, clients, agencies } from "../../drizzle/schema";
+import { users, accountInvitations, subAccountCredentials, clients, agencies, passwordResetTokens } from "../../drizzle/schema";
 import { sendEmail } from "../email-service";
 import { upsertUser as upsertSeoUser, getUserByOpenId, ensureLinkedSeoClient, getFirstAdminSeoUser } from "../seo-db";
 import { sdk } from "../_core/sdk";
@@ -473,5 +473,92 @@ export const onboardingRouter = router({
       });
 
       return { success: true, message: `Activation email resent to ${invitation.email}` };
+    }),
+
+  /**
+   * Check login method for a given email — used to show OAuth hint on login page.
+   */
+  getLoginMethod: publicProcedure
+    .input(z.object({ email: z.string().email() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { loginMethod: null };
+      const [user] = await db
+        .select({ loginMethod: users.loginMethod })
+        .from(users)
+        .where(eq(users.email, input.email))
+        .limit(1);
+      return { loginMethod: user?.loginMethod ?? null };
+    }),
+
+  /**
+   * Request a password reset — sends a reset link to the user's email.
+   */
+  requestPasswordReset: publicProcedure
+    .input(z.object({ email: z.string().email(), origin: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: true };
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, input.email))
+        .limit(1);
+      if (!user) return { success: true };
+      if (user.loginMethod !== 'email_password') {
+        await sendEmail({
+          to: input.email,
+          subject: 'Sign in to your CRM account',
+          html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;"><h2 style="color:#1e293b;">Sign in with Google / Manus</h2><p style="color:#475569;">Hi ${user.name || 'there'},</p><p style="color:#475569;">Your account uses <strong>Google / Manus sign-in</strong> — you don't have a password. Please use the <strong>"Continue with Google / Manus"</strong> button on the login page.</p><div style="text-align:center;margin:32px 0;"><a href="${input.origin}/api/client-login" style="background:#2563eb;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;display:inline-block;">Go to Login Page</a></div></div>`,
+          skipFooter: false,
+        });
+        return { success: true };
+      }
+      const token = crypto.randomBytes(48).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      await db.insert(passwordResetTokens).values({ userId: user.id, token, expiresAt });
+      const resetUrl = `${input.origin}/api/client-login?reset_token=${token}`;
+      await sendEmail({
+        to: input.email,
+        subject: 'Reset your CRM password',
+        html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;"><h2 style="color:#1e293b;">Reset your password</h2><p style="color:#475569;">Hi ${user.name || 'there'},</p><p style="color:#475569;">Click the button below to set a new password. This link expires in 1 hour.</p><div style="text-align:center;margin:32px 0;"><a href="${resetUrl}" style="background:#2563eb;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;display:inline-block;">Reset Password</a></div><p style="color:#94a3b8;font-size:13px;">If you didn't request this, you can safely ignore this email.</p></div>`,
+        skipFooter: false,
+      });
+      return { success: true };
+    }),
+
+  /**
+   * Complete a password reset — validates token and updates the password hash.
+   */
+  resetPassword: publicProcedure
+    .input(z.object({ token: z.string(), password: z.string().min(8, 'Password must be at least 8 characters') }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+      const [resetToken] = await db
+        .select()
+        .from(passwordResetTokens)
+        .where(eq(passwordResetTokens.token, input.token))
+        .limit(1);
+      if (!resetToken) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid or expired reset link.' });
+      if (resetToken.usedAt) throw new TRPCError({ code: 'BAD_REQUEST', message: 'This reset link has already been used.' });
+      if (new Date() > resetToken.expiresAt) throw new TRPCError({ code: 'BAD_REQUEST', message: 'This reset link has expired. Please request a new one.' });
+      const passwordHash = await bcrypt.hash(input.password, 12);
+      const [existing] = await db
+        .select()
+        .from(subAccountCredentials)
+        .where(eq(subAccountCredentials.userId, resetToken.userId))
+        .limit(1);
+      if (existing) {
+        await db.update(subAccountCredentials)
+          .set({ passwordHash, isActive: true, updatedAt: new Date() })
+          .where(eq(subAccountCredentials.userId, resetToken.userId));
+      } else {
+        await db.insert(subAccountCredentials).values({ userId: resetToken.userId, passwordHash, isActive: true, activatedAt: new Date() });
+      }
+      await db.update(passwordResetTokens)
+        .set({ usedAt: new Date() })
+        .where(eq(passwordResetTokens.id, resetToken.id));
+      return { success: true };
     }),
 });

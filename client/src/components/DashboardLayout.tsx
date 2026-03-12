@@ -858,6 +858,13 @@ export default function DashboardLayout({
     }
   }, [sidebarWidth, isEmbedded]);
 
+  // Set sessionStorage flag when user is logged in so we can show session expiry banner
+  useEffect(() => {
+    if (user && typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem("crm_was_logged_in", "1");
+    }
+  }, [user]);
+
   // When rendered inside a hub page, skip the full layout wrapper
   if (isEmbedded) {
     return <>{children}</>;
@@ -872,7 +879,10 @@ export default function DashboardLayout({
     // Sub-account users (Kyle, Tim, LOAs) use email+password at /login.
     // Admin users can also log in there or use the Manus button on the homepage.
     if (typeof window !== "undefined" && !window.location.pathname.startsWith("/api/client-login")) {
-      window.location.replace("/api/client-login");
+      // If the user was previously logged in (sessionStorage flag set on login), show the expiry banner
+      const hadSession = typeof sessionStorage !== "undefined" && sessionStorage.getItem("crm_was_logged_in") === "1";
+      const reason = hadSession ? "?reason=session_expired" : "";
+      window.location.replace(`/api/client-login${reason}`);
     }
     return <DashboardLayoutSkeleton />;
   }

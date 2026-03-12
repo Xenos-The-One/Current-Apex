@@ -660,3 +660,13 @@
 - [x] Auto-detect timezone button in Account Setup
 - [x] Google Places address autocomplete in Account Setup
 - [x] Review & Submit summary step in Account Setup
+
+## Round 7 - Login UX Improvements (Mar 12, 2026)
+- [ ] Forgot password reset flow (backend + email + login page UI)
+- [ ] Login method hint (detect loginMethod by email, show OAuth hint)
+- [ ] Session expiry notice banner (?reason=session_expired)
+
+## Round 7 - Login Improvements (Mar 12, 2026)
+- [x] Forgot password flow (requestPasswordReset + resetPassword procedures + login page UI)
+- [x] Login method hint (getLoginMethod procedure + OAuth hint banner on email blur)
+- [x] Session expiry notice (sessionStorage flag + ?reason=session_expired banner)
