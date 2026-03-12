@@ -730,3 +730,10 @@
 - [x] Replace old clients.map in AgencyDetail.tsx with ClientSenderEmailRow (inline edit + verify toggle)
 - [x] Add SenderEmailStatusCard to Settings.tsx My Account tab (read-only view for clients)
 - [x] All 157 tests pass
+
+## Feature: Campaign Templates One-Click Install
+- [ ] Explore existing Campaign Templates page and template data structure
+- [ ] Add "Drip Sequence Templates" tab/section to Campaign Templates page
+- [ ] Display 3 pre-built templates (DSCR, Fix&Flip, Old Leads) as browsable cards with step previews
+- [ ] Add one-click "Install for [Client]" button that seeds the sequence into the selected client's account
+- [ ] Remove dependency on separate Drip Sequences page for template installation

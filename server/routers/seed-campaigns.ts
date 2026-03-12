@@ -3,11 +3,13 @@
  * Seeds pre-built DSCR, Fix & Flip, and Old Leads re-engagement sequences
  * for Optimal Lending Solutions (Kyle).
  */
+import { z } from "zod";
 import { router, protectedProcedure } from "../_core/trpc";
 import { getDb } from "../db";
 import { TRPCError } from "@trpc/server";
 import { campaignSequences, campaignSequenceSteps } from "../../drizzle/schema-campaigns";
-import { eq } from "drizzle-orm";
+import { agencies } from "../../drizzle/schema";
+import { eq, and } from "drizzle-orm";
 
 // ─── Campaign Copy (from Playbook) ────────────────────────────────────────────
 
@@ -533,4 +535,94 @@ export const seedCampaignsRouter = router({
       .from(campaignSequences)
       .where(eq(campaignSequences.isActive, true));
   }),
+
+  /** Return the static campaign definitions for display in the UI (no DB needed) */
+  listPrebuiltTemplates: protectedProcedure.query(() => {
+    return CAMPAIGNS.map((c, index) => ({
+      index,
+      name: c.name,
+      description: c.description,
+      leadType: c.leadType as string,
+      triggerEvent: c.triggerEvent,
+      stopOnAppointment: c.stopOnAppointment,
+      stopOnReply: c.stopOnReply,
+      stepCount: c.steps.length,
+      steps: c.steps.map(s => ({
+        stepOrder: s.stepOrder,
+        channel: s.channel,
+        delayHours: s.delayHours,
+        subject: s.subject ?? null,
+        preview: s.body.slice(0, 140) + (s.body.length > 140 ? "..." : ""),
+      })),
+    }));
+  }),
+
+  /** Install a single pre-built campaign for a specific client */
+  installForClient: protectedProcedure
+    .input(z.object({
+      campaignIndex: z.number().min(0).max(2), // 0=DSCR, 1=Fix&Flip, 2=Old Leads
+      clientId: z.number().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin" && ctx.user.role !== "super_admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Admin only" });
+      }
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      // Resolve agencyId
+      const [ownedAgency] = await db.select({ id: agencies.id }).from(agencies).where(eq(agencies.ownerId, ctx.user.id)).limit(1);
+      const agencyId = ownedAgency?.id ?? (await db.select({ id: agencies.id }).from(agencies).limit(1).then(r => r[0]?.id));
+      if (!agencyId) throw new TRPCError({ code: "NOT_FOUND", message: "No agency found" });
+
+      const campaign = CAMPAIGNS[input.campaignIndex];
+      if (!campaign) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid campaign index" });
+
+      // Check if already installed
+      const whereClause = input.clientId != null
+        ? and(eq(campaignSequences.name, campaign.name), eq(campaignSequences.clientId, input.clientId))
+        : eq(campaignSequences.name, campaign.name);
+      const [existing] = await db.select({ id: campaignSequences.id }).from(campaignSequences).where(whereClause).limit(1);
+      if (existing) {
+        return { success: true, alreadyExists: true, sequenceId: existing.id, message: `"${campaign.name}" is already installed.` };
+      }
+
+      // Insert sequence
+      const [inserted] = await db.insert(campaignSequences).values({
+        name: campaign.name,
+        description: campaign.description,
+        leadType: campaign.leadType,
+        triggerEvent: campaign.triggerEvent,
+        stopOnAppointment: campaign.stopOnAppointment,
+        stopOnReply: campaign.stopOnReply,
+        agencyId,
+        clientId: input.clientId ?? null,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      const sequenceId = (inserted as any).insertId;
+
+      // Insert steps
+      for (const step of campaign.steps) {
+        await db.insert(campaignSequenceSteps).values({
+          sequenceId,
+          stepOrder: step.stepOrder,
+          channel: step.channel as "email" | "sms",
+          delayHours: step.delayHours,
+          subject: step.subject,
+          body: step.body,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
+
+      return {
+        success: true,
+        alreadyExists: false,
+        sequenceId,
+        message: `"${campaign.name}" installed successfully with ${campaign.steps.length} steps.`,
+      };
+    }),
 });
