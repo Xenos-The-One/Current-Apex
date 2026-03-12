@@ -670,3 +670,9 @@
 - [x] Forgot password flow (requestPasswordReset + resetPassword procedures + login page UI)
 - [x] Login method hint (getLoginMethod procedure + OAuth hint banner on email blur)
 - [x] Session expiry notice (sessionStorage flag + ?reason=session_expired banner)
+
+## Client Password Management
+- [x] Add changePassword tRPC procedure (protectedProcedure, verifies current password, updates hash)
+- [x] Add "Change Password" card to Settings page My Account tab (visible to all users with password credentials)
+- [x] Show/hide toggles on all password fields
+- [x] Vitest tests for changePassword procedure

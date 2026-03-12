@@ -1,0 +1,19 @@
+{
+  "query": "\nSELECT u.id, u.email, u.login_method, u.role,\n       c.id as cred_id, c.is_active, LEFT(c.password_hash, 20) as hash_preview\nFROM users u\nLEFT JOIN sub_account_credentials c ON c.user_id = u.id\nWHERE u.email = 'info@optimallendingsolutions.com'\nLIMIT 1;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nSELECT u.id, u.email, u.login_method, u.role,\n       c.id as cred_id, c.is_active, LEFT(c.password_hash, 20) as hash_preview\nFROM users u\nLEFT JOIN sub_account_credentials c ON c.user_id = u.id\nWHERE u.email = 'info@optimallendingsolutions.com'\nLIMIT 1;\n",
+  "rows": [
+    {
+      "id": "540353",
+      "email": "info@optimallendingsolutions.com",
+      "login_method": "email_password",
+      "role": "client_user",
+      "cred_id": "30001",
+      "is_active": "1",
+      "hash_preview": "$2b$12$XqpmDYrth/VPS"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\tlogin_method\trole\tcred_id\tis_active\thash_preview\n540353\tinfo@optimallendingsolutions.com\temail_password\tclient_user\t30001\t1\t$2b$12$XqpmDYrth/VPS\n",
+  "stderr": "",
+  "execution_time_ms": 72
+}

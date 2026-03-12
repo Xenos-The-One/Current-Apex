@@ -572,4 +572,72 @@ export const onboardingRouter = router({
         .where(eq(passwordResetTokens.id, resetToken.id));
       return { success: true };
     }),
+
+  /**
+   * Authenticated user changes their own password.
+   * Requires the current password to verify identity, then updates the hash.
+   * Works for both email_password and OAuth users who have a password set.
+   */
+  changePassword: protectedProcedure
+    .input(z.object({
+      currentPassword: z.string().min(1, 'Current password is required'),
+      newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+
+      // Find the user's existing credentials
+      const [cred] = await db
+        .select()
+        .from(subAccountCredentials)
+        .where(eq(subAccountCredentials.userId, ctx.user.id))
+        .limit(1);
+
+      if (!cred || !cred.isActive) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'No password credentials found for this account. Please contact your account manager.',
+        });
+      }
+
+      // Verify current password
+      const valid = await bcrypt.compare(input.currentPassword, cred.passwordHash);
+      if (!valid) {
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Current password is incorrect.' });
+      }
+
+      // Prevent reusing the same password
+      const samePassword = await bcrypt.compare(input.newPassword, cred.passwordHash);
+      if (samePassword) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'New password must be different from your current password.' });
+      }
+
+      // Hash and save the new password
+      const newHash = await bcrypt.hash(input.newPassword, 12);
+      await db.update(subAccountCredentials)
+        .set({ passwordHash: newHash, updatedAt: new Date() })
+        .where(eq(subAccountCredentials.userId, ctx.user.id));
+
+      return { success: true };
+    }),
+
+  /**
+   * Check whether the current authenticated user has a password set.
+   * Used by the Settings UI to decide whether to show the Change Password card.
+   */
+  hasPasswordCredentials: protectedProcedure
+    .query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+      const [cred] = await db
+        .select({ id: subAccountCredentials.id })
+        .from(subAccountCredentials)
+        .where(and(
+          eq(subAccountCredentials.userId, ctx.user.id),
+          eq(subAccountCredentials.isActive, true),
+        ))
+        .limit(1);
+      return { hasPassword: !!cred };
+    }),
 });

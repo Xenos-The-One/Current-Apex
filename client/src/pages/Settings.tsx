@@ -10,11 +10,13 @@ import {
   Eye,
   EyeOff,
   Key,
+  KeyRound,
   Lock,
   Phone,
   RefreshCw,
   Save,
   Settings2,
+  ShieldCheck,
   User,
   Webhook,
   XCircle,
@@ -31,6 +33,145 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+
+// ─── Change Password Card ───────────────────────────────────────────────────
+function ChangePasswordCard() {
+  const { data: credData, isLoading: credLoading } = trpc.onboarding.hasPasswordCredentials.useQuery();
+  const changePassword = trpc.onboarding.changePassword.useMutation({
+    onSuccess: () => {
+      toast.success("Password changed successfully!");
+      setForm({ current: "", next: "", confirm: "" });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const [form, setForm] = useState({ current: "", next: "", confirm: "" });
+  const [show, setShow] = useState({ current: false, next: false, confirm: false });
+
+  if (credLoading) return null;
+  if (!credData?.hasPassword) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (form.next !== form.confirm) {
+      toast.error("New passwords do not match.");
+      return;
+    }
+    if (form.next.length < 8) {
+      toast.error("New password must be at least 8 characters.");
+      return;
+    }
+    changePassword.mutate({ currentPassword: form.current, newPassword: form.next });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <KeyRound className="w-4 h-4" /> Change Password
+        </CardTitle>
+        <CardDescription>Update the password you use to log in to your account.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Current password */}
+          <div className="space-y-1.5">
+            <Label htmlFor="cp-current">Current Password</Label>
+            <div className="relative">
+              <Input
+                id="cp-current"
+                type={show.current ? "text" : "password"}
+                value={form.current}
+                onChange={e => setForm(f => ({ ...f, current: e.target.value }))}
+                placeholder="Enter your current password"
+                className="pr-10"
+                required
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                onClick={() => setShow(s => ({ ...s, current: !s.current }))}
+                tabIndex={-1}
+              >
+                {show.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* New password */}
+          <div className="space-y-1.5">
+            <Label htmlFor="cp-new">New Password</Label>
+            <div className="relative">
+              <Input
+                id="cp-new"
+                type={show.next ? "text" : "password"}
+                value={form.next}
+                onChange={e => setForm(f => ({ ...f, next: e.target.value }))}
+                placeholder="At least 8 characters"
+                className="pr-10"
+                required
+                minLength={8}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                onClick={() => setShow(s => ({ ...s, next: !s.next }))}
+                tabIndex={-1}
+              >
+                {show.next ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Confirm new password */}
+          <div className="space-y-1.5">
+            <Label htmlFor="cp-confirm">Confirm New Password</Label>
+            <div className="relative">
+              <Input
+                id="cp-confirm"
+                type={show.confirm ? "text" : "password"}
+                value={form.confirm}
+                onChange={e => setForm(f => ({ ...f, confirm: e.target.value }))}
+                placeholder="Re-enter your new password"
+                className="pr-10"
+                required
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                onClick={() => setShow(s => ({ ...s, confirm: !s.confirm }))}
+                tabIndex={-1}
+              >
+                {show.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            {form.confirm && form.next !== form.confirm && (
+              <p className="text-xs text-red-500">Passwords do not match.</p>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5" /> Minimum 8 characters
+            </p>
+            <Button
+              type="submit"
+              disabled={changePassword.isPending || !form.current || !form.next || form.next !== form.confirm}
+              className="gap-1.5"
+            >
+              {changePassword.isPending ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Check className="w-3.5 h-3.5" />
+              )}
+              {changePassword.isPending ? "Saving..." : "Update Password"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
 
 // ─── Masked secret input ────────────────────────────────────────────────────
 function SecretInput({
@@ -912,7 +1053,7 @@ export default function Settings() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Account Details</CardTitle>
-                <CardDescription>Your personal account information from Manus OAuth.</CardDescription>
+                <CardDescription>Your personal account information.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
@@ -928,11 +1069,14 @@ export default function Settings() {
                 <div className="rounded-lg border p-3 text-xs text-muted-foreground flex items-start gap-2">
                   <Lock className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                   <span>
-                    Account details are managed through Manus OAuth. To update your name or email, visit your Manus profile settings.
+                    To update your name or email, contact your account manager.
                   </span>
                 </div>
               </CardContent>
             </Card>
+
+            {/* Change Password — only shown when user has password credentials */}
+            <ChangePasswordCard />
           </TabsContent>
         </Tabs>
       </div>
