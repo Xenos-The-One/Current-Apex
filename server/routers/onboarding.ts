@@ -350,15 +350,17 @@ export const onboardingRouter = router({
       if (!user) {
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
       }
-      if (user.loginMethod !== "email_password") {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Please use the Manus login button for this account" });
-      }
+      // Check for active password credentials first — if they exist, allow login regardless of loginMethod
       const [cred] = await db
         .select()
         .from(subAccountCredentials)
         .where(eq(subAccountCredentials.userId, user.id))
         .limit(1);
       if (!cred || !cred.isActive) {
+        // No password credentials — check if they should use OAuth instead
+        if (user.loginMethod !== "email_password") {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Please use the \"Continue with Manus\" button to sign in with your Google account." });
+        }
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Account not yet activated. Please check your email for the activation link." });
       }
       const valid = await bcrypt.compare(input.password, cred.passwordHash);
