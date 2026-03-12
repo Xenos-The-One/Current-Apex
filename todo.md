@@ -589,3 +589,7 @@
 - [ ] PWA: VAPID keys need to be set by Thailer (VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VITE_VAPID_PUBLIC_KEY)
 - [x] Facebook webhook: Fixed broken handler — now uses page configs, fetches real lead data, triggers automation
 - [x] Facebook webhook: Added per-page automation controls (VAPI on/off, SMS on/off, template, tag)
+- [x] Build full GHL-inspired Contacts page (ContactsPage.tsx) with smart lists, advanced filters, bulk actions, add/edit drawer, CSV import, manage fields, sort, search, pagination, tags
+- [x] Add tags column to leads schema and backfill tags for Kyle's 14,027 imported leads
+- [x] Fix search query to use valid leads table columns (firstName, lastName, email, phone)
+- [x] Add smart_lists table to DB for saved filter presets

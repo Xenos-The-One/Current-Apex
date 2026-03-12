@@ -168,6 +168,8 @@ export const leads = mysqlTable("leads", {
   refiDripCompletedAt: timestamp("refi_drip_completed_at"), // When drip finished
   // Follow-up snooze — hide this lead from suggestions until the given date
   snoozedUntil: timestamp("snoozed_until"),
+  // Tags — JSON array of strings for filtering and segmentation
+  tags: text("tags"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -1402,3 +1404,15 @@ export const clientAccountSetup = mysqlTable("client_account_setup", {
 });
 export type ClientAccountSetup = typeof clientAccountSetup.$inferSelect;
 export type InsertClientAccountSetup = typeof clientAccountSetup.$inferInsert;
+
+// ─── Smart Lists ──────────────────────────────────────────────────────────────
+export const smartLists = mysqlTable("smart_lists", {
+  id: int("id").primaryKey().autoincrement(),
+  clientId: int("client_id").notNull().references(() => clients.id),
+  name: varchar("name", { length: 100 }).notNull(),
+  filters: text("filters").notNull(), // JSON: FilterSet[]
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type SmartList = typeof smartLists.$inferSelect;
+export type InsertSmartList = typeof smartLists.$inferInsert;

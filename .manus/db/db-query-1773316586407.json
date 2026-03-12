@@ -1,0 +1,9 @@
+{
+  "query": "\nUPDATE leads SET tags = JSON_ARRAY('Broward County Multifamily', 'Broward', 'multifamily') WHERE source = 'Broward County Multifamily' AND client_id IN (60001, 60002);\nUPDATE leads SET tags = JSON_ARRAY('Palm Beach County Multifamily', 'Palm Beach', 'multifamily') WHERE source = 'Palm Beach County Multifamily' AND client_id IN (60001, 60002);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nUPDATE leads SET tags = JSON_ARRAY('Broward County Multifamily', 'Broward', 'multifamily') WHERE source = 'Broward County Multifamily' AND client_id IN (60001, 60002);\nUPDATE leads SET tags = JSON_ARRAY('Palm Beach County Multifamily', 'Palm Beach', 'multifamily') WHERE source = 'Palm Beach County Multifamily' AND client_id IN (60001, 60002);\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 141
+}

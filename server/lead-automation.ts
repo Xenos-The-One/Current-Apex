@@ -103,14 +103,39 @@ export async function scheduleLeadFollowUp(leadId: number, phone: string, firstN
       })
       .where(eq(leads.id, leadId));
     
-    // Send after-hours SMS
+    // Send after-hours SMS — personalised per client
     try {
-      const bookingUrl = `${process.env.VITE_APP_URL || 'https://agency-crm.manus.space'}/book`;
+      // Resolve client branding for the correct agent name/company
+      let agentName = 'Tim Haskins';
+      let company = 'Home Loan Coach';
+      let nmls = 'NMLS #1116876';
+      let bookingSlug = 'tim';
+      if (clientId) {
+        try {
+          const [cl] = await db
+            .select({ name: clients.name, bookingSlug: clients.bookingSlug })
+            .from(clients)
+            .where(eq(clients.id, clientId))
+            .limit(1);
+          if (cl) {
+            const isKyle = cl.name.toLowerCase().includes('kyle') || cl.name.toLowerCase().includes('optimal');
+            if (isKyle) {
+              agentName = 'Kyle Dombecki';
+              company = 'Optimal Lending Solutions';
+              nmls = 'NMLS #2161960';
+              bookingSlug = cl.bookingSlug || 'kyle';
+            } else if (cl.bookingSlug) {
+              bookingSlug = cl.bookingSlug;
+            }
+          }
+        } catch { /* non-fatal */ }
+      }
+      const bookingUrl = `${process.env.VITE_APP_URL || 'https://crmplatform-rus3etbp.manus.space'}/book/${bookingSlug}`;
       await sendSMS({
         to: phone,
-        body: `Hi ${firstName}! Thanks for your interest in Premier Mortgage Resources. Book your consultation with Tim here: ${bookingUrl} or we'll call you tomorrow morning at 9 AM PST. - Tim Haskins, NMLS #1116876`
+        body: `Hi ${firstName}! Thanks for reaching out to ${company}. Book your free consultation here: ${bookingUrl} — or we'll call you tomorrow morning at 9 AM PST. — ${agentName}, ${nmls}`
       });
-      console.log(`[Lead Automation] After-hours SMS sent to ${firstName}`);
+      console.log(`[Lead Automation] After-hours SMS sent to ${firstName} (${agentName})`);
     } catch (error) {
       console.error("[Lead Automation] Failed to send after-hours SMS:", error);
     }

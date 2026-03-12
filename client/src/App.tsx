@@ -80,6 +80,7 @@ import ClientWebsite from "./pages/ClientWebsite";
 import PaymentsPage from "./pages/PaymentsPage";
 // OnboardingSnapshot removed — /onboarding-snapshot now redirects to /admin
 import ContactsHub from "./pages/ContactsHub";
+import ContactsPage from "./pages/ContactsPage";
 import SettingsPage from "./pages/Settings";
 import ActivityHub from "./pages/ActivityHub";
 import MarketingHub from "./pages/MarketingHub";
@@ -112,15 +113,15 @@ function Router() {
       <Route path="/admin/agencies/:id" component={AgencyDetail} />
       <Route path="/dashboard" component={ClientDashboard} />
       {/* ── Consolidated Hub routes (new GHL-style tab pages) ── */}
-      <Route path="/contacts" component={ContactsHub} />
-      <Route path="/contacts/borrowers" component={ContactsHub} />
-      <Route path="/contacts/re-agents" component={ContactsHub} />
-      <Route path="/contacts/attorneys" component={ContactsHub} />
-      <Route path="/contacts/insurance" component={ContactsHub} />
-      <Route path="/contacts/title" component={ContactsHub} />
-      <Route path="/contacts/builders" component={ContactsHub} />
-      <Route path="/contacts/lenders" component={ContactsHub} />
-      <Route path="/contacts/referral-partners" component={ContactsHub} />
+      <Route path="/contacts" component={ContactsPage} />
+      <Route path="/contacts/borrowers" component={ContactsPage} />
+      <Route path="/contacts/re-agents" component={ContactsPage} />
+      <Route path="/contacts/attorneys" component={ContactsPage} />
+      <Route path="/contacts/insurance" component={ContactsPage} />
+      <Route path="/contacts/title" component={ContactsPage} />
+      <Route path="/contacts/builders" component={ContactsPage} />
+      <Route path="/contacts/lenders" component={ContactsPage} />
+      <Route path="/contacts/referral-partners" component={ContactsPage} />
       <Route path="/activity" component={ActivityHub} />
       <Route path="/activity/call-review" component={ActivityHub} />
       <Route path="/activity/follow-ups" component={ActivityHub} />

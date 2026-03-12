@@ -20,7 +20,7 @@ import {
   getDb,
   ensureClientProfile,
 } from "../db";
-import { appointments, leads, contentApprovals, referralPartners } from "../../drizzle/schema";
+import { appointments, leads, contentApprovals, referralPartners, smartLists } from "../../drizzle/schema";
 import { eq, and, count, or, like, sql, inArray } from "drizzle-orm";
 import { pushAppointmentBooked } from "../push-triggers";
 
@@ -1011,4 +1011,154 @@ export const clientRouter = router({
       clientCount: allClients.length,
     };
   }),
+
+  // ─── Update Lead Details ──────────────────────────────────────────────────
+  updateLead: protectedProcedure
+    .input(z.object({
+      leadId: z.number(),
+      firstName: z.string().optional(),
+      lastName: z.string().optional(),
+      email: z.string().email().optional().or(z.literal('')),
+      phone: z.string().optional(),
+      company: z.string().optional(),
+      source: z.string().optional(),
+      notes: z.string().optional(),
+      tags: z.array(z.string()).optional(),
+      status: z.enum(["new", "contacted", "qualified", "appointment_set", "appointment_completed", "closed_won", "closed_lost"]).optional(),
+      contactType: z.enum(["borrower", "real_estate_agent", "attorney", "insurance_agent", "title_company", "builder_developer", "lender", "other"]).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const client = await resolveClient(ctx);
+      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+      const lead = await getLeadById(input.leadId);
+      if (!lead || (!isAdminUser(ctx.user.role) && lead.clientId !== client.id)) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Lead not found" });
+      }
+      const { leadId, tags, ...rest } = input;
+      const updateData: any = { ...rest };
+      if (tags !== undefined) updateData.tags = JSON.stringify(tags);
+      if (Object.keys(updateData).length > 0) {
+        await updateLead(leadId, updateData);
+      }
+      return { success: true };
+    }),
+
+  // ─── Delete Lead ──────────────────────────────────────────────────────────
+  deleteLead: protectedProcedure
+    .input(z.object({ leadId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const client = await resolveClient(ctx);
+      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+      const lead = await getLeadById(input.leadId);
+      if (!lead || (!isAdminUser(ctx.user.role) && lead.clientId !== client.id)) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Lead not found" });
+      }
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      await db.delete(leads).where(eq(leads.id, input.leadId));
+      return { success: true };
+    }),
+
+  // ─── Bulk Delete Leads ────────────────────────────────────────────────────
+  bulkDeleteLeads: protectedProcedure
+    .input(z.object({ leadIds: z.array(z.number()).min(1).max(500) }))
+    .mutation(async ({ ctx, input }) => {
+      const client = await resolveClient(ctx);
+      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      let deleted = 0;
+      const chunkSize = 100;
+      for (let i = 0; i < input.leadIds.length; i += chunkSize) {
+        const chunk = input.leadIds.slice(i, i + chunkSize);
+        const result = await db.delete(leads).where(and(inArray(leads.id, chunk), eq(leads.clientId, client.id)));
+        deleted += (result as any)[0]?.affectedRows ?? 0;
+      }
+      return { deleted };
+    }),
+
+  // ─── Bulk Add Tag ─────────────────────────────────────────────────────────
+  bulkAddTag: protectedProcedure
+    .input(z.object({ leadIds: z.array(z.number()).min(1).max(500), tag: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const client = await resolveClient(ctx);
+      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      let updated = 0;
+      const chunkSize = 100;
+      for (let i = 0; i < input.leadIds.length; i += chunkSize) {
+        const chunk = input.leadIds.slice(i, i + chunkSize);
+        // Use JSON_ARRAY_APPEND to add tag if not already present
+        const result = await db.execute(
+          sql`UPDATE leads SET tags = IF(JSON_SEARCH(tags, 'one', ${input.tag}) IS NULL, JSON_ARRAY_APPEND(COALESCE(tags, '[]'), '$', ${input.tag}), tags) WHERE id IN (${sql.join(chunk.map(id => sql`${id}`), sql`, `)}) AND client_id = ${client.id}`
+        );
+        updated += (result as any)[0]?.affectedRows ?? 0;
+      }
+      return { updated };
+    }),
+
+  // ─── Bulk Remove Tag ──────────────────────────────────────────────────────
+  bulkRemoveTag: protectedProcedure
+    .input(z.object({ leadIds: z.array(z.number()).min(1).max(500), tag: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const client = await resolveClient(ctx);
+      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      let updated = 0;
+      const chunkSize = 100;
+      for (let i = 0; i < input.leadIds.length; i += chunkSize) {
+        const chunk = input.leadIds.slice(i, i + chunkSize);
+        const result = await db.execute(
+          sql`UPDATE leads SET tags = JSON_REMOVE(tags, IFNULL(JSON_UNQUOTE(JSON_SEARCH(tags, 'one', ${input.tag})), '$[999]')) WHERE id IN (${sql.join(chunk.map(id => sql`${id}`), sql`, `)}) AND client_id = ${client.id} AND JSON_SEARCH(tags, 'one', ${input.tag}) IS NOT NULL`
+        );
+        updated += (result as any)[0]?.affectedRows ?? 0;
+      }
+      return { updated };
+    }),
+
+  // ─── Smart Lists CRUD ─────────────────────────────────────────────────────
+  getSmartLists: protectedProcedure
+    .query(async ({ ctx }) => {
+      const client = await resolveClient(ctx);
+      if (!client) return [];
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(smartLists).where(eq(smartLists.clientId, client.id));
+    }),
+
+  createSmartList: protectedProcedure
+    .input(z.object({ name: z.string().min(1).max(100), filters: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const client = await resolveClient(ctx);
+      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      await db.insert(smartLists).values({ clientId: client.id, name: input.name, filters: input.filters });
+      return { success: true };
+    }),
+
+  updateSmartList: protectedProcedure
+    .input(z.object({ id: z.number(), name: z.string().min(1).max(100).optional(), filters: z.string().optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const client = await resolveClient(ctx);
+      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      const { id, ...data } = input;
+      await db.update(smartLists).set(data).where(and(eq(smartLists.id, id), eq(smartLists.clientId, client.id)));
+      return { success: true };
+    }),
+
+  deleteSmartList: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const client = await resolveClient(ctx);
+      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      await db.delete(smartLists).where(and(eq(smartLists.id, input.id), eq(smartLists.clientId, client.id)));
+      return { success: true };
+    }),
 });

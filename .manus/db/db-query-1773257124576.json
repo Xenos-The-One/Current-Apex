@@ -1,0 +1,30 @@
+{
+  "query": "SELECT id, name, email, phone, vapi_calls_enabled, booking_slug, booking_title, subscription_tier FROM clients WHERE id IN (60001, 60002);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, name, email, phone, vapi_calls_enabled, booking_slug, booking_title, subscription_tier FROM clients WHERE id IN (60001, 60002);",
+  "rows": [
+    {
+      "id": "60001",
+      "name": "Optimal Lending Solutions",
+      "email": "info@optimallendingsolutions.com",
+      "phone": "NULL",
+      "vapi_calls_enabled": "1",
+      "booking_slug": "NULL",
+      "booking_title": "NULL",
+      "subscription_tier": "done_for_you"
+    },
+    {
+      "id": "60002",
+      "name": "Premier Mortgage Resources",
+      "email": "haskinstim57@gmail.com",
+      "phone": "NULL",
+      "vapi_calls_enabled": "1",
+      "booking_slug": "NULL",
+      "booking_title": "NULL",
+      "subscription_tier": "done_for_you"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tphone\tvapi_calls_enabled\tbooking_slug\tbooking_title\tsubscription_tier\n60001\tOptimal Lending Solutions\tinfo@optimallendingsolutions.com\tNULL\t1\tNULL\tNULL\tdone_for_you\n60002\tPremier Mortgage Resources\thaskinstim57@gmail.com\tNULL\t1\tNULL\tNULL\tdone_for_you\n",
+  "stderr": "",
+  "execution_time_ms": 67
+}

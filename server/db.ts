@@ -375,7 +375,7 @@ export async function getLeadsByClientIdPaginated(
   if (search) {
     const q = `%${search}%`;
     conditions.push(
-      sql`(${leads.firstName} LIKE ${q} OR ${leads.lastName} LIKE ${q} OR ${leads.email} LIKE ${q} OR ${leads.phone} LIKE ${q} OR ${leads.company} LIKE ${q})`
+      sql`(${leads.firstName} LIKE ${q} OR ${leads.lastName} LIKE ${q} OR ${leads.email} LIKE ${q} OR ${leads.phone} LIKE ${q})`
     );
   }
   if (tag) {

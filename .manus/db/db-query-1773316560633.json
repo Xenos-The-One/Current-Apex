@@ -1,0 +1,22 @@
+{
+  "query": "SELECT id, first_name, source, custom_fields FROM leads WHERE client_id = 60001 AND custom_fields IS NOT NULL LIMIT 2;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, first_name, source, custom_fields FROM leads WHERE client_id = 60001 AND custom_fields IS NOT NULL LIMIT 2;",
+  "rows": [
+    {
+      "id": "120001",
+      "first_name": "Christopher",
+      "source": "import",
+      "custom_fields": "{\"all_emails\": \"cjr@ryanlawfl.com, christopherr2611@msn.com\", \"all_phones\": \"954-647-2137 | 954-920-2921, 954-561-3817, 954-920-1260, 305-524-7429\", \"building_sqft\": \"1646\", \"county\": \"Broward\", \"est_equity\": \"\", \"est_value\": \"777000\", \"last_sale_amount\": \"\", \"last_sale_date\": \"2002-11-08\", \"lot_sqft\": \"5229\", \"mailing_address\": \"1521 Ne 28th Dr, Wilton Manors, FL, 33334\", \"owner_occupied\": \"No\", \"property_type\": \"Duplex (2 units, any combination)\", \"sentiment\": \"neutral\", \"sentiment_reason\": \"The communication provides factual property data without any subjective language, opinions, or emotional indicators.\", \"sentiment_score\": 0, \"sentiment_updated_at\": \"2026-03-12 04:00:52.000000\", \"source_list\": \"Broward County Multifamily\", \"total_assessed_value\": \"367370\", \"year_built\": \"1970\"}"
+    },
+    {
+      "id": "120002",
+      "first_name": "Idd",
+      "source": "import",
+      "custom_fields": "{\"all_emails\": \"richcarco@aol.com, richard@richardscarco.com\", \"all_phones\": \"352-621-6959, 904-251-0066, 904-251-2482, 803-689-6075\", \"building_sqft\": \"5477\", \"county\": \"Broward\", \"est_equity\": \"1029001\", \"est_value\": \"1029001\", \"last_sale_amount\": \"1528800\", \"last_sale_date\": \"2016-01-13\", \"lot_sqft\": \"11650\", \"mailing_address\": \"20600 Nw 47th Ave, Miami Gardens, FL, 33055\", \"owner_occupied\": \"No\", \"property_type\": \"Multi-Family Dwellings (Generic, 2+)\", \"sentiment\": \"neutral\", \"sentiment_reason\": \"The communication consists solely of factual property data and financial figures, without any subjective language or emotional indicators that would suggest a positive or negative sentiment.\", \"sentiment_score\": 0, \"sentiment_updated_at\": \"2026-03-12 04:00:52.000000\", \"source_list\": \"Broward County Multifamily\", \"total_assessed_value\": \"1088690\", \"year_built\": \"1970\"}"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tfirst_name\tsource\tcustom_fields\n120001\tChristopher\timport\t{\"all_emails\": \"cjr@ryanlawfl.com, christopherr2611@msn.com\", \"all_phones\": \"954-647-2137 | 954-920-2921, 954-561-3817, 954-920-1260, 305-524-7429\", \"building_sqft\": \"1646\", \"county\": \"Broward\", \"est_equity\": \"\", \"est_value\": \"777000\", \"last_sale_amount\": \"\", \"last_sale_date\": \"2002-11-08\", \"lot_sqft\": \"5229\", \"mailing_address\": \"1521 Ne 28th Dr, Wilton Manors, FL, 33334\", \"owner_occupied\": \"No\", \"property_type\": \"Duplex (2 units, any combination)\", \"sentiment\": \"neutral\", \"sentiment_reason\": \"The communication provides factual property data without any subjective language, opinions, or emotional indicators.\", \"sentiment_score\": 0, \"sentiment_updated_at\": \"2026-03-12 04:00:52.000000\", \"source_list\": \"Broward County Multifamily\", \"total_assessed_value\": \"367370\", \"year_built\": \"1970\"}\n120002\tIdd\timport\t{\"all_emails\": \"richcarco@aol.com, richard@richardscarco.com\", \"all_phones\": \"352-621-6959, 904-251-0066, 904-251-2482, 803-689-6075\", \"building_sqft\": \"5477\", \"county\": \"Broward\", \"est_equity\": \"1029001\", \"est_value\": \"1029001\", \"last_sale_amount\": \"1528800\", \"last_sale_date\": \"2016-01-13\", \"lot_sqft\": \"11650\", \"mailing_address\": \"20600 Nw 47th Ave, Miami Gardens, FL, 33055\", \"owner_occupied\": \"No\", \"property_type\": \"Multi-Family Dwellings (Generic, 2+)\", \"sentiment\": \"neutral\", \"sentiment_reason\": \"The communication consists solely of factual property data and financial figures, without any subjective language or emotional indicators that would suggest a positive or negative sentiment.\", \"sentiment_score\": 0, \"sentiment_updated_at\": \"2026-03-12 04:00:52.000000\", \"source_list\": \"Broward County Multifamily\", \"total_assessed_value\": \"1088690\", \"year_built\": \"1970\"}\n",
+  "stderr": "",
+  "execution_time_ms": 60
+}
