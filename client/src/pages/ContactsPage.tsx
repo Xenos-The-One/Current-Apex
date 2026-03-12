@@ -1260,8 +1260,8 @@ export default function ContactsPage() {
         </div>
         </div>{/* end main contacts area */}
         {/* ── Right Sidebar: Suggested Follow-Ups ── */}
-        <div className="hidden xl:flex flex-col w-72 border-l bg-card/50 overflow-y-auto p-4 gap-4">
-          <SuggestedFollowUpsPanel />
+        <div className="hidden lg:flex flex-col w-80 border-l bg-card/50 overflow-y-auto p-4 gap-4">
+          <SuggestedFollowUpsPanel showAll />
         </div>
       </div>
       {/* ── Modals / Drawers ── */}

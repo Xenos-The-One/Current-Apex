@@ -633,3 +633,7 @@
 - [x] SuggestedFollowUpsPanel already shows all 3 action buttons (Call, SMS, Email) per item
 - [x] Route /contacts/:id registered after sub-routes to avoid wouter conflicts
 - [x] Vitest tests for bulk messaging input validation and procedure existence
+
+## Round 4 Changes (Mar 12, 2026 - session 2)
+- [x] Show all 3 suggested follow-up items in the panel (increase from slice(0,3) to show all 3 visible)
+- [x] Remove Partner Portal from the Contacts sidebar section in DashboardLayout

@@ -8,9 +8,11 @@ import { toast } from "sonner";
 
 interface SuggestedFollowUpsProps {
   className?: string;
+  /** When true, shows all suggestions instead of capping at 3 */
+  showAll?: boolean;
 }
 
-export default function SuggestedFollowUpsPanel({ className }: SuggestedFollowUpsProps) {
+export default function SuggestedFollowUpsPanel({ className, showAll }: SuggestedFollowUpsProps) {
   const [, navigate] = useLocation();
   const { data, isLoading, refetch } = trpc.followUps.getSuggested.useQuery(undefined, {
     refetchOnWindowFocus: false,
@@ -53,7 +55,7 @@ export default function SuggestedFollowUpsPanel({ className }: SuggestedFollowUp
     return "bg-blue-400";
   };
 
-  const displayItems = suggestions.slice(0, 3);
+  const displayItems = showAll ? suggestions : suggestions.slice(0, 3);
 
   return (
     <Card className={className}>
@@ -90,7 +92,7 @@ export default function SuggestedFollowUpsPanel({ className }: SuggestedFollowUp
                   {/* Lead name + urgency */}
                   <div
                     className="flex items-center gap-2 mb-2 cursor-pointer"
-                    onClick={() => navigate(`/leads/${item.leadId}`)}
+                    onClick={() => navigate(`/contacts/${item.leadId}`)}
                   >
                     <div className={`h-2 w-2 rounded-full flex-shrink-0 ${urgencyDot(item.urgency)}`} />
                     <div className="flex-1 min-w-0">
@@ -175,12 +177,12 @@ export default function SuggestedFollowUpsPanel({ className }: SuggestedFollowUp
               ))}
             </ul>
 
-            {suggestions.length > 3 && (
+            {!showAll && suggestions.length > 3 && (
               <Button
                 variant="ghost"
                 size="sm"
                 className="w-full text-xs text-muted-foreground mt-1"
-                onClick={() => navigate("/follow-up-actions")}
+                onClick={() => navigate("/follow-ups")}
               >
                 View all {suggestions.length} follow-ups
                 <ChevronRight className="h-3.5 w-3.5 ml-1" />

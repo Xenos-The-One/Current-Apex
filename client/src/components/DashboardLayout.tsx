@@ -213,7 +213,6 @@ const clientMenuSections: MenuSection[] = [
     items: [
       { icon: Users, label: "Contacts", path: "/contacts" },
       { icon: BellDot, label: "Follow-Ups", path: "/follow-ups" },
-      { icon: Handshake, label: "Partner Portal", path: "/partner-portal" },
     ],
   },
   {
