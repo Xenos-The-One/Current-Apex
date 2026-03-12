@@ -715,3 +715,8 @@
 - [x] Campaign step scheduler (cron job every 5 min to send due steps)
 - [x] Stop-on-appointment and stop-on-reply flags per sequence
 - [x] Vitest tests for campaign enrollment and step processing (11 new tests, 157 total)
+
+## Fix: Wire autoEnrollLead into Facebook webhook + lead creation
+- [x] Import autoEnrollLead in facebook.ts webhook and call it after lead creation
+- [x] Import autoEnrollLead in leads.ts router and call it after lead creation (capture + create procedures)
+- [x] Wire lead type detection from loanType/leadTag into autoEnrollLead call (dscr / fix_flip / all)

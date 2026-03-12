@@ -1,0 +1,42 @@
+{
+  "query": "SELECT * FROM facebook_page_configs LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT * FROM facebook_page_configs LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "agency_id": "1",
+      "client_id": "60002",
+      "page_id": "500444413143324",
+      "page_name": "Tim Haskins - Premier Mortgage",
+      "page_access_token": "EAAvwgCNktpQBQ8YOxv04oLy1rEmv4P3jylmQyEt0JlqI3zDr8Ya1w1tzU4afFNdqWE287tsV0C8ZBW4YWheWzlTbOMVCoeXwxOl2qBZBqDfBpB7LmxW5ZCYsLCzAqHZCs6QVpaJFWzgtvEuXX2h2foPvHp3hLdSWdfj7iURFU3VKSJDH27ZChqeDi7ZB2hpwybFRDjqWzFnE2gsSXRT0hlG0PXx8bMIQc4614EbcgfSex9Jng4uZACepUDkhBQZD",
+      "is_active": "1",
+      "created_at": "2026-03-10 19:14:18",
+      "updated_at": "2026-03-11 18:55:03",
+      "vapi_assistant_id": "NULL",
+      "auto_vapi_call": "1",
+      "auto_sms": "1",
+      "sms_template": "Hi {{firstName}}! Thanks for reaching out. We'd love to help you with your mortgage needs. Book a free consultation here: {{bookingUrl}} — or we'll call you shortly! - {{clientName}}",
+      "lead_tag": "Facebook Ad Lead"
+    },
+    {
+      "id": "2",
+      "agency_id": "1",
+      "client_id": "60001",
+      "page_id": "61586221872067",
+      "page_name": "Kyle Dombecki - Optimal Lending",
+      "page_access_token": "EAALkIuCb5CMBQxKpVHcXJAUcdlC0N03nGxOve2ZBv1AzC1y00la5SxJyu12VOrhcbfHrFezZB2KX4e7WZBLoNfELfMoQmYM90INszHiiWLWblbOQZAOOC4QENIHikcZBFe2ZAr4yocoRagnkS1syJw3Dpbnn4v2Yo1qMuW5xZA2gR62tNrliqcT6eanR0c4sCZCbXjx33UxfdloZCXXJDmR3CZAlaaMprji7fhYMCf52xrhFI3WQFv73CtvPE3ee78h4ZAyXXpcxMzN8rlLZC5ZAk0l6gyNL3",
+      "is_active": "1",
+      "created_at": "2026-03-10 19:14:18",
+      "updated_at": "2026-03-11 18:55:03",
+      "vapi_assistant_id": "NULL",
+      "auto_vapi_call": "1",
+      "auto_sms": "1",
+      "sms_template": "Hi {{firstName}}! Thanks for your interest in Optimal Lending Solutions. Book a free consultation here: {{bookingUrl}} — or we'll call you shortly! - Kyle Dombecki",
+      "lead_tag": "Facebook Ad Lead"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tagency_id\tclient_id\tpage_id\tpage_name\tpage_access_token\tis_active\tcreated_at\tupdated_at\tvapi_assistant_id\tauto_vapi_call\tauto_sms\tsms_template\tlead_tag\n1\t1\t60002\t500444413143324\tTim Haskins - Premier Mortgage\tEAAvwgCNktpQBQ8YOxv04oLy1rEmv4P3jylmQyEt0JlqI3zDr8Ya1w1tzU4afFNdqWE287tsV0C8ZBW4YWheWzlTbOMVCoeXwxOl2qBZBqDfBpB7LmxW5ZCYsLCzAqHZCs6QVpaJFWzgtvEuXX2h2foPvHp3hLdSWdfj7iURFU3VKSJDH27ZChqeDi7ZB2hpwybFRDjqWzFnE2gsSXRT0hlG0PXx8bMIQc4614EbcgfSex9Jng4uZACepUDkhBQZD\t1\t2026-03-10 19:14:18\t2026-03-11 18:55:03\tNULL\t1\t1\tHi {{firstName}}! Thanks for reaching out. We'd love to help you with your mortgage needs. Book a free consultation here: {{bookingUrl}} — or we'll call you shortly! - {{clientName}}\tFacebook Ad Lead\n2\t1\t60001\t61586221872067\tKyle Dombecki - Optimal Lending\tEAALkIuCb5CMBQxKpVHcXJAUcdlC0N03nGxOve2ZBv1AzC1y00la5SxJyu12VOrhcbfHrFezZB2KX4e7WZBLoNfELfMoQmYM90INszHiiWLWblbOQZAOOC4QENIHikcZBFe2ZAr4yocoRagnkS1syJw3Dpbnn4v2Yo1qMuW5xZA2gR62tNrliqcT6eanR0c4sCZCbXjx33UxfdloZCXXJDmR3CZAlaaMprji7fhYMCf52xrhFI3WQFv73CtvPE3ee78h4ZAyXXpcxMzN8rlLZC5ZAk0l6gyNL3\t1\t2026-03-10 19:14:18\t2026-03-11 18:55:03\tNULL\t1\t1\tHi {{firstName}}! Thanks for your interest in Optimal Lending Solutions. Book a free consultation here: {{bookingUrl}} — or we'll call you shortly! - Kyle Dombecki\tFacebook Ad Lead\n",
+  "stderr": "",
+  "execution_time_ms": 378
+}

@@ -1,0 +1,97 @@
+{
+  "query": "SELECT * FROM facebook_page_configs\\G;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT * FROM facebook_page_configs\\G;",
+  "rows": [
+    {
+      "*************************** 1. row ***************************": "               id: 1"
+    },
+    {
+      "*************************** 1. row ***************************": "        agency_id: 1"
+    },
+    {
+      "*************************** 1. row ***************************": "        client_id: 60002"
+    },
+    {
+      "*************************** 1. row ***************************": "          page_id: 500444413143324"
+    },
+    {
+      "*************************** 1. row ***************************": "        page_name: Tim Haskins - Premier Mortgage"
+    },
+    {
+      "*************************** 1. row ***************************": "page_access_token: EAAvwgCNktpQBQ8YOxv04oLy1rEmv4P3jylmQyEt0JlqI3zDr8Ya1w1tzU4afFNdqWE287tsV0C8ZBW4YWheWzlTbOMVCoeXwxOl2qBZBqDfBpB7LmxW5ZCYsLCzAqHZCs6QVpaJFWzgtvEuXX2h2foPvHp3hLdSWdfj7iURFU3VKSJDH27ZChqeDi7ZB2hpwybFRDjqWzFnE2gsSXRT0hlG0PXx8bMIQc4614EbcgfSex9Jng4uZACepUDkhBQZD"
+    },
+    {
+      "*************************** 1. row ***************************": "        is_active: 1"
+    },
+    {
+      "*************************** 1. row ***************************": "       created_at: 2026-03-10 19:14:18"
+    },
+    {
+      "*************************** 1. row ***************************": "       updated_at: 2026-03-11 18:55:03"
+    },
+    {
+      "*************************** 1. row ***************************": "vapi_assistant_id: NULL"
+    },
+    {
+      "*************************** 1. row ***************************": "   auto_vapi_call: 1"
+    },
+    {
+      "*************************** 1. row ***************************": "         auto_sms: 1"
+    },
+    {
+      "*************************** 1. row ***************************": "     sms_template: Hi {{firstName}}! Thanks for reaching out. We'd love to help you with your mortgage needs. Book a free consultation here: {{bookingUrl}} — or we'll call you shortly! - {{clientName}}"
+    },
+    {
+      "*************************** 1. row ***************************": "         lead_tag: Facebook Ad Lead"
+    },
+    {
+      "*************************** 1. row ***************************": "*************************** 2. row ***************************"
+    },
+    {
+      "*************************** 1. row ***************************": "               id: 2"
+    },
+    {
+      "*************************** 1. row ***************************": "        agency_id: 1"
+    },
+    {
+      "*************************** 1. row ***************************": "        client_id: 60001"
+    },
+    {
+      "*************************** 1. row ***************************": "          page_id: 61586221872067"
+    },
+    {
+      "*************************** 1. row ***************************": "        page_name: Kyle Dombecki - Optimal Lending"
+    },
+    {
+      "*************************** 1. row ***************************": "page_access_token: EAALkIuCb5CMBQxKpVHcXJAUcdlC0N03nGxOve2ZBv1AzC1y00la5SxJyu12VOrhcbfHrFezZB2KX4e7WZBLoNfELfMoQmYM90INszHiiWLWblbOQZAOOC4QENIHikcZBFe2ZAr4yocoRagnkS1syJw3Dpbnn4v2Yo1qMuW5xZA2gR62tNrliqcT6eanR0c4sCZCbXjx33UxfdloZCXXJDmR3CZAlaaMprji7fhYMCf52xrhFI3WQFv73CtvPE3ee78h4ZAyXXpcxMzN8rlLZC5ZAk0l6gyNL3"
+    },
+    {
+      "*************************** 1. row ***************************": "        is_active: 1"
+    },
+    {
+      "*************************** 1. row ***************************": "       created_at: 2026-03-10 19:14:18"
+    },
+    {
+      "*************************** 1. row ***************************": "       updated_at: 2026-03-11 18:55:03"
+    },
+    {
+      "*************************** 1. row ***************************": "vapi_assistant_id: NULL"
+    },
+    {
+      "*************************** 1. row ***************************": "   auto_vapi_call: 1"
+    },
+    {
+      "*************************** 1. row ***************************": "         auto_sms: 1"
+    },
+    {
+      "*************************** 1. row ***************************": "     sms_template: Hi {{firstName}}! Thanks for your interest in Optimal Lending Solutions. Book a free consultation here: {{bookingUrl}} — or we'll call you shortly! - Kyle Dombecki"
+    },
+    {
+      "*************************** 1. row ***************************": "         lead_tag: Facebook Ad Lead"
+    }
+  ],
+  "messages": [],
+  "stdout": "*************************** 1. row ***************************\n               id: 1\n        agency_id: 1\n        client_id: 60002\n          page_id: 500444413143324\n        page_name: Tim Haskins - Premier Mortgage\npage_access_token: EAAvwgCNktpQBQ8YOxv04oLy1rEmv4P3jylmQyEt0JlqI3zDr8Ya1w1tzU4afFNdqWE287tsV0C8ZBW4YWheWzlTbOMVCoeXwxOl2qBZBqDfBpB7LmxW5ZCYsLCzAqHZCs6QVpaJFWzgtvEuXX2h2foPvHp3hLdSWdfj7iURFU3VKSJDH27ZChqeDi7ZB2hpwybFRDjqWzFnE2gsSXRT0hlG0PXx8bMIQc4614EbcgfSex9Jng4uZACepUDkhBQZD\n        is_active: 1\n       created_at: 2026-03-10 19:14:18\n       updated_at: 2026-03-11 18:55:03\nvapi_assistant_id: NULL\n   auto_vapi_call: 1\n         auto_sms: 1\n     sms_template: Hi {{firstName}}! Thanks for reaching out. We'd love to help you with your mortgage needs. Book a free consultation here: {{bookingUrl}} — or we'll call you shortly! - {{clientName}}\n         lead_tag: Facebook Ad Lead\n*************************** 2. row ***************************\n               id: 2\n        agency_id: 1\n        client_id: 60001\n          page_id: 61586221872067\n        page_name: Kyle Dombecki - Optimal Lending\npage_access_token: EAALkIuCb5CMBQxKpVHcXJAUcdlC0N03nGxOve2ZBv1AzC1y00la5SxJyu12VOrhcbfHrFezZB2KX4e7WZBLoNfELfMoQmYM90INszHiiWLWblbOQZAOOC4QENIHikcZBFe2ZAr4yocoRagnkS1syJw3Dpbnn4v2Yo1qMuW5xZA2gR62tNrliqcT6eanR0c4sCZCbXjx33UxfdloZCXXJDmR3CZAlaaMprji7fhYMCf52xrhFI3WQFv73CtvPE3ee78h4ZAyXXpcxMzN8rlLZC5ZAk0l6gyNL3\n        is_active: 1\n       created_at: 2026-03-10 19:14:18\n       updated_at: 2026-03-11 18:55:03\nvapi_assistant_id: NULL\n   auto_vapi_call: 1\n         auto_sms: 1\n     sms_template: Hi {{firstName}}! Thanks for your interest in Optimal Lending Solutions. Book a free consultation here: {{bookingUrl}} — or we'll call you shortly! - Kyle Dombecki\n         lead_tag: Facebook Ad Lead\n",
+  "stderr": "",
+  "execution_time_ms": 360
+}

@@ -19,6 +19,7 @@ import { tagLeadAsRefiProspect, untagLeadAsRefiProspect, getRefiDripStatus } fro
 import { sendSMS } from "../twilio";
 import { sendEmail } from "../sendgrid";
 import { isTestLead } from "../test-lead-utils";
+import { autoEnrollLead } from "./drip-sequences";
 
 export const leadsRouter = router({
   // PUBLIC lead capture - for landing pages, Facebook ads, webinars (NO LOGIN REQUIRED)
@@ -133,7 +134,17 @@ export const leadsRouter = router({
         }
       }
 
-      console.log(`[Lead Capture] ✅ Lead #${lead.id} created for ${input.firstName} — SMS + email sent, Vapi call scheduled`);
+      // Auto-enroll in matching drip sequence
+      try {
+        const leadType = input.loanType?.toLowerCase().includes("dscr") ? "dscr"
+          : (input.loanType?.toLowerCase().includes("fix") || input.loanType?.toLowerCase().includes("flip")) ? "fix_flip"
+          : undefined;
+        await autoEnrollLead(lead.id, input.agencyId ?? 1, leadType);
+      } catch (enrollErr) {
+        console.error("[Lead Capture] Drip enrollment failed:", enrollErr);
+      }
+
+      console.log(`[Lead Capture] ✅ Lead #${lead.id} created for ${input.firstName} — SMS + email sent, Vapi call scheduled, drip enrolled`);
       return { success: true, leadId: lead.id };
     }),
 
@@ -221,8 +232,17 @@ export const leadsRouter = router({
         });
       }
       
-      // Auto Vapi calls disabled - Tim handles calls manually now
-      console.log(`[Lead Capture] ✅ Lead #${lead.id} created for ${input.firstName} - Tim will call manually`);
+      // Auto Vapi calls disabled - handled manually
+      // Auto-enroll in matching drip sequence
+      try {
+        const leadType = input.loanType?.toLowerCase().includes("dscr") ? "dscr"
+          : (input.loanType?.toLowerCase().includes("fix") || input.loanType?.toLowerCase().includes("flip")) ? "fix_flip"
+          : undefined;
+        await autoEnrollLead(lead.id, input.agencyId, leadType);
+        console.log(`[Lead Capture] ✅ Lead #${lead.id} created for ${input.firstName} - drip enrolled`);
+      } catch (enrollErr) {
+        console.error("[Lead Capture] Drip enrollment failed:", enrollErr);
+      }
 
       return lead;
     }),

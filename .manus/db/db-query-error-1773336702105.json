@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT \n  f.id,\n  f.client_id,\n  c.name as client_name,\n  f.page_id,\n  f.page_name,\n  f.is_active,\n  f.auto_vapi_call,\n  f.auto_sms,\n  f.vapi_assistant_id,\n  CASE WHEN f.access_token IS NOT NULL AND f.access_token != '' THEN 'YES' ELSE 'NO' END as has_access_token,\n  f.created_at\nFROM facebook_page_configs f\nLEFT JOIN clients c ON c.id = f.client_id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nSELECT \n  f.id,\n  f.client_id,\n  c.name as client_name,\n  f.page_id,\n  f.page_name,\n  f.is_active,\n  f.auto_vapi_call,\n  f.auto_sms,\n  f.vapi_assistant_id,\n  CASE WHEN f.access_token IS NOT NULL AND f.access_token != '' THEN 'YES' ELSE 'NO' END as has_access_token,\n  f.created_at\nFROM facebook_page_configs f\nLEFT JOIN clients c ON c.id = f.client_id;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'f.access_token' in 'field list'"
+  ]
+}

@@ -23,6 +23,7 @@ import { getDb } from "../db";
 import { pushFacebookLead } from "../push-triggers";
 import { scheduleLeadFollowUp } from "../lead-automation";
 import { createLeadActivity } from "../db";
+import { autoEnrollLead } from "../routers/drip-sequences";
 
 const VERIFY_TOKEN = process.env.FACEBOOK_VERIFY_TOKEN ?? "manus_crm_verify";
 
@@ -152,6 +153,19 @@ export async function facebookWebhookHandler(req: Request, res: Response) {
           const leadId = (insertResult as any)[0]?.insertId;
 
           console.log(`[Facebook] ✅ Lead #${leadId} created — ${leadData.firstName} ${leadData.lastName} → client ${clientId} (${clientName})`);
+
+          // ── 5b. Auto-enroll in drip sequence ───────────────────────────
+          if (leadId) {
+            const leadTypeTag = config?.leadTag?.toLowerCase();
+            const leadType = leadTypeTag?.includes("dscr") ? "dscr"
+              : (leadTypeTag?.includes("fix") || leadTypeTag?.includes("flip")) ? "fix_flip"
+              : undefined;
+            try {
+              await autoEnrollLead(leadId, agencyId, leadType);
+            } catch (enrollErr) {
+              console.error(`[Facebook] Drip enrollment failed for lead ${leadId}:`, enrollErr);
+            }
+          }
 
           // ── 6. Log activity ─────────────────────────────────────────────
           if (leadId) {

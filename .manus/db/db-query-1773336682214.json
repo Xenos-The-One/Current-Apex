@@ -1,0 +1,32 @@
+{
+  "query": "SELECT id, client_id, page_id, page_name, auto_vapi_call, auto_sms, is_active, vapi_assistant_id, sms_template FROM facebook_page_configs;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, client_id, page_id, page_name, auto_vapi_call, auto_sms, is_active, vapi_assistant_id, sms_template FROM facebook_page_configs;",
+  "rows": [
+    {
+      "id": "1",
+      "client_id": "60002",
+      "page_id": "500444413143324",
+      "page_name": "Tim Haskins - Premier Mortgage",
+      "auto_vapi_call": "1",
+      "auto_sms": "1",
+      "is_active": "1",
+      "vapi_assistant_id": "NULL",
+      "sms_template": "Hi {{firstName}}! Thanks for reaching out. We'd love to help you with your mortgage needs. Book a free consultation here: {{bookingUrl}} — or we'll call you shortly! - {{clientName}}"
+    },
+    {
+      "id": "2",
+      "client_id": "60001",
+      "page_id": "61586221872067",
+      "page_name": "Kyle Dombecki - Optimal Lending",
+      "auto_vapi_call": "1",
+      "auto_sms": "1",
+      "is_active": "1",
+      "vapi_assistant_id": "NULL",
+      "sms_template": "Hi {{firstName}}! Thanks for your interest in Optimal Lending Solutions. Book a free consultation here: {{bookingUrl}} — or we'll call you shortly! - Kyle Dombecki"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tclient_id\tpage_id\tpage_name\tauto_vapi_call\tauto_sms\tis_active\tvapi_assistant_id\tsms_template\n1\t60002\t500444413143324\tTim Haskins - Premier Mortgage\t1\t1\t1\tNULL\tHi {{firstName}}! Thanks for reaching out. We'd love to help you with your mortgage needs. Book a free consultation here: {{bookingUrl}} — or we'll call you shortly! - {{clientName}}\n2\t60001\t61586221872067\tKyle Dombecki - Optimal Lending\t1\t1\t1\tNULL\tHi {{firstName}}! Thanks for your interest in Optimal Lending Solutions. Book a free consultation here: {{bookingUrl}} — or we'll call you shortly! - Kyle Dombecki\n",
+  "stderr": "",
+  "execution_time_ms": 353
+}

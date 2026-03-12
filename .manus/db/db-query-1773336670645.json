@@ -1,0 +1,30 @@
+{
+  "query": "SELECT id, client_id, page_id, page_name, auto_vapi_call, auto_sms, is_active, created_at FROM facebook_page_configs;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, client_id, page_id, page_name, auto_vapi_call, auto_sms, is_active, created_at FROM facebook_page_configs;",
+  "rows": [
+    {
+      "id": "1",
+      "client_id": "60002",
+      "page_id": "500444413143324",
+      "page_name": "Tim Haskins - Premier Mortgage",
+      "auto_vapi_call": "1",
+      "auto_sms": "1",
+      "is_active": "1",
+      "created_at": "2026-03-10 19:14:18"
+    },
+    {
+      "id": "2",
+      "client_id": "60001",
+      "page_id": "61586221872067",
+      "page_name": "Kyle Dombecki - Optimal Lending",
+      "auto_vapi_call": "1",
+      "auto_sms": "1",
+      "is_active": "1",
+      "created_at": "2026-03-10 19:14:18"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tclient_id\tpage_id\tpage_name\tauto_vapi_call\tauto_sms\tis_active\tcreated_at\n1\t60002\t500444413143324\tTim Haskins - Premier Mortgage\t1\t1\t1\t2026-03-10 19:14:18\n2\t60001\t61586221872067\tKyle Dombecki - Optimal Lending\t1\t1\t1\t2026-03-10 19:14:18\n",
+  "stderr": "",
+  "execution_time_ms": 360
+}
