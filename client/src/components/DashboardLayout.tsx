@@ -221,6 +221,7 @@ const clientMenuSections: MenuSection[] = [
       { icon: Calendar, label: "Calendar", path: "/calendar" },
       { icon: MessageSquare, label: "Conversations", path: "/conversations" },
       { icon: Megaphone, label: "Campaigns", path: "/campaigns" },
+      { icon: Zap, label: "Follow-Up Sequences", path: "/drip-sequences" },
     ],
   },
   {

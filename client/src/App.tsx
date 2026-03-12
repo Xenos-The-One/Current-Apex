@@ -60,6 +60,8 @@ import BorrowerImport from "./pages/BorrowerImport";
 import AgentWebinarMarch26 from "./pages/AgentWebinarMarch26";
 import HomebuwerWebinarMarch6 from "./pages/HomebuwerWebinarMarch6";
 import CampaignMonitoring from "./pages/CampaignMonitoring";
+import DripSequences from "./pages/DripSequences";
+import InvestorBooking from "./pages/InvestorBooking";
 import CallReview from "./pages/CallReview";
 import ConversionDashboard from "./pages/ConversionDashboard";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -175,6 +177,8 @@ function Router() {
       <Route path="/first-time-buyer" component={FirstTimeBuyerGuide} />
       <Route path="/campaigns/dashboard" component={CampaignDashboard} />
       <Route path="/campaigns" component={CampaignMonitoring} />
+      <Route path="/drip-sequences" component={DripSequences} />
+      <Route path="/investor-booking" component={InvestorBooking} />
       {/* ── Legacy activity routes → ActivityHub ── */}
       <Route path="/call-review" component={ActivityHub} />
       <Route path="/appointments" component={ActivityHub} />

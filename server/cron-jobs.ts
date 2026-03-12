@@ -25,6 +25,7 @@ import { buildWeeklyContentCalendar } from './agents/viral-topic-agent';
 import { processApprovedPackages, fireScheduledPosts } from './agents/social-posting-agent';
 import { sendDailyContentDigest } from './jobs/daily-content-digest';
 import { processScheduledCampaigns } from './jobs/campaign-scheduler';
+import { processSequenceQueue } from './routers/drip-sequences';
 
 /**
  * Initialize all cron jobs
@@ -419,6 +420,15 @@ export function initializeCronJobs() {
     }
   });
 
+  // Drip Sequence Queue: Every 5 minutes — sends due email/SMS steps in follow-up sequences
+  cron.schedule('*/5 * * * *', async () => {
+    try {
+      await processSequenceQueue();
+    } catch (error) {
+      console.error('[Cron] Drip sequence queue failed:', error);
+    }
+  });
+
   console.log('[Cron] All cron jobs initialized successfully');
   console.log('[Cron] - Scheduled Vapi calls: DISABLED (Tim handles manually)');
   console.log('[Cron] - Webinar reminders: Every 5 minutes');
@@ -433,4 +443,5 @@ export function initializeCronJobs() {
   console.log('[Cron] - Social posting agent: Every 30 minutes');
   console.log('[Cron] - Scheduled posts executor: Every 5 minutes');
   console.log('[Cron] - Campaign scheduler: Every minute (email + SMS)');
+  console.log('[Cron] - Drip sequence queue: Every 5 minutes');
 }

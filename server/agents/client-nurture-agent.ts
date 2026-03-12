@@ -161,7 +161,7 @@ export class ClientNurtureAgent {
       .where(
         and(
           eq(leadActivities.leadId, leadId),
-          sql`description LIKE ${'%' + campaignKey + '%day' + dayOffset + '%'}`
+          sql`content LIKE ${'%' + campaignKey + '%day' + dayOffset + '%'}`
         )
       );
     
@@ -304,13 +304,13 @@ Do not include a subject line, just the email body.`;
       SELECT 
         COUNT(DISTINCT lead_id) as leads_nurtured,
         COUNT(*) as total_emails_sent,
-        SUM(CASE WHEN description LIKE '%cold_lead_nurture%' THEN 1 ELSE 0 END) as cold_nurture_emails,
-        SUM(CASE WHEN description LIKE '%re_engagement%' THEN 1 ELSE 0 END) as reengagement_emails,
-        SUM(CASE WHEN description LIKE '%AI-generated%' THEN 1 ELSE 0 END) as ai_generated_emails
+        SUM(CASE WHEN content LIKE '%cold_lead_nurture%' THEN 1 ELSE 0 END) as cold_nurture_emails,
+        SUM(CASE WHEN content LIKE '%re_engagement%' THEN 1 ELSE 0 END) as reengagement_emails,
+        SUM(CASE WHEN content LIKE '%AI-generated%' THEN 1 ELSE 0 END) as ai_generated_emails
       FROM lead_activities
       WHERE createdAt BETWEEN ${startDate} AND ${endDate}
         AND activity_type = 'email'
-        AND (description LIKE '%Nurture%' OR description LIKE '%re-engagement%' OR description LIKE '%AI-generated%')
+        AND (content LIKE '%Nurture%' OR content LIKE '%re-engagement%' OR content LIKE '%AI-generated%')
     `);
     
     return stats[0];

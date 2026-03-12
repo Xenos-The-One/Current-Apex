@@ -695,3 +695,23 @@
 - [x] Add Login History card to Settings → My Account tab showing last 50 entries
 - [x] Admin can view login history for any user via getLoginHistory({ userId })
 - [x] Vitest tests for adminResetPassword, clearMustChangePassword, getLoginHistory (8 new tests)
+
+## Feature: Email & SMS Campaign System
+- [x] Add drip_sequences, drip_sequence_steps, drip_enrollments, drip_execution_log tables to schema
+- [x] Apply DB migration via webdev_execute_sql
+- [x] Build dripSequencesRouter: createSequence, listSequences, getSequence, updateSequence, deleteSequence, enrollLead, processSequenceQueue
+- [x] Register dripSequencesRouter in routers.ts
+- [x] Add processSequenceQueue to cron-jobs.ts (runs every 5 minutes)
+- [x] Build DripSequences.tsx management page (list, create, view steps, enroll leads)
+- [x] Add Drip Sequences nav item to DashboardLayout sidebar
+- [x] Add route /drip-sequences to App.tsx
+- [x] tRPC procedures: createSequence, listSequences, getSequence, updateSequence, deleteSequence, enrollLead, processSequenceQueue
+- [x] Campaigns management page for Kyle (list, create, edit campaigns and steps)
+- [x] Campaign step builder UI (email/SMS, delay, subject, body with merge tags)
+- [x] Auto-enrollment: new DSCR/Fix&Flip leads enrolled via enrollLead procedure
+- [x] Old leads enrolled in re-engagement campaign on demand
+- [x] Booking page: public /investor-booking page with lead magnet download + booking form
+- [x] Seed 3 pre-built campaigns with full copy (DSCR New Lead, Fix&Flip New Lead, Old Leads Re-engagement)
+- [x] Campaign step scheduler (cron job every 5 min to send due steps)
+- [x] Stop-on-appointment and stop-on-reply flags per sequence
+- [x] Vitest tests for campaign enrollment and step processing (11 new tests, 157 total)

@@ -213,3 +213,88 @@ export const funnelProgress = mysqlTable('funnel_progress', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow(),
 });
+
+// ==========================================
+// Drip Campaign Sequences
+// Automated multi-step email/SMS follow-up sequences
+// ==========================================
+
+/**
+ * Campaign Sequences — named drip sequences (e.g. "DSCR New Lead Follow-Up")
+ */
+export const campaignSequences = mysqlTable('campaign_sequences', {
+  id: int('id').primaryKey().autoincrement(),
+  agencyId: int('agency_id').notNull(),
+  clientId: int('client_id'),            // null = agency-wide; set = client-specific
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  leadType: varchar('lead_type', { length: 100 }), // 'dscr', 'fix_flip', 'old_lead', 'all'
+  triggerEvent: varchar('trigger_event', { length: 100 }).notNull().default('lead_created'),
+  // 'lead_created' | 'no_appointment_24h' | 'manual' | 'status_change'
+  isActive: boolean('is_active').default(true).notNull(),
+  stopOnAppointment: boolean('stop_on_appointment').default(true).notNull(),
+  stopOnReply: boolean('stop_on_reply').default(true).notNull(),
+  createdBy: int('created_by').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow(),
+});
+export type CampaignSequence = typeof campaignSequences.$inferSelect;
+export type InsertCampaignSequence = typeof campaignSequences.$inferInsert;
+
+/**
+ * Campaign Sequence Steps — individual email or SMS steps in a sequence
+ */
+export const campaignSequenceSteps = mysqlTable('campaign_sequence_steps', {
+  id: int('id').primaryKey().autoincrement(),
+  sequenceId: int('sequence_id').notNull(),
+  stepOrder: int('step_order').notNull(),
+  channel: varchar('channel', { length: 10 }).notNull(), // 'email' | 'sms'
+  delayHours: int('delay_hours').notNull().default(0),   // hours after previous step (or enrollment)
+  subject: varchar('subject', { length: 500 }),          // email only
+  body: text('body').notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow(),
+});
+export type CampaignSequenceStep = typeof campaignSequenceSteps.$inferSelect;
+export type InsertCampaignSequenceStep = typeof campaignSequenceSteps.$inferInsert;
+
+/**
+ * Campaign Enrollments — tracks which leads are enrolled in which sequences
+ */
+export const campaignEnrollments = mysqlTable('campaign_enrollments', {
+  id: int('id').primaryKey().autoincrement(),
+  sequenceId: int('sequence_id').notNull(),
+  leadId: int('lead_id').notNull(),
+  agencyId: int('agency_id').notNull(),
+  status: varchar('status', { length: 30 }).notNull().default('active'),
+  // 'active' | 'paused' | 'completed' | 'stopped' | 'unsubscribed'
+  currentStep: int('current_step').default(0).notNull(),
+  nextStepAt: timestamp('next_step_at'),
+  enrolledAt: timestamp('enrolled_at').notNull().defaultNow(),
+  completedAt: timestamp('completed_at'),
+  stoppedReason: varchar('stopped_reason', { length: 100 }),
+  // 'appointment_booked' | 'replied' | 'manual' | 'unsubscribed'
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().onUpdateNow(),
+});
+export type CampaignEnrollment = typeof campaignEnrollments.$inferSelect;
+export type InsertCampaignEnrollment = typeof campaignEnrollments.$inferInsert;
+
+/**
+ * Campaign Step Logs — records each message sent per enrollment
+ */
+export const campaignStepLogs = mysqlTable('campaign_step_logs', {
+  id: int('id').primaryKey().autoincrement(),
+  enrollmentId: int('enrollment_id').notNull(),
+  stepId: int('step_id').notNull(),
+  leadId: int('lead_id').notNull(),
+  channel: varchar('channel', { length: 10 }).notNull(),
+  status: varchar('status', { length: 30 }).notNull().default('sent'),
+  // 'sent' | 'failed' | 'skipped'
+  externalId: varchar('external_id', { length: 255 }), // SendGrid/Twilio ID
+  errorMessage: text('error_message'),
+  sentAt: timestamp('sent_at').notNull().defaultNow(),
+});
+export type CampaignStepLog = typeof campaignStepLogs.$inferSelect;
+export type InsertCampaignStepLog = typeof campaignStepLogs.$inferInsert;

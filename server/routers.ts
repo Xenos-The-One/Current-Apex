@@ -54,6 +54,8 @@ import { clientsRouter } from "./routers/clients";
 import { conversationsRouter } from "./routers/conversations";
 import { websiteGeneratorRouter } from "./routers/website-generator";
 import { accountSetupRouter } from "./routers/account-setup";
+import { dripSequencesRouter } from "./routers/drip-sequences";
+import { seedCampaignsRouter } from "./routers/seed-campaigns";
 
 export const appRouter = router({
   system: systemRouter,
@@ -109,6 +111,8 @@ export const appRouter = router({
   conversations: conversationsRouter,
   websiteGenerator: websiteGeneratorRouter,
   accountSetup: accountSetupRouter,
+  dripSequences: dripSequencesRouter,
+  seedCampaigns: seedCampaignsRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

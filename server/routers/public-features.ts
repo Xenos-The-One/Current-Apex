@@ -417,6 +417,59 @@ export const publicFeaturesRouter = router({
         partnerPerformance,
       };
     }),
+
+  // ─── INVESTOR BOOKING PAGE LEAD CAPTURE ─────────────────────────────────────
+  captureBookingLead: publicProcedure
+    .input(z.object({
+      firstName: z.string().min(1),
+      lastName: z.string().optional().default(""),
+      email: z.string().email(),
+      phone: z.string().min(7),
+      loanType: z.string(),
+      propertyAddress: z.string().optional().default(""),
+      loanAmount: z.string().optional().default(""),
+      source: z.string().optional().default("booking_page"),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      // Find the first agency (Kyle's agency)
+      const [agency] = await db.select().from(agencies).limit(1);
+      if (!agency) throw new TRPCError({ code: "NOT_FOUND", message: "Agency not found" });
+
+      // Find Kyle's client account
+      const [client] = await db.select({ id: clients.id }).from(clients).where(eq(clients.agencyId, agency.id)).limit(1);
+
+      // Map loan type to lead type
+      const leadTypeMap: Record<string, string> = {
+        dscr: "dscr",
+        fix_flip: "fix_flip",
+        construction: "fix_flip",
+        bridge: "dscr",
+        not_sure: "other",
+      };
+      const leadType = leadTypeMap[input.loanType] ?? "other";
+
+      // Create the lead
+      await db.insert(leads).values({
+        firstName: input.firstName,
+        lastName: input.lastName,
+        email: input.email,
+        phone: input.phone,
+        source: input.source,
+        loanType: leadType as any,
+        propertyAddress: input.propertyAddress || null,
+        loanAmount: input.loanAmount ? (parseFloat(input.loanAmount.replace(/[^0-9.]/g, "")) || null) : null,
+        status: "new",
+        agencyId: agency.id,
+        clientId: client?.id ?? null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      return { success: true };
+    }),
 });
 
 function emptyReport() {
