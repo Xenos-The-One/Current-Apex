@@ -1,0 +1,58 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'users' ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'users' ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "openId"
+    },
+    {
+      "COLUMN_NAME": "name"
+    },
+    {
+      "COLUMN_NAME": "email"
+    },
+    {
+      "COLUMN_NAME": "loginMethod"
+    },
+    {
+      "COLUMN_NAME": "role"
+    },
+    {
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "COLUMN_NAME": "lastSignedIn"
+    },
+    {
+      "COLUMN_NAME": "agencyId"
+    },
+    {
+      "COLUMN_NAME": "phone"
+    },
+    {
+      "COLUMN_NAME": "avatarUrl"
+    },
+    {
+      "COLUMN_NAME": "isActive"
+    },
+    {
+      "COLUMN_NAME": "avatar_url"
+    },
+    {
+      "COLUMN_NAME": "last_signed_in"
+    },
+    {
+      "COLUMN_NAME": "login_method"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\nopenId\nname\nemail\nloginMethod\nrole\ncreatedAt\nupdatedAt\nlastSignedIn\nagencyId\nphone\navatarUrl\nisActive\navatar_url\nlast_signed_in\nlogin_method\n",
+  "stderr": "",
+  "execution_time_ms": 60
+}
