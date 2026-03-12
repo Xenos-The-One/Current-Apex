@@ -15,7 +15,7 @@ const queryClient = new QueryClient();
 const PUBLIC_PATHS = ["/", "/login", "/info", "/get-started", "/activate-account",
   "/webinar", "/refinance", "/first-time-buyer", "/book",
   "/partner-program", "/privacy-policy", "/terms",
-  "/lead-capture", "/mortgage",
+  "/lead-capture", "/mortgage", "/force-change-password",
 ];
 
 const isPublicPath = () => {

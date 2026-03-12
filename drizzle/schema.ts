@@ -1106,12 +1106,30 @@ export const subAccountCredentials = mysqlTable("sub_account_credentials", {
   userId: int("user_id").notNull().references(() => users.id),
   passwordHash: varchar("password_hash", { length: 255 }).notNull(),
   isActive: boolean("is_active").default(false).notNull(),
+  mustChangePassword: boolean("must_change_password").default(false).notNull(),
   activatedAt: timestamp("activated_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 export type SubAccountCredential = typeof subAccountCredentials.$inferSelect;
 export type InsertSubAccountCredential = typeof subAccountCredentials.$inferInsert;
+
+// ==========================================
+// Login Audit Log
+// ==========================================
+export const loginAuditLog = mysqlTable("login_audit_log", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  method: varchar("method", { length: 50 }).notNull().default("email_password"),
+  success: boolean("success").notNull().default(false),
+  failureReason: varchar("failure_reason", { length: 255 }),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type LoginAuditEntry = typeof loginAuditLog.$inferSelect;
+export type InsertLoginAuditEntry = typeof loginAuditLog.$inferInsert;
 
 // ==========================================
 // Onboarding Progress - Launchpad step tracking per user

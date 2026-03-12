@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
 import { getDb } from "../db";
-import { users, accountInvitations, subAccountCredentials, clients, agencies, passwordResetTokens } from "../../drizzle/schema";
+import { users, accountInvitations, subAccountCredentials, clients, agencies, passwordResetTokens, loginAuditLog } from "../../drizzle/schema";
 import { sendEmail } from "../email-service";
 import { upsertUser as upsertSeoUser, getUserByOpenId, ensureLinkedSeoClient, getFirstAdminSeoUser } from "../seo-db";
 import { sdk } from "../_core/sdk";
@@ -363,8 +363,13 @@ export const onboardingRouter = router({
         }
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Account not yet activated. Please check your email for the activation link." });
       }
+      const ipAddress = (ctx.req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || ctx.req.socket?.remoteAddress || null;
+      const userAgent = ctx.req.headers['user-agent'] || null;
+
       const valid = await bcrypt.compare(input.password, cred.passwordHash);
       if (!valid) {
+        // Log failed attempt
+        try { await db.insert(loginAuditLog).values({ userId: user.id, email: input.email, method: 'email_password', success: false, failureReason: 'Wrong password', ipAddress, userAgent }); } catch {}
         throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
       }
       const sessionToken = await sdk.createSessionToken(user.openId, {
@@ -374,10 +379,13 @@ export const onboardingRouter = router({
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
       await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.id, user.id));
+      // Log successful login
+      try { await db.insert(loginAuditLog).values({ userId: user.id, email: input.email, method: 'email_password', success: true, ipAddress, userAgent }); } catch {}
       return {
         success: true,
         name: user.name,
         role: user.role,
+        mustChangePassword: cred.mustChangePassword ?? false,
       };
     }),
 
@@ -392,9 +400,28 @@ export const onboardingRouter = router({
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
 
+    // Join with users table to get userId for the Reset Password button
     const invitations = await db
-      .select()
+      .select({
+        id: accountInvitations.id,
+        token: accountInvitations.token,
+        email: accountInvitations.email,
+        firstName: accountInvitations.firstName,
+        lastName: accountInvitations.lastName,
+        phone: accountInvitations.phone,
+        company: accountInvitations.company,
+        role: accountInvitations.role,
+        agencyId: accountInvitations.agencyId,
+        clientId: accountInvitations.clientId,
+        status: accountInvitations.status,
+        invitedByUserId: accountInvitations.invitedByUserId,
+        expiresAt: accountInvitations.expiresAt,
+        acceptedAt: accountInvitations.acceptedAt,
+        createdAt: accountInvitations.createdAt,
+        userId: users.id,
+      })
       .from(accountInvitations)
+      .leftJoin(users, eq(users.email, accountInvitations.email))
       .orderBy(accountInvitations.createdAt);
 
     return invitations;
@@ -639,5 +666,89 @@ export const onboardingRouter = router({
         ))
         .limit(1);
       return { hasPassword: !!cred };
+    }),
+
+  /**
+   * Admin resets a sub-account user's password to a temporary one.
+   * Sets mustChangePassword = true so the user is forced to change it on next login.
+   */
+  adminResetPassword: protectedProcedure
+    .input(z.object({
+      userId: z.number(),
+      tempPassword: z.string().min(8, 'Temporary password must be at least 8 characters'),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Admin access required' });
+      }
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+
+      const [targetUser] = await db
+        .select({ id: users.id, email: users.email, name: users.name })
+        .from(users)
+        .where(eq(users.id, input.userId))
+        .limit(1);
+      if (!targetUser) throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+
+      const passwordHash = await bcrypt.hash(input.tempPassword, 12);
+      const [existing] = await db
+        .select({ id: subAccountCredentials.id })
+        .from(subAccountCredentials)
+        .where(eq(subAccountCredentials.userId, input.userId))
+        .limit(1);
+
+      if (existing) {
+        await db.update(subAccountCredentials)
+          .set({ passwordHash, isActive: true, mustChangePassword: true, updatedAt: new Date() })
+          .where(eq(subAccountCredentials.userId, input.userId));
+      } else {
+        await db.insert(subAccountCredentials).values({
+          userId: input.userId,
+          passwordHash,
+          isActive: true,
+          mustChangePassword: true,
+          activatedAt: new Date(),
+        });
+      }
+
+      return { success: true, email: targetUser.email, name: targetUser.name };
+    }),
+
+  /**
+   * After a forced password change, clear the mustChangePassword flag.
+   */
+  clearMustChangePassword: protectedProcedure
+    .mutation(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+      await db.update(subAccountCredentials)
+        .set({ mustChangePassword: false, updatedAt: new Date() })
+        .where(eq(subAccountCredentials.userId, ctx.user.id));
+      return { success: true };
+    }),
+
+  /**
+   * Get login history for the current user (last 50 entries).
+   * Admins can pass a userId to view another user's history.
+   */
+  getLoginHistory: protectedProcedure
+    .input(z.object({ userId: z.number().optional() }).optional())
+    .query(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+
+      const targetUserId = (input?.userId && (ctx.user.role === 'admin' || ctx.user.role === 'super_admin'))
+        ? input.userId
+        : ctx.user.id;
+
+      const entries = await db
+        .select()
+        .from(loginAuditLog)
+        .where(eq(loginAuditLog.userId, targetUserId))
+        .orderBy(desc(loginAuditLog.createdAt))
+        .limit(50);
+
+      return entries;
     }),
 });

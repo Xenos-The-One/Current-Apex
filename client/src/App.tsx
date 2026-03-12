@@ -83,6 +83,7 @@ import ContactsHub from "./pages/ContactsHub";
 import ContactsPage from "./pages/ContactsPage";
 import ContactDetailPage from "./pages/ContactDetailPage";
 import SettingsPage from "./pages/Settings";
+import ForceChangePassword from "./pages/ForceChangePassword";
 import ActivityHub from "./pages/ActivityHub";
 import MarketingHub from "./pages/MarketingHub";
 import ReportingHub from "./pages/ReportingHub";
@@ -107,6 +108,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/login" component={Login} />
+      <Route path="/force-change-password" component={ForceChangePassword} />
       <Route path="/info" component={Info} />
       <Route path="/get-started" component={GetStarted} />
       <Route path="/onboarding/success" component={OnboardingSuccess} />

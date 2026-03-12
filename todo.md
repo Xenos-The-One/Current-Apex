@@ -676,3 +676,22 @@
 - [x] Add "Change Password" card to Settings page My Account tab (visible to all users with password credentials)
 - [x] Show/hide toggles on all password fields
 - [x] Vitest tests for changePassword procedure
+
+## Feature: Admin Password Reset Button
+- [x] Add adminResetPassword tRPC procedure (admin only, sets temp password + mustChangePassword flag)
+- [x] Add mustChangePassword column to sub_account_credentials table, run migration
+- [x] Add "Reset Password" button in AdminDashboard Pending Invitations list (accepted accounts)
+- [x] Show generated temp password in a copy-able dialog after reset
+
+## Feature: Force Password Change on First Login
+- [x] Detect mustChangePassword flag after login and redirect to /force-change-password page
+- [x] Build /force-change-password page with temp + new + confirm fields
+- [x] Clear mustChangePassword flag after successful change (clearMustChangePassword procedure)
+- [x] Page added to PUBLIC_PATHS so no redirect loop
+
+## Feature: Login Audit Log
+- [x] Add login_audit_log DB table (userId, email, method, success, ipAddress, userAgent, createdAt)
+- [x] Record every login attempt (success + failure) in loginWithPassword
+- [x] Add Login History card to Settings → My Account tab showing last 50 entries
+- [x] Admin can view login history for any user via getLoginHistory({ userId })
+- [x] Vitest tests for adminResetPassword, clearMustChangePassword, getLoginHistory (8 new tests)

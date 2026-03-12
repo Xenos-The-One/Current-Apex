@@ -7,8 +7,10 @@ import {
   Building2,
   Check,
   CheckCircle2,
+  Clock,
   Eye,
   EyeOff,
+  History,
   Key,
   KeyRound,
   Lock,
@@ -33,6 +35,71 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+
+// ─── Login History Card ─────────────────────────────────────────────────────
+function LoginHistoryCard() {
+  const { data: history, isLoading } = trpc.onboarding.getLoginHistory.useQuery();
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <History className="h-4 w-4 text-primary" />
+          Login History
+        </CardTitle>
+        <CardDescription>Your last 50 login attempts (most recent first).</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+            <div className="h-4 w-4 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+            Loading history…
+          </div>
+        ) : !history || history.length === 0 ? (
+          <div className="text-sm text-muted-foreground py-4 text-center">
+            No login history yet. Entries appear after your first password-based login.
+          </div>
+        ) : (
+          <div className="space-y-1 max-h-72 overflow-y-auto">
+            {history.map((entry) => (
+              <div
+                key={entry.id}
+                className={`flex items-start gap-3 px-3 py-2.5 rounded-lg text-sm border ${
+                  entry.success
+                    ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800/50"
+                    : "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800/50"
+                }`}
+              >
+                {entry.success ? (
+                  <Check className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`font-medium ${ entry.success ? "text-green-800 dark:text-green-200" : "text-red-700 dark:text-red-300" }`}>
+                      {entry.success ? "Successful login" : "Failed attempt"}
+                    </span>
+                    {entry.failureReason && (
+                      <span className="text-xs text-red-600 dark:text-red-400">— {entry.failureReason}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground flex-wrap">
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {new Date(entry.createdAt).toLocaleString()}
+                    </span>
+                    {entry.ipAddress && <span>IP: {entry.ipAddress}</span>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 // ─── Change Password Card ───────────────────────────────────────────────────
 function ChangePasswordCard() {
@@ -1077,6 +1144,7 @@ export default function Settings() {
 
             {/* Change Password — only shown when user has password credentials */}
             <ChangePasswordCard />
+            <LoginHistoryCard />
           </TabsContent>
         </Tabs>
       </div>

@@ -28,9 +28,12 @@ export default function Login() {
 
   const loginMutation = trpc.onboarding.loginWithPassword.useMutation({
     onSuccess: (data) => {
-      toast.success(`Welcome back, ${data.name || ""}!`);
-      // Hard redirect to root — let the app re-check auth and route appropriately
-      window.location.replace("/");
+      if (data.mustChangePassword) {
+        window.location.replace("/force-change-password");
+      } else {
+        toast.success(`Welcome back, ${data.name || ""}!`);
+        window.location.replace("/");
+      }
     },
     onError: (err) => {
       setError(err.message || "Invalid email or password. Please try again.");

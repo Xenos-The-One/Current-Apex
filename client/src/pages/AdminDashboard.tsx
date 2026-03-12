@@ -20,6 +20,7 @@ import {
   AlertCircle,
   FileText,
   Eye,
+  EyeOff,
   MousePointerClick,
   Star,
   ArrowRight,
@@ -30,6 +31,7 @@ import {
   Rocket,
   XCircle,
   ClipboardList,
+  KeyRound,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
@@ -61,6 +63,26 @@ export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const { startImpersonatingAsAdmin, startImpersonatingAsClient } = useImpersonation();
   const utils = trpc.useUtils();
+
+  // ── Admin Reset Password state ────────────────────────────────────────────────────
+  const [resetPasswordTarget, setResetPasswordTarget] = useState<{ userId: number; name: string; email: string } | null>(null);
+  const [tempPassword, setTempPassword] = useState("");
+  const [showTempPassword, setShowTempPassword] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState<{ name: string; email: string } | null>(null);
+
+  const adminResetPassword = trpc.onboarding.adminResetPassword.useMutation({
+    onSuccess: (data) => {
+      setResetSuccess({ name: data.name ?? resetPasswordTarget?.name ?? "", email: data.email ?? "" });
+      setTempPassword("");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const generateTempPassword = () => {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$';
+    const pwd = Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    setTempPassword(pwd);
+  };
 
   // Content oversight state
   const [showRejectOversightDialog, setShowRejectOversightDialog] = useState(false);
@@ -880,22 +902,38 @@ export default function AdminDashboard() {
                           Invited {new Date(inv.createdAt).toLocaleDateString()} · Expires {new Date(inv.expiresAt).toLocaleDateString()}
                         </p>
                       </div>
-                      {inv.status !== "accepted" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="ml-3 shrink-0"
-                          disabled={resendInvitation.isPending}
-                          onClick={() => resendInvitation.mutate({ invitationId: inv.id, origin: window.location.origin })}
-                        >
-                          {resendInvitation.isPending ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Mail className="w-3.5 h-3.5 mr-1" />
-                          )}
-                          Resend
-                        </Button>
-                      )}
+                      <div className="flex items-center gap-2 ml-3 shrink-0">
+                        {inv.status !== "accepted" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={resendInvitation.isPending}
+                            onClick={() => resendInvitation.mutate({ invitationId: inv.id, origin: window.location.origin })}
+                          >
+                            {resendInvitation.isPending ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Mail className="w-3.5 h-3.5 mr-1" />
+                            )}
+                            Resend
+                          </Button>
+                        )}
+                        {inv.status === "accepted" && inv.userId && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setResetPasswordTarget({ userId: inv.userId!, name: `${inv.firstName} ${inv.lastName}`, email: inv.email });
+                              setResetSuccess(null);
+                              setTempPassword("");
+                              generateTempPassword();
+                            }}
+                          >
+                            <KeyRound className="w-3.5 h-3.5 mr-1" />
+                            Reset Password
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -904,6 +942,82 @@ export default function AdminDashboard() {
           </Card>
         )}
       </div>
+
+      {/* Admin Reset Password Dialog */}
+      <Dialog open={!!resetPasswordTarget} onOpenChange={(open) => { if (!open) { setResetPasswordTarget(null); setResetSuccess(null); setTempPassword(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-primary" />
+              Reset Password
+            </DialogTitle>
+            <DialogDescription>
+              {resetSuccess
+                ? `Password has been reset for ${resetSuccess.name}.`
+                : `Set a temporary password for ${resetPasswordTarget?.name} (${resetPasswordTarget?.email}). They will be required to change it on next login.`
+              }
+            </DialogDescription>
+          </DialogHeader>
+
+          {!resetSuccess ? (
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="tempPwd">Temporary Password</Label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      id="tempPwd"
+                      type={showTempPassword ? "text" : "password"}
+                      value={tempPassword}
+                      onChange={(e) => setTempPassword(e.target.value)}
+                      placeholder="Enter temporary password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowTempPassword(v => !v)}
+                    >
+                      {showTempPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <Button type="button" variant="outline" size="sm" onClick={generateTempPassword} className="shrink-0">
+                    Generate
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Minimum 8 characters. Share this securely with the client.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="py-4">
+              <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg">
+                <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-green-800 dark:text-green-200">Password reset successfully</p>
+                  <p className="text-xs text-green-700 dark:text-green-300">{resetSuccess.name} must change their password on next login.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            {!resetSuccess ? (
+              <>
+                <Button variant="outline" onClick={() => setResetPasswordTarget(null)}>Cancel</Button>
+                <Button
+                  disabled={!tempPassword || tempPassword.length < 8 || adminResetPassword.isPending}
+                  onClick={() => resetPasswordTarget && adminResetPassword.mutate({ userId: resetPasswordTarget.userId, tempPassword })}
+                >
+                  {adminResetPassword.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Reset Password
+                </Button>
+              </>
+            ) : (
+              <Button onClick={() => { setResetPasswordTarget(null); setResetSuccess(null); }}>Done</Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
