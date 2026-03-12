@@ -743,3 +743,18 @@
 - [x] Fix: pass createdBy: ctx.user.id, agencyId, and clientId: null explicitly in both seedPrebuiltCampaigns and installForClient
 - [x] Fix test mock to use makeDbWithAgency so agency lookup succeeds in seedPrebuiltCampaigns test
 - [x] All 157 tests pass
+
+## Feature: Pipeline / Opportunities Page (COMPLETED)
+- [x] Add pipelines, pipeline_stages, opportunities, opportunity_activities tables to schema
+- [x] Run DB migration (all 5 tables confirmed in database)
+- [x] Build pipelinesRouter: CRUD for pipelines, stages, opportunities, moveStage, bulkAction, seedSampleData
+- [x] Register pipelinesRouter in routers.ts
+- [x] Build Pipeline.tsx page: Kanban board view with drag-and-drop, pipeline selector, filters, search
+- [x] Build list/table view for opportunities with sorting, bulk select, status filter
+- [x] Build Add Opportunity modal with all fields (name, contact, value, stage, source, priority, close date, notes)
+- [x] Build Opportunity Details sheet with activity timeline, stage move, note add, edit/delete
+- [x] Bulk Actions: mark won, mark lost, delete (with selected count indicator)
+- [x] Seed sample data: 3 pipelines (DSCR, Fix&Flip, Referral), 60 opportunities with realistic values
+- [x] Add Pipeline nav item under Follow-Ups in DashboardLayout sidebar (client menu)
+- [x] /pipeline route already existed in App.tsx
+- [x] Vitest tests for pipeline procedures (22 new tests, 179 total passing)

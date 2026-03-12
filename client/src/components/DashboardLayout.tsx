@@ -213,6 +213,7 @@ const clientMenuSections: MenuSection[] = [
     items: [
       { icon: Users, label: "Contacts", path: "/contacts" },
       { icon: BellDot, label: "Follow-Ups", path: "/follow-ups" },
+      { icon: Target, label: "Pipeline", path: "/pipeline" },
     ],
   },
   {
@@ -515,6 +516,7 @@ const TAB_LABELS: Record<string, string> = {
   "/call-review": "Call Review",
   "/follow-ups": "Follow-Ups",
   "/birthdays": "Birthdays",
+  "/pipeline": "Pipeline",
   // Marketing hub
   "/marketing": "Email Campaigns",
   "/marketing/sms": "SMS Campaigns",
