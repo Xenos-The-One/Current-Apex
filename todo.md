@@ -731,9 +731,15 @@
 - [x] Add SenderEmailStatusCard to Settings.tsx My Account tab (read-only view for clients)
 - [x] All 157 tests pass
 
-## Feature: Campaign Templates One-Click Install
-- [ ] Explore existing Campaign Templates page and template data structure
-- [ ] Add "Drip Sequence Templates" tab/section to Campaign Templates page
-- [ ] Display 3 pre-built templates (DSCR, Fix&Flip, Old Leads) as browsable cards with step previews
-- [ ] Add one-click "Install for [Client]" button that seeds the sequence into the selected client's account
-- [ ] Remove dependency on separate Drip Sequences page for template installation
+## Feature: Campaign Templates One-Click Install (COMPLETED)
+- [x] Explore existing Campaign Templates page and template data structure
+- [x] Add "Drip Sequence Templates" tab as default tab in Campaign Templates page
+- [x] Display 3 pre-built templates (DSCR, Fix&Flip, Old Leads) as browsable cards with step previews
+- [x] Add one-click "Install for [Client]" button that seeds the sequence into the selected client's account
+- [x] Remove dependency on separate Drip Sequences page for template installation
+
+## Bug: Campaign Install client_id empty string error (FIXED)
+- [x] Root cause: createdBy was missing from insert, causing column shift in MySQL positional params
+- [x] Fix: pass createdBy: ctx.user.id, agencyId, and clientId: null explicitly in both seedPrebuiltCampaigns and installForClient
+- [x] Fix test mock to use makeDbWithAgency so agency lookup succeeds in seedPrebuiltCampaigns test
+- [x] All 157 tests pass

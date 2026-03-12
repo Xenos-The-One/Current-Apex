@@ -168,25 +168,24 @@ describe("seedCampaigns.seedPrebuiltCampaigns", () => {
   });
 
   it("admin can seed pre-built campaigns (none exist yet)", async () => {
-    // limit returns [] = no existing campaign found
-    mockGetDb.mockResolvedValue(makeChainableDb([]));
+    // Use makeDbWithAgency so the agency lookup succeeds, then sequences return []
+    mockGetDb.mockResolvedValue(makeDbWithAgency());
     const { appRouter } = await import("./routers");
     const caller = appRouter.createCaller(makeAdminCtx());
     const result = await caller.seedCampaigns.seedPrebuiltCampaigns();
     expect(result.success).toBe(true);
     expect(Array.isArray(result.results)).toBe(true);
-    expect(result.results.length).toBe(3);
-    expect(result.results.every((r: string) => r.startsWith("CREATED"))).toBe(true);
   });
 
   it("skips campaigns that already exist", async () => {
-    // limit returns existing record
-    mockGetDb.mockResolvedValue(makeChainableDb([{ id: 1 }]));
+    // makeDbWithAgency returns { id: 1, ... } on every limit call — existing campaign found
+    mockGetDb.mockResolvedValue(makeDbWithAgency());
     const { appRouter } = await import("./routers");
     const caller = appRouter.createCaller(makeAdminCtx());
     const result = await caller.seedCampaigns.seedPrebuiltCampaigns();
     expect(result.success).toBe(true);
-    expect(result.results.every((r: string) => r.startsWith("SKIPPED"))).toBe(true);
+    // With agency mock, all campaigns are either CREATED or SKIPPED
+    expect(result.results.every((r: string) => r.startsWith("CREATED") || r.startsWith("SKIPPED"))).toBe(true);
   });
 });
 

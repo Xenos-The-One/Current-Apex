@@ -461,17 +461,20 @@ info@optimallendingsolutions.com`,
 // ─── Router ───────────────────────────────────────────────────────────────────
 
 export const seedCampaignsRouter = router({
-  seedPrebuiltCampaigns: protectedProcedure
+   seedPrebuiltCampaigns: protectedProcedure
     .mutation(async ({ ctx }) => {
       if (ctx.user.role !== "admin" && ctx.user.role !== "super_admin") {
         throw new TRPCError({ code: "FORBIDDEN", message: "Admin only" });
       }
-
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
 
-      const results: string[] = [];
+      // Resolve agencyId for the seeding admin
+      const [ownedAgency] = await db.select({ id: agencies.id }).from(agencies).where(eq(agencies.ownerId, ctx.user.id)).limit(1);
+      const agencyId = ownedAgency?.id ?? (await db.select({ id: agencies.id }).from(agencies).limit(1).then(r => r[0]?.id));
+      if (!agencyId) throw new TRPCError({ code: "NOT_FOUND", message: "No agency found" });
 
+      const results: string[] = [];
       for (const campaign of CAMPAIGNS) {
         // Check if already exists
         const [existing] = await db
@@ -493,7 +496,10 @@ export const seedCampaignsRouter = router({
           triggerEvent: campaign.triggerEvent,
           stopOnAppointment: campaign.stopOnAppointment,
           stopOnReply: campaign.stopOnReply,
+          agencyId,
+          clientId: null,
           isActive: true,
+          createdBy: ctx.user.id,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -596,8 +602,9 @@ export const seedCampaignsRouter = router({
         stopOnAppointment: campaign.stopOnAppointment,
         stopOnReply: campaign.stopOnReply,
         agencyId,
-        clientId: input.clientId ?? null,
+        clientId: input.clientId != null ? input.clientId : null,
         isActive: true,
+        createdBy: ctx.user.id,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
