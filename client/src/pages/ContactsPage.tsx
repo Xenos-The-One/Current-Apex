@@ -4,6 +4,7 @@
  * CSV import, manage fields, sort, search, pagination, tags.
  */
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import SuggestedFollowUpsPanel from "@/components/SuggestedFollowUpsPanel";
@@ -643,6 +644,7 @@ function ManageFieldsDialog({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ContactsPage() {
+  const [, navigate] = useLocation();
   // ── State ──
   const [page, setPage] = useState(1);
   const [limit] = useState(50);
@@ -662,6 +664,12 @@ export default function ContactsPage() {
   const [showManageFields, setShowManageFields] = useState(false);
   const [showSmartListRename, setShowSmartListRename] = useState<SmartList | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  // Bulk action dialogs
+  const [showBulkSms, setShowBulkSms] = useState(false);
+  const [showBulkEmail, setShowBulkEmail] = useState(false);
+  const [bulkSmsText, setBulkSmsText] = useState("");
+  const [bulkEmailSubject, setBulkEmailSubject] = useState("");
+  const [bulkEmailBody, setBulkEmailBody] = useState("");
 
   // Visible columns
   const [visibleCols, setVisibleCols] = useState<string[]>(
@@ -696,6 +704,14 @@ export default function ContactsPage() {
   const utils = trpc.useUtils();
 
   // ── Mutations ──
+  const bulkSmsMut = trpc.crm.bulkSendSMS.useMutation({
+    onSuccess: (r: any) => { toast.success(`SMS sent to ${r.sent ?? selected.size} contacts`); setShowBulkSms(false); setBulkSmsText(""); setSelected(new Set()); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const bulkEmailMut = trpc.crm.bulkSendEmail.useMutation({
+    onSuccess: (r: any) => { toast.success(`Email sent to ${r.sent ?? selected.size} contacts`); setShowBulkEmail(false); setBulkEmailSubject(""); setBulkEmailBody(""); setSelected(new Set()); },
+    onError: (e: any) => toast.error(e.message),
+  });
   const bulkStatusMut = trpc.crm.bulkUpdateLeadStatus.useMutation({
     onSuccess: (r) => { toast.success(`Updated ${r.updated} contacts`); utils.crm.listMyLeads.invalidate(); setSelected(new Set()); },
     onError: (e) => toast.error(e.message),
@@ -896,8 +912,17 @@ export default function ContactsPage() {
         {selected.size > 0 && (
           <div className="flex items-center gap-2 px-6 py-2.5 bg-primary/5 border-b border-primary/20">
             <span className="text-sm font-medium text-primary">{selected.size} selected</span>
+             <div className="h-4 w-px bg-border mx-1" />
+            <Button size="sm" variant="outline" className="gap-1.5 hover:bg-green-50 hover:border-green-400 hover:text-green-700" onClick={() => toast.info("Call feature — coming soon")}>
+              <Phone className="w-3.5 h-3.5" /> Call
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1.5 hover:bg-purple-50 hover:border-purple-400 hover:text-purple-700" onClick={() => setShowBulkSms(true)}>
+              <MessageSquare className="w-3.5 h-3.5" /> SMS
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1.5 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700" onClick={() => setShowBulkEmail(true)}>
+              <Mail className="w-3.5 h-3.5" /> Email
+            </Button>
             <div className="h-4 w-px bg-border mx-1" />
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline">
@@ -1068,7 +1093,7 @@ export default function ContactsPage() {
                     <tr
                       key={lead.id}
                       className={`group hover:bg-muted/40 transition-colors cursor-pointer ${isSelected ? "bg-primary/5" : ""}`}
-                      onClick={() => setEditLead(lead)}
+                      onClick={() => navigate(`/contacts/${lead.id}`)}
                     >
                       <td className="px-4 py-3" onClick={e => { e.stopPropagation(); toggleOne(lead.id); }}>
                         <Checkbox checked={isSelected} onCheckedChange={() => toggleOne(lead.id)} />
@@ -1283,6 +1308,76 @@ export default function ContactsPage() {
                 updateSmartListMut.mutate({ id: showSmartListRename.id, name: renameValue.trim() });
               }
             }}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Bulk SMS Dialog */}
+      <Dialog open={showBulkSms} onOpenChange={setShowBulkSms}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-purple-600" /> Send SMS to {selected.size} Contact{selected.size !== 1 ? 's' : ''}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">This message will be sent to all selected contacts that have a phone number.</p>
+            <Textarea
+              value={bulkSmsText}
+              onChange={e => setBulkSmsText(e.target.value)}
+              placeholder="Type your SMS message here…"
+              className="min-h-[120px] text-sm resize-none"
+              maxLength={1600}
+            />
+            <p className="text-xs text-muted-foreground text-right">{bulkSmsText.length}/1600</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBulkSms(false)}>Cancel</Button>
+            <Button
+              onClick={() => bulkSmsMut.mutate({ leadIds: Array.from(selected), message: bulkSmsText })}
+              disabled={!bulkSmsText.trim() || bulkSmsMut.isPending}
+              className="gap-1.5"
+            >
+              {bulkSmsMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageSquare className="w-4 h-4" />}
+              Send SMS
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Bulk Email Dialog */}
+      <Dialog open={showBulkEmail} onOpenChange={setShowBulkEmail}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-4 h-4 text-blue-600" /> Send Email to {selected.size} Contact{selected.size !== 1 ? 's' : ''}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">This email will be sent to all selected contacts that have an email address.</p>
+            <Input
+              value={bulkEmailSubject}
+              onChange={e => setBulkEmailSubject(e.target.value)}
+              placeholder="Subject"
+              className="h-9 text-sm"
+            />
+            <Textarea
+              value={bulkEmailBody}
+              onChange={e => setBulkEmailBody(e.target.value)}
+              placeholder="Type your email message here…"
+              className="min-h-[160px] text-sm resize-none"
+              maxLength={10000}
+            />
+            <p className="text-xs text-muted-foreground text-right">{bulkEmailBody.length}/10000</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBulkEmail(false)}>Cancel</Button>
+            <Button
+              onClick={() => bulkEmailMut.mutate({ leadIds: Array.from(selected), subject: bulkEmailSubject, body: bulkEmailBody })}
+              disabled={!bulkEmailSubject.trim() || !bulkEmailBody.trim() || bulkEmailMut.isPending}
+              className="gap-1.5"
+            >
+              {bulkEmailMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+              Send Email
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -23,6 +23,8 @@ import {
 import { appointments, leads, contentApprovals, referralPartners, smartLists } from "../../drizzle/schema";
 import { eq, and, count, or, like, sql, inArray } from "drizzle-orm";
 import { pushAppointmentBooked } from "../push-triggers";
+import { sendSMS } from "../twilio";
+import { sendEmail as sendEmailService } from "../email-service";
 
 // ─── Admin Impersonation Helper ──────────────────────────────────────────────
 // When an admin sends the x-impersonate-client-id header, resolve to that client
@@ -1175,5 +1177,56 @@ export const clientRouter = router({
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
       await db.delete(smartLists).where(and(eq(smartLists.id, input.id), eq(smartLists.clientId, client.id)));
       return { success: true };
+    }),
+
+  // ─── Bulk SMS ───────────────────────────────────────────────────────────
+  bulkSendSMS: protectedProcedure
+    .input(z.object({
+      leadIds: z.array(z.number()).min(1).max(200),
+      message: z.string().min(1).max(1600),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const client = await resolveClient(ctx);
+      if (!client) throw new TRPCError({ code: "FORBIDDEN", message: "No client profile linked." });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      const rows = await db.select().from(leads).where(inArray(leads.id, input.leadIds));
+      let sent = 0;
+      for (const lead of rows) {
+        if (!lead.phone) continue;
+        try {
+          await sendSMS({ to: lead.phone, body: input.message, leadContext: { email: lead.email, isTest: lead.isTest, firstName: lead.firstName || undefined, lastName: lead.lastName || undefined } });
+          await updateLead(lead.id, { lastContactDate: new Date() });
+          await createLeadActivity({ leadId: lead.id, activityType: "sms", description: `Bulk SMS: "${input.message.substring(0, 60)}${input.message.length > 60 ? '...' : ''}"`, performedBy: ctx.user.id });
+          sent++;
+        } catch { /* skip failed */ }
+      }
+      return { sent };
+    }),
+
+  // ─── Bulk Email ──────────────────────────────────────────────────────────
+  bulkSendEmail: protectedProcedure
+    .input(z.object({
+      leadIds: z.array(z.number()).min(1).max(200),
+      subject: z.string().min(1).max(200),
+      body: z.string().min(1).max(10000),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const client = await resolveClient(ctx);
+      if (!client) throw new TRPCError({ code: "FORBIDDEN", message: "No client profile linked." });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      const rows = await db.select().from(leads).where(inArray(leads.id, input.leadIds));
+      let sent = 0;
+      for (const lead of rows) {
+        if (!lead.email) continue;
+        try {
+          await sendEmailService({ to: lead.email, subject: input.subject, html: input.body.replace(/\n/g, "<br>") });
+          await updateLead(lead.id, { lastContactDate: new Date() });
+          await createLeadActivity({ leadId: lead.id, activityType: "email", description: `Bulk email: "${input.subject}"`, performedBy: ctx.user.id });
+          sent++;
+        } catch { /* skip failed */ }
+      }
+      return { sent };
     }),
 });

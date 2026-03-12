@@ -610,3 +610,26 @@
 - [x] Rename "Pipeline" label to "Contacts" in DashboardLayout sidebar nav item (tooltip + span text)
 - [x] Add SuggestedFollowUpsPanel as right sidebar on ContactsPage (visible on xl screens)
 - [x] Strip newTag from form before sending to createLead/updateLead mutations
+
+## Round 31: Contact Details Workspace + Bulk Action Buttons
+- [ ] Build ContactDetailPage - full GHL-style workspace (left sidebar with fields/DND/actions, activity timeline, message composer, top action bar)
+- [ ] Add SMS/Email/Call quick-action buttons to bulk action bar (before Set Status)
+- [ ] Ensure SuggestedFollowUpsPanel shows all 3 follow-up items (not just 1)
+- [ ] Add /contacts/:id route to App.tsx
+- [ ] Wire contact detail page to existing lead data (getLeadById or similar procedure)
+- [ ] Activity timeline: show lead activities from DB with type icons
+- [ ] Message composer: email/SMS/note tabs with send actions
+- [ ] DND toggles: email, SMS, call, voicemail, global
+- [ ] Actions section: call, email, SMS, add note, schedule task, mark favorite
+
+## Round 3 Changes (Mar 12, 2026)
+- [x] Contact Details workspace page (GHL-style) - left sidebar, activity timeline, message composer
+- [x] Clicking a contact row navigates to /contacts/:id detail page
+- [x] Bulk action bar: Call, SMS, Email buttons added before Set Status
+- [x] Bulk SMS dialog with message composer and character counter
+- [x] Bulk Email dialog with subject + body fields
+- [x] bulkSendSMS backend procedure (sends via Twilio, logs activity)
+- [x] bulkSendEmail backend procedure (sends via SendGrid, logs activity)
+- [x] SuggestedFollowUpsPanel already shows all 3 action buttons (Call, SMS, Email) per item
+- [x] Route /contacts/:id registered after sub-routes to avoid wouter conflicts
+- [x] Vitest tests for bulk messaging input validation and procedure existence

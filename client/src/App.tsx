@@ -81,6 +81,7 @@ import PaymentsPage from "./pages/PaymentsPage";
 // OnboardingSnapshot removed — /onboarding-snapshot now redirects to /admin
 import ContactsHub from "./pages/ContactsHub";
 import ContactsPage from "./pages/ContactsPage";
+import ContactDetailPage from "./pages/ContactDetailPage";
 import SettingsPage from "./pages/Settings";
 import ActivityHub from "./pages/ActivityHub";
 import MarketingHub from "./pages/MarketingHub";
@@ -122,6 +123,7 @@ function Router() {
       <Route path="/contacts/builders" component={ContactsPage} />
       <Route path="/contacts/lenders" component={ContactsPage} />
       <Route path="/contacts/referral-partners" component={ContactsPage} />
+      <Route path="/contacts/:id" component={ContactDetailPage} />
       <Route path="/activity" component={ActivityHub} />
       <Route path="/activity/call-review" component={ActivityHub} />
       <Route path="/activity/follow-ups" component={ActivityHub} />
