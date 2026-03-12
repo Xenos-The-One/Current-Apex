@@ -72,9 +72,12 @@ import {
   ChevronDown,
   CircleDollarSign,
   Filter,
+  GripVertical,
   Kanban,
+  Link2,
   List,
   MoreHorizontal,
+  Pencil,
   Plus,
   Search,
   Settings2,
@@ -130,6 +133,7 @@ type Opportunity = {
   priority?: string | null;
   stageEnteredAt?: Date | null;
   createdAt: Date;
+  contactId?: number | null;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -584,6 +588,13 @@ function OpportunityDetail({
         </Select>
       </div>
 
+      {/* Contact Linking */}
+      <ContactLinker
+        opportunityId={data.id}
+        currentContactId={(data as any).contactId}
+        onLinked={() => utils.pipelines.getOpportunity.invalidate({ id: oppId })}
+      />
+
       {/* Details */}
       <div className="space-y-2 text-sm">
         {data.source && (
@@ -796,6 +807,187 @@ function PipelineStats({ opps, stages }: { opps: Opportunity[]; stages: Stage[] 
   );
 }
 
+// ─── Stage Manager Dialog ────────────────────────────────────────────────────
+function StageManagerDialog({
+  pipeline,
+  open,
+  onClose,
+}: {
+  pipeline: Pipeline;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const utils = trpc.useUtils();
+  const [newStageName, setNewStageName] = useState("");
+  const [newStageColor, setNewStageColor] = useState("#6366f1");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editColor, setEditColor] = useState("");
+
+  const addMut = trpc.pipelines.addStage.useMutation({
+    onSuccess: () => {
+      toast.success("Stage added");
+      setNewStageName("");
+      utils.pipelines.listPipelines.invalidate();
+    },
+    onError: e => toast.error(e.message),
+  });
+
+  const updateMut = trpc.pipelines.updateStage.useMutation({
+    onSuccess: () => {
+      toast.success("Stage updated");
+      setEditingId(null);
+      utils.pipelines.listPipelines.invalidate();
+    },
+    onError: e => toast.error(e.message),
+  });
+
+  const deleteMut = trpc.pipelines.deleteStage.useMutation({
+    onSuccess: () => {
+      toast.success("Stage deleted");
+      utils.pipelines.listPipelines.invalidate();
+    },
+    onError: e => toast.error(e.message),
+  });
+
+  const stages = [...(pipeline.stages ?? [])].sort((a, b) => a.stageOrder - b.stageOrder);
+
+  return (
+    <Dialog open={open} onOpenChange={o => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Manage Stages — {pipeline.name}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2">
+          {stages.map((stage, idx) => (
+            <div key={stage.id} className="flex items-center gap-2 p-2 rounded-lg border border-border bg-muted/30">
+              <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0 cursor-grab" />
+              <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: stage.color }} />
+              {editingId === stage.id ? (
+                <>
+                  <Input
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    className="h-7 text-sm flex-1"
+                    autoFocus
+                  />
+                  <input
+                    type="color"
+                    value={editColor}
+                    onChange={e => setEditColor(e.target.value)}
+                    className="w-7 h-7 rounded cursor-pointer border-0 p-0"
+                  />
+                  <Button size="sm" className="h-7 px-2 text-xs" onClick={() => updateMut.mutate({ id: stage.id, name: editName, color: editColor })} disabled={updateMut.isPending}>Save</Button>
+                  <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setEditingId(null)}>Cancel</Button>
+                </>
+              ) : (
+                <>
+                  <span className="flex-1 text-sm">{stage.name}</span>
+                  <span className="text-xs text-muted-foreground">{stage.probability}%</span>
+                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingId(stage.id); setEditName(stage.name); setEditColor(stage.color); }}>
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => deleteMut.mutate({ id: stage.id })} disabled={deleteMut.isPending}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2 pt-2 border-t border-border">
+          <Input
+            value={newStageName}
+            onChange={e => setNewStageName(e.target.value)}
+            placeholder="New stage name..."
+            className="h-8 text-sm flex-1"
+            onKeyDown={e => { if (e.key === "Enter" && newStageName.trim()) addMut.mutate({ pipelineId: pipeline.id, name: newStageName.trim(), color: newStageColor }); }}
+          />
+          <input
+            type="color"
+            value={newStageColor}
+            onChange={e => setNewStageColor(e.target.value)}
+            className="w-8 h-8 rounded cursor-pointer border border-border p-0.5"
+          />
+          <Button size="sm" className="h-8" onClick={() => { if (newStageName.trim()) addMut.mutate({ pipelineId: pipeline.id, name: newStageName.trim(), color: newStageColor }); }} disabled={addMut.isPending || !newStageName.trim()}>
+            <Plus className="w-3.5 h-3.5 mr-1" /> Add
+          </Button>
+        </div>
+        <Button variant="outline" className="w-full mt-2" onClick={onClose}>Done</Button>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Contact Linker ───────────────────────────────────────────────────────────
+function ContactLinker({ opportunityId, currentContactId, onLinked }: { opportunityId: number; currentContactId?: number | null; onLinked: () => void }) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+
+  const { data: results = [], isFetching } = trpc.pipelines.searchContacts.useQuery(
+    { query },
+    { enabled: query.length >= 2 }
+  );
+
+  const linkMut = trpc.pipelines.linkContact.useMutation({
+    onSuccess: () => {
+      toast.success("Contact linked");
+      setOpen(false);
+      setQuery("");
+      onLinked();
+    },
+    onError: e => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs text-muted-foreground">Linked Contact</Label>
+        <Button variant="ghost" size="sm" className="h-6 text-xs gap-1" onClick={() => setOpen(o => !o)}>
+          <Link2 className="w-3 h-3" />
+          {currentContactId ? "Change" : "Link Contact"}
+        </Button>
+      </div>
+      {currentContactId && !open && (
+        <p className="text-xs text-muted-foreground">Contact ID: {currentContactId} — <button className="text-primary underline" onClick={() => linkMut.mutate({ opportunityId, contactId: null })}>Unlink</button></p>
+      )}
+      {open && (
+        <div className="space-y-1.5">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search contacts by name or email..."
+              className="h-8 text-sm pl-8"
+              autoFocus
+            />
+          </div>
+          {isFetching && <p className="text-xs text-muted-foreground">Searching...</p>}
+          {results.length > 0 && (
+            <div className="border border-border rounded-lg divide-y divide-border max-h-40 overflow-y-auto">
+              {results.map(c => (
+                <button
+                  key={c.id}
+                  className="w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors"
+                  onClick={() => linkMut.mutate({ opportunityId, contactId: c.id })}
+                >
+                  <p className="text-sm font-medium">{c.name}</p>
+                  {c.email && <p className="text-xs text-muted-foreground">{c.email}</p>}
+                </button>
+              ))}
+            </div>
+          )}
+          {query.length >= 2 && results.length === 0 && !isFetching && (
+            <p className="text-xs text-muted-foreground">No contacts found for "{query}"</p>
+          )}
+          <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setOpen(false)}>Cancel</Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Pipeline() {
   const utils = trpc.useUtils();
@@ -809,6 +1001,7 @@ export default function Pipeline() {
   const [editOpp, setEditOpp] = useState<Opportunity | null>(null);
   const [dragActiveId, setDragActiveId] = useState<number | null>(null);
   const [bulkAction, setBulkAction] = useState<string | null>(null);
+  const [showStageManager, setShowStageManager] = useState(false);
 
   // ── Data ──
   const { data: pipelines = [], isLoading: loadingPipelines } = trpc.pipelines.listPipelines.useQuery();
@@ -1038,6 +1231,12 @@ export default function Pipeline() {
               </button>
             </div>
 
+            {/* Stage Manager */}
+            <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => setShowStageManager(true)}>
+              <Settings2 className="w-3.5 h-3.5" />
+              Stages
+            </Button>
+
             {/* Add opportunity */}
             <Button size="sm" className="h-8 gap-1.5" onClick={() => setAddDialogStageId(stages[0]?.id ?? null)}>
               <Plus className="w-3.5 h-3.5" />
@@ -1191,6 +1390,15 @@ export default function Pipeline() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* ── Stage Manager Dialog ── */}
+      {activePipeline && (
+        <StageManagerDialog
+          pipeline={activePipeline}
+          open={showStageManager}
+          onClose={() => { setShowStageManager(false); refreshAll(); }}
+        />
+      )}
     </DashboardLayout>
   );
 }

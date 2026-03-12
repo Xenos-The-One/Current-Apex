@@ -14,7 +14,7 @@ import { pipelines, pipelineStages, opportunities, opportunityActivities } from 
 import { agencies } from "../../drizzle/schema";
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
-async function getAgencyId(userId: number, db: ReturnType<typeof getDb>): Promise<number> {
+async function getAgencyId(userId: number, db: Awaited<ReturnType<typeof getDb>>): Promise<number> {
   const rows = await db.select({ id: agencies.id }).from(agencies).where(eq(agencies.userId, userId)).limit(1);
   if (rows.length > 0) return rows[0].id;
   // sub-account: look up via clients table
@@ -24,7 +24,7 @@ async function getAgencyId(userId: number, db: ReturnType<typeof getDb>): Promis
   throw new TRPCError({ code: "NOT_FOUND", message: "No agency found for user" });
 }
 
-async function getClientId(userId: number, db: ReturnType<typeof getDb>): Promise<number | null> {
+async function getClientId(userId: number, db: Awaited<ReturnType<typeof getDb>>): Promise<number | null> {
   const { clients } = await import("../../drizzle/schema");
   const rows = await db.select({ id: clients.id }).from(clients).where(eq(clients.userId, userId)).limit(1);
   return rows.length > 0 ? rows[0].id : null;
@@ -36,7 +36,8 @@ export const pipelinesRouter = router({
   // ── Pipeline CRUD ──────────────────────────────────────────────────────────
 
   listPipelines: protectedProcedure.query(async ({ ctx }) => {
-    const db = getDb();
+    const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
     const agencyId = await getAgencyId(ctx.user.id, db);
     const clientId = await getClientId(ctx.user.id, db);
     const pipelineList = await db.select().from(pipelines)
@@ -71,7 +72,8 @@ export const pipelinesRouter = router({
       })).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
       const agencyId = await getAgencyId(ctx.user.id, db);
       const clientId = await getClientId(ctx.user.id, db);
 
@@ -125,7 +127,8 @@ export const pipelinesRouter = router({
       isActive: z.boolean().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
       const agencyId = await getAgencyId(ctx.user.id, db);
       if (input.isDefault) {
         await db.update(pipelines).set({ isDefault: false }).where(eq(pipelines.agencyId, agencyId));
@@ -142,7 +145,8 @@ export const pipelinesRouter = router({
   deletePipeline: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
       const agencyId = await getAgencyId(ctx.user.id, db);
       // Delete all stages and opportunities first
       const stages = await db.select({ id: pipelineStages.id }).from(pipelineStages).where(eq(pipelineStages.pipelineId, input.id));
@@ -168,7 +172,8 @@ export const pipelinesRouter = router({
       slaHours: z.number().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
       const maxOrder = await db.select({ maxOrder: sql<number>`MAX(${pipelineStages.stageOrder})` })
         .from(pipelineStages).where(eq(pipelineStages.pipelineId, input.pipelineId));
       const nextOrder = (maxOrder[0]?.maxOrder ?? -1) + 1;
@@ -193,7 +198,8 @@ export const pipelinesRouter = router({
       stageOrder: z.number().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
       await db.update(pipelineStages).set({
         ...(input.name !== undefined && { name: input.name }),
         ...(input.color !== undefined && { color: input.color }),
@@ -207,7 +213,8 @@ export const pipelinesRouter = router({
   deleteStage: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
       await db.delete(pipelineStages).where(eq(pipelineStages.id, input.id));
       return { success: true };
     }),
@@ -217,7 +224,8 @@ export const pipelinesRouter = router({
       stages: z.array(z.object({ id: z.number(), stageOrder: z.number() })),
     }))
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
       for (const s of input.stages) {
         await db.update(pipelineStages).set({ stageOrder: s.stageOrder }).where(eq(pipelineStages.id, s.id));
       }
@@ -240,7 +248,8 @@ export const pipelinesRouter = router({
       pageSize: z.number().default(50),
     }))
     .query(async ({ ctx, input }) => {
-      const db = getDb();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
       const agencyId = await getAgencyId(ctx.user.id, db);
       const clientId = await getClientId(ctx.user.id, db);
 
@@ -300,7 +309,8 @@ export const pipelinesRouter = router({
   getOpportunity: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
-      const db = getDb();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
       const agencyId = await getAgencyId(ctx.user.id, db);
       const rows = await db.select().from(opportunities)
         .where(and(eq(opportunities.id, input.id), eq(opportunities.agencyId, agencyId)))
@@ -332,7 +342,8 @@ export const pipelinesRouter = router({
       priority: z.enum(["low", "medium", "high"]).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
       const agencyId = await getAgencyId(ctx.user.id, db);
       const clientId = await getClientId(ctx.user.id, db);
       const stageName = await db.select({ name: pipelineStages.name }).from(pipelineStages).where(eq(pipelineStages.id, input.stageId)).limit(1);
@@ -382,7 +393,8 @@ export const pipelinesRouter = router({
       priority: z.enum(["low", "medium", "high"]).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
       const agencyId = await getAgencyId(ctx.user.id, db);
       const { id, ...fields } = input;
       await db.update(opportunities).set({
@@ -407,7 +419,8 @@ export const pipelinesRouter = router({
       newStageId: z.number(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
       const agencyId = await getAgencyId(ctx.user.id, db);
       const opp = await db.select({ stageId: opportunities.stageId, name: opportunities.name })
         .from(opportunities).where(and(eq(opportunities.id, input.opportunityId), eq(opportunities.agencyId, agencyId))).limit(1);
@@ -438,7 +451,8 @@ export const pipelinesRouter = router({
   deleteOpportunity: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
       const agencyId = await getAgencyId(ctx.user.id, db);
       await db.delete(opportunityActivities).where(eq(opportunityActivities.opportunityId, input.id));
       await db.delete(opportunities).where(and(eq(opportunities.id, input.id), eq(opportunities.agencyId, agencyId)));
@@ -451,7 +465,8 @@ export const pipelinesRouter = router({
       content: z.string().min(1),
     }))
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
       await db.insert(opportunityActivities).values({
         opportunityId: input.opportunityId,
         type: "note",
@@ -474,7 +489,8 @@ export const pipelinesRouter = router({
       pipelineId: z.number().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
       const agencyId = await getAgencyId(ctx.user.id, db);
 
       switch (input.action) {
@@ -536,7 +552,8 @@ export const pipelinesRouter = router({
   // ── Seed Sample Data ───────────────────────────────────────────────────────
 
   seedSampleData: protectedProcedure.mutation(async ({ ctx }) => {
-    const db = getDb();
+    const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
     const agencyId = await getAgencyId(ctx.user.id, db);
     const clientId = await getClientId(ctx.user.id, db);
 
@@ -692,4 +709,57 @@ export const pipelinesRouter = router({
 
     return { success: true, pipelines: createdPipelines.length, opportunities: oppCount };
   }),
+
+  // ── Contact Linking ────────────────────────────────────────────────────────
+
+  searchContacts: protectedProcedure
+    .input(z.object({ query: z.string().min(1), limit: z.number().default(10) }))
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const agencyId = await getAgencyId(ctx.user.id, db);
+      const { leads } = await import("../../drizzle/schema");
+      const q = `%${input.query}%`;
+      const rows = await db
+        .select({ id: leads.id, firstName: leads.firstName, lastName: leads.lastName, email: leads.email, phone: leads.phone, contactType: leads.contactType })
+        .from(leads)
+        .where(and(
+          eq(leads.agencyId, agencyId),
+          or(
+            like(leads.firstName, q),
+            like(leads.lastName, q),
+            like(leads.email, q),
+          )
+        ))
+        .limit(input.limit);
+      return rows.map(r => ({
+        id: r.id,
+        name: `${r.firstName} ${r.lastName}`.trim(),
+        email: r.email,
+        phone: r.phone,
+        contactType: r.contactType,
+      }));
+    }),
+
+  linkContact: protectedProcedure
+    .input(z.object({ opportunityId: z.number(), contactId: z.number().nullable() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const agencyId = await getAgencyId(ctx.user.id, db);
+      await db.update(opportunities)
+        .set({ contactId: input.contactId })
+        .where(and(eq(opportunities.id, input.opportunityId), eq(opportunities.agencyId, agencyId)));
+      // Log activity
+      if (input.contactId) {
+        await db.insert(opportunityActivities).values({
+          opportunityId: input.opportunityId,
+          type: "note",
+          content: `Contact linked (ID: ${input.contactId})`,
+          createdBy: ctx.user.id,
+          createdByName: ctx.user.name ?? "System",
+        });
+      }
+      return { success: true };
+    }),
 });

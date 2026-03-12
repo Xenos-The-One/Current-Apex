@@ -26,6 +26,7 @@ import { processApprovedPackages, fireScheduledPosts } from './agents/social-pos
 import { sendDailyContentDigest } from './jobs/daily-content-digest';
 import { processScheduledCampaigns } from './jobs/campaign-scheduler';
 import { processSequenceQueue } from './routers/drip-sequences';
+import { processPipelineCloseDateReminders } from './cron/pipelineCloseDateReminders';
 
 /**
  * Initialize all cron jobs
@@ -429,6 +430,15 @@ export function initializeCronJobs() {
     }
   });
 
+  // Pipeline Close Date Reminders: Daily at 8 AM ET
+  cron.schedule('0 8 * * *', async () => {
+    try {
+      await processPipelineCloseDateReminders();
+    } catch (error) {
+      console.error('[Cron] Pipeline close date reminders failed:', error);
+    }
+  }, { timezone: 'America/New_York' });
+
   console.log('[Cron] All cron jobs initialized successfully');
   console.log('[Cron] - Scheduled Vapi calls: DISABLED (Tim handles manually)');
   console.log('[Cron] - Webinar reminders: Every 5 minutes');
@@ -444,4 +454,5 @@ export function initializeCronJobs() {
   console.log('[Cron] - Scheduled posts executor: Every 5 minutes');
   console.log('[Cron] - Campaign scheduler: Every minute (email + SMS)');
   console.log('[Cron] - Drip sequence queue: Every 5 minutes');
+  console.log('[Cron] - Pipeline close date reminders: Daily at 8 AM ET');
 }

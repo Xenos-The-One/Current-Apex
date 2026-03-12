@@ -758,3 +758,11 @@
 - [x] Add Pipeline nav item under Follow-Ups in DashboardLayout sidebar (client menu)
 - [x] /pipeline route already existed in App.tsx
 - [x] Vitest tests for pipeline procedures (22 new tests, 179 total passing)
+
+## Bug Fix & Feature Additions (Mar 12, 2026)
+- [x] Fix: seed data 'db.select is not a function' — all getDb() calls now properly awaited with null guard
+- [x] Stage Management UI: Stages button in top bar opens dialog to add/rename/delete/color stages per pipeline
+- [x] Contact Linking: Link Contact button in opportunity detail panel searches leads by name/email and links them
+- [x] Close Date Reminders: Daily 8 AM ET cron job sends in-app notification when deals close within 3 days
+- [x] Backend: searchContacts and linkContact procedures added to pipelinesRouter
+- [x] Backend: processPipelineCloseDateReminders() added to cron/pipelineCloseDateReminders.ts and registered in cron-jobs.ts
