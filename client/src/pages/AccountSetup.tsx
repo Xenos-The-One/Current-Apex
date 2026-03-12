@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Facebook,
   Instagram,
@@ -28,13 +29,19 @@ import {
   Loader2,
   ShieldCheck,
   AlertCircle,
+  MapPin,
+  Building2,
+  Clock,
+  ExternalLink,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Section = "social" | "website" | "ads" | "preferences";
+type Section = "gmb" | "business" | "social" | "website" | "ads" | "preferences";
 
 const SECTIONS: { id: Section; label: string; icon: any; description: string }[] = [
+  { id: "gmb", label: "Google My Business", icon: Globe, description: "Connect your Google Business Profile" },
+  { id: "business", label: "Business Information", icon: Building2, description: "Legal name, EIN, address & timezone" },
   { id: "social", label: "Social Media Logins", icon: Facebook, description: "Connect your social accounts for automated posting" },
   { id: "website", label: "Website Access", icon: Globe, description: "Grant access for content publishing & SEO" },
   { id: "ads", label: "Ad Account Access", icon: BarChart2, description: "Connect ad platforms for campaign management" },
@@ -65,6 +72,355 @@ function PasswordInput({ id, value, onChange, placeholder }: { id: string; value
         {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
       </button>
     </div>
+  );
+}
+
+// ─── Section: Google My Business ─────────────────────────────────────────────
+function GoogleMyBusinessSection({ defaultValues, onSaved }: { defaultValues?: any; onSaved: () => void }) {
+  const [form, setForm] = useState({
+    gmbConnected: false,
+    gmbProfileName: "",
+    gmbProfileUrl: "",
+    gmbNotes: "",
+  });
+  useEffect(() => {
+    if (defaultValues) {
+      setForm({
+        gmbConnected: defaultValues.gmb_connected ?? false,
+        gmbProfileName: defaultValues.gmb_profile_name || "",
+        gmbProfileUrl: defaultValues.gmb_profile_url || "",
+        gmbNotes: defaultValues.gmb_notes || "",
+      });
+    }
+  }, [defaultValues]);
+  const mutation = trpc.accountSetup.saveGoogleMyBusiness.useMutation({
+    onSuccess: () => { toast.success("Google My Business info saved"); onSaved(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(form); }} className="space-y-6">
+      <div className="rounded-xl border border-border bg-card p-6 space-y-5">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-950/40 flex items-center justify-center">
+            <Globe className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Google Business Profile</h3>
+            <p className="text-xs text-muted-foreground">Link your Google Business Profile for local SEO and reviews</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-4">
+          <Checkbox
+            id="gmbConnected"
+            checked={form.gmbConnected}
+            onCheckedChange={(v) => set("gmbConnected", !!v)}
+          />
+          <div>
+            <Label htmlFor="gmbConnected" className="text-sm font-medium cursor-pointer">
+              Google Business Profile is connected
+            </Label>
+            <p className="text-xs text-muted-foreground mt-0.5">Check this once you have linked your profile below</p>
+          </div>
+          {form.gmbConnected && (
+            <Badge className="ml-auto bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400">
+              <CheckCircle2 className="w-3 h-3 mr-1" /> Connected
+            </Badge>
+          )}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field label="Business Profile Name" hint="Exact name as it appears on Google">
+            <Input
+              value={form.gmbProfileName}
+              onChange={(e) => set("gmbProfileName", e.target.value)}
+              placeholder="e.g. Premier Mortgage LLC"
+            />
+          </Field>
+          <Field label="Google Business Profile URL" hint="Link to your Google Maps listing">
+            <div className="relative">
+              <Input
+                value={form.gmbProfileUrl}
+                onChange={(e) => set("gmbProfileUrl", e.target.value)}
+                placeholder="https://g.page/your-business"
+                className="pr-9"
+              />
+              {form.gmbProfileUrl && (
+                <a
+                  href={form.gmbProfileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary"
+                  title="Open link"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
+            </div>
+          </Field>
+        </div>
+        <Field label="Notes" hint="Any additional info about your Google Business setup">
+          <Textarea
+            value={form.gmbNotes}
+            onChange={(e) => set("gmbNotes", e.target.value)}
+            placeholder="e.g. Need to claim profile, or profile is under a different email..."
+            rows={3}
+          />
+        </Field>
+        {!form.gmbConnected && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/20 p-3 flex gap-2.5">
+            <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+            <p className="text-xs text-amber-700 dark:text-amber-300">
+              {"Don't have a Google Business Profile yet? "}
+              <a
+                href="https://business.google.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline font-medium"
+              >
+                Create one at business.google.com
+              </a>
+              {" — it's free and essential for local visibility."}
+            </p>
+          </div>
+        )}
+      </div>
+      <SaveButton loading={mutation.isPending} />
+    </form>
+  );
+}
+
+// ─── Section: Business Information ───────────────────────────────────────────
+const BUSINESS_TYPES = [
+  { value: "sole_proprietorship", label: "Sole Proprietorship" },
+  { value: "llc", label: "LLC (Limited Liability Company)" },
+  { value: "corporation", label: "Corporation (C-Corp / S-Corp)" },
+  { value: "partnership", label: "Partnership" },
+  { value: "nonprofit", label: "Nonprofit Organization" },
+  { value: "other", label: "Other" },
+];
+const BUSINESS_REG_ID_TYPES = [
+  { value: "ein", label: "EIN (Employer Identification Number)" },
+  { value: "state_reg", label: "State Registration Number" },
+  { value: "business_number", label: "Business Number" },
+  { value: "corporation_number", label: "Corporation Number" },
+  { value: "tax_id", label: "Tax ID" },
+  { value: "other", label: "Other" },
+];
+const BUSINESS_CATEGORIES = [
+  "Mortgage / Lending", "Real Estate", "Insurance", "Financial Planning",
+  "Legal Services", "Accounting / Tax", "Healthcare", "Construction / Contracting",
+  "Retail", "Restaurants / Food", "Technology", "Marketing / Advertising", "Other",
+];
+const US_TIMEZONES = [
+  { value: "America/New_York", label: "Eastern Time (ET) — New York, Miami" },
+  { value: "America/Chicago", label: "Central Time (CT) — Chicago, Dallas" },
+  { value: "America/Denver", label: "Mountain Time (MT) — Denver, Phoenix" },
+  { value: "America/Los_Angeles", label: "Pacific Time (PT) — Los Angeles, Seattle" },
+  { value: "America/Anchorage", label: "Alaska Time (AKT)" },
+  { value: "Pacific/Honolulu", label: "Hawaii Time (HT)" },
+  { value: "America/Puerto_Rico", label: "Atlantic Time (AST) — Puerto Rico" },
+  { value: "America/Toronto", label: "Eastern Time — Toronto (Canada)" },
+  { value: "America/Vancouver", label: "Pacific Time — Vancouver (Canada)" },
+  { value: "Europe/London", label: "GMT / BST — London" },
+  { value: "Europe/Paris", label: "CET — Paris, Berlin" },
+  { value: "Asia/Dubai", label: "GST — Dubai" },
+  { value: "Asia/Kolkata", label: "IST — India" },
+  { value: "Australia/Sydney", label: "AEST — Sydney" },
+];
+
+function BusinessInfoSection({ defaultValues, onSaved }: { defaultValues?: any; onSaved: () => void }) {
+  const [form, setForm] = useState({
+    bizLegalName: "", bizDbaName: "", bizPhone: "", bizEmail: "",
+    bizWebsite: "", bizCategory: "", bizDescription: "",
+    ein: "", businessType: "", businessRegIdType: "",
+    timezone: "", addressLine1: "", addressLine2: "",
+    addressCity: "", addressState: "", addressPostalCode: "", addressCountry: "United States",
+  });
+  useEffect(() => {
+    if (defaultValues) {
+      setForm({
+        bizLegalName: defaultValues.biz_legal_name || "",
+        bizDbaName: defaultValues.biz_dba_name || "",
+        bizPhone: defaultValues.biz_phone || "",
+        bizEmail: defaultValues.biz_email || "",
+        bizWebsite: defaultValues.biz_website || "",
+        bizCategory: defaultValues.biz_category || "",
+        bizDescription: defaultValues.biz_description || "",
+        ein: defaultValues.ein || "",
+        businessType: defaultValues.business_type || "",
+        businessRegIdType: defaultValues.business_reg_id_type || "",
+        timezone: defaultValues.timezone || "",
+        addressLine1: defaultValues.address_line1 || "",
+        addressLine2: defaultValues.address_line2 || "",
+        addressCity: defaultValues.address_city || "",
+        addressState: defaultValues.address_state || "",
+        addressPostalCode: defaultValues.address_postal_code || "",
+        addressCountry: defaultValues.address_country || "United States",
+      });
+    }
+  }, [defaultValues]);
+  const mutation = trpc.accountSetup.saveBusinessInfo.useMutation({
+    onSuccess: () => { toast.success("Business information saved"); onSaved(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
+  const formatEin = (v: string) => {
+    const digits = v.replace(/\D/g, "").slice(0, 9);
+    if (digits.length > 2) return digits.slice(0, 2) + "-" + digits.slice(2);
+    return digits;
+  };
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(form); }} className="space-y-6">
+      {/* Business Information */}
+      <div className="rounded-xl border border-border bg-card p-6 space-y-5">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-9 h-9 rounded-lg bg-violet-100 dark:bg-violet-950/40 flex items-center justify-center">
+            <Building2 className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Business Information</h3>
+            <p className="text-xs text-muted-foreground">Legal details, contact info, and a brief description</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field label="Legal Business Name" hint="Exact name registered with the state">
+            <Input value={form.bizLegalName} onChange={(e) => set("bizLegalName", e.target.value)} placeholder="Premier Mortgage LLC" />
+          </Field>
+          <Field label="DBA / Operating Name" hint="Doing Business As — if different from legal name">
+            <Input value={form.bizDbaName} onChange={(e) => set("bizDbaName", e.target.value)} placeholder="Premier Mortgage" />
+          </Field>
+          <Field label="Business Phone">
+            <Input type="tel" value={form.bizPhone} onChange={(e) => set("bizPhone", e.target.value)} placeholder="+1 (555) 000-0000" />
+          </Field>
+          <Field label="Business Email">
+            <Input type="email" value={form.bizEmail} onChange={(e) => set("bizEmail", e.target.value)} placeholder="info@yourbusiness.com" />
+          </Field>
+          <Field label="Website">
+            <Input value={form.bizWebsite} onChange={(e) => set("bizWebsite", e.target.value)} placeholder="https://yourbusiness.com" />
+          </Field>
+          <Field label="Business Category / Industry">
+            <Select value={form.bizCategory} onValueChange={(v) => set("bizCategory", v)}>
+              <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+              <SelectContent>
+                {BUSINESS_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+        </div>
+        <Field label="Short Business Description" hint="A 1-2 sentence description of what your business does">
+          <Textarea value={form.bizDescription} onChange={(e) => set("bizDescription", e.target.value)} placeholder="We help first-time homebuyers navigate the mortgage process with personalized guidance..." rows={3} />
+        </Field>
+      </div>
+
+      {/* EIN & Registration */}
+      <div className="rounded-xl border border-border bg-card p-6 space-y-5">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center">
+            <ShieldCheck className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">EIN &amp; Registration</h3>
+            <p className="text-xs text-muted-foreground">Tax identification and business registration details</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Field label="EIN" hint="Employer Identification Number (XX-XXXXXXX)">
+            <Input
+              value={form.ein}
+              onChange={(e) => set("ein", formatEin(e.target.value))}
+              placeholder="12-3456789"
+              maxLength={10}
+            />
+          </Field>
+          <Field label="Business Type">
+            <Select value={form.businessType} onValueChange={(v) => set("businessType", v)}>
+              <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+              <SelectContent>
+                {BUSINESS_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Registration ID Type">
+            <Select value={form.businessRegIdType} onValueChange={(v) => set("businessRegIdType", v)}>
+              <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+              <SelectContent>
+                {BUSINESS_REG_ID_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+        </div>
+        <div className="rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-700 dark:bg-blue-950/20 p-3 flex gap-2.5">
+          <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+          <p className="text-xs text-blue-700 dark:text-blue-300">
+            Your EIN is stored securely and used only for business verification and compliance purposes.
+            It is never shared with third parties without your consent.
+          </p>
+        </div>
+      </div>
+
+      {/* Timezone */}
+      <div className="rounded-xl border border-border bg-card p-6 space-y-5">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-9 h-9 rounded-lg bg-teal-100 dark:bg-teal-950/40 flex items-center justify-center">
+            <Clock className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Timezone</h3>
+            <p className="text-xs text-muted-foreground">Used for scheduling calls, emails, and automated follow-ups</p>
+          </div>
+        </div>
+        <Field label="Business Timezone">
+          <Select value={form.timezone} onValueChange={(v) => set("timezone", v)}>
+            <SelectTrigger><SelectValue placeholder="Select your timezone" /></SelectTrigger>
+            <SelectContent>
+              {US_TIMEZONES.map(tz => <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </Field>
+      </div>
+
+      {/* Address */}
+      <div className="rounded-xl border border-border bg-card p-6 space-y-5">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-9 h-9 rounded-lg bg-rose-100 dark:bg-rose-950/40 flex items-center justify-center">
+            <MapPin className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Business Address</h3>
+            <p className="text-xs text-muted-foreground">Used for local SEO, Google Business Profile, and correspondence</p>
+          </div>
+        </div>
+        <div className="space-y-4">
+          <Field label="Street Address">
+            <Input value={form.addressLine1} onChange={(e) => set("addressLine1", e.target.value)} placeholder="123 Main Street" />
+          </Field>
+          <Field label="Address Line 2" hint="Suite, unit, floor, etc.">
+            <Input value={form.addressLine2} onChange={(e) => set("addressLine2", e.target.value)} placeholder="Suite 200" />
+          </Field>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="col-span-2 md:col-span-1">
+              <Field label="City">
+                <Input value={form.addressCity} onChange={(e) => set("addressCity", e.target.value)} placeholder="Atlanta" />
+              </Field>
+            </div>
+            <div>
+              <Field label="State / Province">
+                <Input value={form.addressState} onChange={(e) => set("addressState", e.target.value)} placeholder="GA" />
+              </Field>
+            </div>
+            <div>
+              <Field label="ZIP / Postal Code">
+                <Input value={form.addressPostalCode} onChange={(e) => set("addressPostalCode", e.target.value)} placeholder="30301" />
+              </Field>
+            </div>
+          </div>
+          <Field label="Country">
+            <Input value={form.addressCountry} onChange={(e) => set("addressCountry", e.target.value)} placeholder="United States" />
+          </Field>
+        </div>
+      </div>
+      <SaveButton loading={mutation.isPending} />
+    </form>
   );
 }
 
@@ -693,7 +1049,7 @@ function SaveButton({ loading }: { loading: boolean }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AccountSetup() {
-  const [activeSection, setActiveSection] = useState<Section>("social");
+  const [activeSection, setActiveSection] = useState<Section>("gmb");
   const [completedSections, setCompletedSections] = useState<Set<Section>>(new Set());
 
   const { data: setupData, isLoading } = trpc.accountSetup.getSetup.useQuery();
@@ -706,6 +1062,8 @@ export default function AccountSetup() {
   useEffect(() => {
     if (!setupData) return;
     const completed = new Set<Section>();
+    if (setupData.gmb_profile_name || setupData.gmb_connected) completed.add("gmb");
+    if (setupData.biz_legal_name || setupData.ein || setupData.address_line1) completed.add("business");
     if (setupData.fb_email || setupData.ig_username || setupData.linkedin_email || setupData.twitter_username) completed.add("social");
     if (setupData.website_url || setupData.website_admin_email) completed.add("website");
     if (setupData.meta_ad_account_id || setupData.google_ads_email) completed.add("ads");
@@ -770,6 +1128,18 @@ export default function AccountSetup() {
           </div>
         ) : (
           <div>
+            {activeSection === "gmb" && (
+              <GoogleMyBusinessSection
+                defaultValues={setupData}
+                onSaved={() => markSectionComplete("gmb")}
+              />
+            )}
+            {activeSection === "business" && (
+              <BusinessInfoSection
+                defaultValues={setupData}
+                onSaved={() => markSectionComplete("business")}
+              />
+            )}
             {activeSection === "social" && (
               <SocialMediaSection
                 defaultValues={setupData}

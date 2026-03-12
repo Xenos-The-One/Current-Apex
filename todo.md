@@ -637,3 +637,16 @@
 ## Round 4 Changes (Mar 12, 2026 - session 2)
 - [x] Show all 3 suggested follow-up items in the panel (increase from slice(0,3) to show all 3 visible)
 - [x] Remove Partner Portal from the Contacts sidebar section in DashboardLayout
+
+## Round 5 - Account Setup Expansion (Mar 12, 2026)
+- [x] Add Google My Business section to Account Setup
+- [x] Add Business Information section (legal name, DBA, phone, email, website, category, description)
+- [x] Add EIN field with auto-formatting (XX-XXXXXXX)
+- [x] Add Business Type dropdown (Sole Proprietorship, LLC, Corporation, etc.)
+- [x] Add Business Registration ID Type dropdown
+- [x] Add Timezone selector (US + international timezones)
+- [x] Add full Address section (line1, line2, city, state, postal, country)
+- [x] Update DB schema with 21 new columns and run migration
+- [x] Add saveGoogleMyBusiness and saveBusinessInfo tRPC procedures
+- [x] Update SECTIONS array to 6 steps (gmb, business, social, website, ads, preferences)
+- [x] Progress grid updated to 6-column layout

@@ -117,6 +117,33 @@ const adAccountsSchema = z.object({
   tiktokAdsPassword: z.string().max(500).optional(),
 });
 
+const googleMyBusinessSchema = z.object({
+  gmbConnected: z.boolean().optional(),
+  gmbProfileName: z.string().max(255).optional(),
+  gmbProfileUrl: z.string().url().max(500).optional().or(z.literal('')),
+  gmbNotes: z.string().max(2000).optional(),
+});
+
+const businessInfoSchema = z.object({
+  bizLegalName: z.string().max(255).optional(),
+  bizDbaName: z.string().max(255).optional(),
+  bizPhone: z.string().max(30).optional(),
+  bizEmail: z.string().email().max(320).optional().or(z.literal('')),
+  bizWebsite: z.string().url().max(500).optional().or(z.literal('')),
+  bizCategory: z.string().max(100).optional(),
+  bizDescription: z.string().max(2000).optional(),
+  ein: z.string().max(20).optional(),
+  businessType: z.string().max(50).optional(),
+  businessRegIdType: z.string().max(50).optional(),
+  timezone: z.string().max(100).optional(),
+  addressLine1: z.string().max(255).optional(),
+  addressLine2: z.string().max(255).optional(),
+  addressCity: z.string().max(100).optional(),
+  addressState: z.string().max(100).optional(),
+  addressPostalCode: z.string().max(20).optional(),
+  addressCountry: z.string().max(100).optional(),
+});
+
 const websitePreferencesSchema = z.object({
   wantsNewWebsite: z.boolean().optional(),
   websiteGoal: z.string().max(50).optional(),
@@ -248,6 +275,49 @@ export const accountSetupRouter = router({
       };
 
       await upsertSetup(clientId, dbData);
+      return { success: true };
+    }),
+
+  // Save Google My Business section
+  saveGoogleMyBusiness: protectedProcedure
+    .input(googleMyBusinessSchema)
+    .mutation(async ({ ctx, input }) => {
+      const clientId = await getClientIdForUser(ctx.user.id);
+      await upsertSetup(clientId, {
+        gmb_connected: input.gmbConnected ?? false,
+        gmb_profile_name: input.gmbProfileName || null,
+        gmb_profile_url: input.gmbProfileUrl || null,
+        gmb_notes: input.gmbNotes || null,
+        last_updated_section: 'google_my_business',
+      });
+      return { success: true };
+    }),
+
+  // Save Business Information section (info + EIN + type + reg + timezone + address)
+  saveBusinessInfo: protectedProcedure
+    .input(businessInfoSchema)
+    .mutation(async ({ ctx, input }) => {
+      const clientId = await getClientIdForUser(ctx.user.id);
+      await upsertSetup(clientId, {
+        biz_legal_name: input.bizLegalName || null,
+        biz_dba_name: input.bizDbaName || null,
+        biz_phone: input.bizPhone || null,
+        biz_email: input.bizEmail || null,
+        biz_website: input.bizWebsite || null,
+        biz_category: input.bizCategory || null,
+        biz_description: input.bizDescription || null,
+        ein: input.ein || null,
+        business_type: input.businessType || null,
+        business_reg_id_type: input.businessRegIdType || null,
+        timezone: input.timezone || null,
+        address_line1: input.addressLine1 || null,
+        address_line2: input.addressLine2 || null,
+        address_city: input.addressCity || null,
+        address_state: input.addressState || null,
+        address_postal_code: input.addressPostalCode || null,
+        address_country: input.addressCountry || null,
+        last_updated_section: 'business_info',
+      });
       return { success: true };
     }),
 

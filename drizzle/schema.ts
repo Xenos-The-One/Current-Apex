@@ -1398,6 +1398,33 @@ export const clientAccountSetup = mysqlTable("client_account_setup", {
   websiteExamples: text("website_examples"),
   websiteAdditionalNotes: text("website_additional_notes"),
 
+  // Google My Business
+  gmbConnected: boolean("gmb_connected").default(false),
+  gmbProfileName: varchar("gmb_profile_name", { length: 255 }),
+  gmbProfileUrl: varchar("gmb_profile_url", { length: 500 }),
+  gmbNotes: text("gmb_notes"),
+  // Business Information
+  bizLegalName: varchar("biz_legal_name", { length: 255 }),
+  bizDbaName: varchar("biz_dba_name", { length: 255 }),
+  bizPhone: varchar("biz_phone", { length: 30 }),
+  bizEmail: varchar("biz_email", { length: 320 }),
+  bizWebsite: varchar("biz_website", { length: 500 }),
+  bizCategory: varchar("biz_category", { length: 100 }),
+  bizDescription: text("biz_description"),
+  // EIN & Registration
+  ein: varchar("ein", { length: 20 }),
+  businessType: varchar("business_type", { length: 50 }),
+  businessRegIdType: varchar("business_reg_id_type", { length: 50 }),
+  // Timezone
+  timezone: varchar("timezone", { length: 100 }),
+  // Address
+  addressLine1: varchar("address_line1", { length: 255 }),
+  addressLine2: varchar("address_line2", { length: 255 }),
+  addressCity: varchar("address_city", { length: 100 }),
+  addressState: varchar("address_state", { length: 100 }),
+  addressPostalCode: varchar("address_postal_code", { length: 20 }),
+  addressCountry: varchar("address_country", { length: 100 }),
+
   setupCompletedAt: timestamp("setup_completed_at"),
   lastUpdatedSection: varchar("last_updated_section", { length: 50 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
