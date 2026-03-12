@@ -6,6 +6,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
+import SuggestedFollowUpsPanel from "@/components/SuggestedFollowUpsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -187,9 +188,13 @@ function ContactDrawer({
   const handleSubmit = () => {
     if (!form.firstName.trim()) { toast.error("First name is required"); return; }
     if (isEdit && lead) {
-      updateMut.mutate({ leadId: lead.id, ...form, tags: form.tags });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { company, newTag, ...rest } = form;
+      updateMut.mutate({ leadId: lead.id, ...rest, businessName: company, tags: form.tags });
     } else {
-      createMut.mutate({ ...form, contactType: form.contactType as any });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { company, newTag, ...rest } = form;
+      createMut.mutate({ ...rest, businessName: company, contactType: form.contactType as any });
     }
   };
 
@@ -765,7 +770,9 @@ export default function ContactsPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col h-full min-h-0 bg-background">
+      <div className="flex h-full min-h-0 bg-background">
+        {/* ── Main contacts area ── */}
+        <div className="flex flex-col flex-1 min-w-0 min-h-0">
 
         {/* ── Header ── */}
         <div className="border-b bg-card px-6 pt-5 pb-0">
@@ -1224,10 +1231,14 @@ export default function ContactsPage() {
             <Button variant="outline" size="icon" className="w-8 h-8" disabled={page === totalPages} onClick={() => setPage(totalPages)}>
               <ChevronsRight className="w-4 h-4" />
             </Button>
-          </div>
+           </div>
+        </div>
+        </div>{/* end main contacts area */}
+        {/* ── Right Sidebar: Suggested Follow-Ups ── */}
+        <div className="hidden xl:flex flex-col w-72 border-l bg-card/50 overflow-y-auto p-4 gap-4">
+          <SuggestedFollowUpsPanel />
         </div>
       </div>
-
       {/* ── Modals / Drawers ── */}
       <ContactDrawer
         open={showAddDrawer}

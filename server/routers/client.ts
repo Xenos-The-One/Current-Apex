@@ -270,7 +270,8 @@ export const clientRouter = router({
         lastName: input.lastName,
         email: input.email,
         phone: input.phone,
-        source: input.source,
+        company: input.businessName,
+        source: input.source || "manual",
         notes: input.notes,
         contactType: input.contactType,
         loanAmount: input.loanAmount ? String(input.loanAmount) : undefined,
@@ -1032,6 +1033,7 @@ export const clientRouter = router({
       email: z.string().email().optional().or(z.literal('')),
       phone: z.string().optional(),
       company: z.string().optional(),
+      businessName: z.string().optional(), // alias for company
       source: z.string().optional(),
       notes: z.string().optional(),
       tags: z.array(z.string()).optional(),
@@ -1045,8 +1047,10 @@ export const clientRouter = router({
       if (!lead || (!isAdminUser(ctx.user.role) && lead.clientId !== client.id)) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Lead not found" });
       }
-      const { leadId, tags, ...rest } = input;
+      const { leadId, tags, businessName, ...rest } = input;
       const updateData: any = { ...rest };
+      // businessName is an alias for company
+      if (businessName !== undefined) updateData.company = businessName;
       if (tags !== undefined) updateData.tags = JSON.stringify(tags);
       if (Object.keys(updateData).length > 0) {
         await updateLead(leadId, updateData);

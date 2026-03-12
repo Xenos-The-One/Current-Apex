@@ -117,6 +117,7 @@ export const leads = mysqlTable("leads", {
   lastName: varchar("last_name", { length: 255 }).notNull(),
   email: varchar("email", { length: 320 }),
   phone: varchar("phone", { length: 50 }),
+  company: varchar("company", { length: 255 }), // Business name / company
   source: varchar("source", { length: 255 }), // e.g., "facebook", "google_ads", "referral"
   status: mysqlEnum("status", ["new", "contacted", "qualified", "appointment_set", "appointment_completed", "closed_won", "closed_lost"]).default("new").notNull(),
   vapiAssistantId: varchar("vapi_assistant_id", { length: 255 }), // Different assistant per lead source

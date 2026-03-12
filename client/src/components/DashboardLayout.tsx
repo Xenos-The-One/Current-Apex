@@ -321,7 +321,7 @@ function PipelineNavItem({
     <SidebarMenuItem>
       <SidebarMenuButton
         isActive={isActive}
-        tooltip="Pipeline"
+        tooltip="Contacts"
         className={`h-7 transition-all font-normal text-[13px] ${
           isClient
             ? isActive
@@ -342,7 +342,7 @@ function PipelineNavItem({
               : ""
           }`}
         />
-        <span className="flex-1">Pipeline</span>
+        <span className="flex-1">Contacts</span>
       </SidebarMenuButton>
     </SidebarMenuItem>
   );

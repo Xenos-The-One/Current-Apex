@@ -599,3 +599,14 @@
 - [x] Fix "Client profile not found" error blocking contact creation for client-side users (limited access mode now only blocks read_only, not limited)
 - [x] Add businessName and tags fields to createLead input schema
 - [x] Rename "Pipeline" to "Contacts" in CRMLayout sidebar, DashboardLayout client/LOA nav, and breadcrumb labels
+- [ ] Fix SQL insert error in createLead - column count mismatch (too many columns being inserted)
+- [ ] Fix remaining "Pipeline" label in client sidebar (still showing under CONTACTS section)
+- [ ] Build contact detail side panel with activity timeline, notes, and suggested follow-ups
+
+## Round 30: Bug Fixes & Contacts Improvements
+- [x] Fix createLead SQL insert error - company column was in DB but not in Drizzle schema; added company field to leads schema
+- [x] Fix createLead form - ContactsPage was sending 'company' but backend expected 'businessName'; fixed mapping in handleSubmit
+- [x] Fix updateLead to accept businessName alias for company field
+- [x] Rename "Pipeline" label to "Contacts" in DashboardLayout sidebar nav item (tooltip + span text)
+- [x] Add SuggestedFollowUpsPanel as right sidebar on ContactsPage (visible on xl screens)
+- [x] Strip newTag from form before sending to createLead/updateLead mutations
