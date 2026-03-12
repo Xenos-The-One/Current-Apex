@@ -94,6 +94,7 @@ import {
   CheckCircle2,
   XCircle,
   BarChart3,
+  FileDown,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 
@@ -807,6 +808,175 @@ function PipelineStats({ opps, stages }: { opps: Opportunity[]; stages: Stage[] 
   );
 }
 
+// ─── CSV Export Helper ────────────────────────────────────────────────────
+function exportToCSV(opps: Opportunity[], stages: Stage[], pipelineName: string) {
+  const headers = ["Name", "Contact", "Company", "Stage", "Value", "Status", "Priority", "Source", "Owner", "Expected Close", "Created"];
+  const rows = opps.map(o => [
+    o.name,
+    o.contactName ?? "",
+    o.companyName ?? "",
+    stages.find(s => s.id === o.stageId)?.name ?? "",
+    o.value ?? "",
+    o.status,
+    o.priority ?? "",
+    o.source ?? "",
+    o.ownerName ?? "",
+    o.expectedCloseDate ? new Date(o.expectedCloseDate).toLocaleDateString() : "",
+    new Date(o.createdAt).toLocaleDateString(),
+  ]);
+  const csv = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${pipelineName.replace(/\s+/g, "-").toLowerCase()}-opportunities-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast.success(`Exported ${opps.length} opportunities to CSV`);
+}
+
+// ─── Create Pipeline Inline Form ───────────────────────────────────────────────
+function CreatePipelineInline({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: () => void }) {
+  const [name, setName] = useState("");
+  const createMut = trpc.pipelines.createPipeline.useMutation({
+    onSuccess: () => { toast.success("Pipeline created!"); onSuccess(); },
+    onError: e => toast.error(e.message),
+  });
+  return (
+    <div className="flex items-center gap-2 mt-2 p-3 rounded-xl border border-border bg-muted/30 w-full max-w-sm">
+      <Input
+        value={name}
+        onChange={e => setName(e.target.value)}
+        placeholder="Pipeline name (e.g. DSCR Loans)"
+        className="h-8 text-sm flex-1"
+        autoFocus
+        onKeyDown={e => { if (e.key === "Enter" && name.trim()) createMut.mutate({ name: name.trim(), isDefault: true }); }}
+      />
+      <Button size="sm" className="h-8" onClick={() => { if (name.trim()) createMut.mutate({ name: name.trim(), isDefault: true }); }} disabled={createMut.isPending || !name.trim()}>
+        Create
+      </Button>
+      <Button size="sm" variant="ghost" className="h-8" onClick={onCancel}>Cancel</Button>
+    </div>
+  );
+}
+
+// ─── Pipeline Analytics Component ────────────────────────────────────────────────────
+function PipelineAnalytics({ pipelineId, pipelineName }: { pipelineId: number; pipelineName: string }) {
+  const { data, isLoading } = trpc.pipelines.getAnalytics.useQuery({ pipelineId });
+
+  if (isLoading) return <div className="flex items-center justify-center py-20 text-muted-foreground text-sm">Loading analytics...</div>;
+  if (!data) return null;
+
+  const { summary, stageStats, monthlyTrends } = data;
+  const maxCount = Math.max(...stageStats.map(s => s.count), 1);
+  const maxValue = Math.max(...stageStats.map(s => s.totalValue), 1);
+
+  return (
+    <div className="flex-1 overflow-auto space-y-6 pb-6">
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: "Total Deals", value: summary.total, icon: <Kanban className="w-4 h-4" />, color: "text-blue-500" },
+          { label: "Win Rate", value: `${summary.winRate}%`, icon: <Trophy className="w-4 h-4" />, color: "text-emerald-500" },
+          { label: "Won Value", value: formatCurrency(String(summary.wonValue)), icon: <CircleDollarSign className="w-4 h-4" />, color: "text-emerald-500" },
+          { label: "Pipeline Value", value: formatCurrency(String(summary.totalValue)), icon: <TrendingUp className="w-4 h-4" />, color: "text-primary" },
+        ].map(card => (
+          <div key={card.label} className="rounded-xl border border-border bg-card p-4">
+            <div className={`mb-2 ${card.color}`}>{card.icon}</div>
+            <p className="text-2xl font-bold">{card.value}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{card.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Stage funnel */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <h3 className="text-sm font-semibold mb-4">Stage Breakdown</h3>
+        <div className="space-y-3">
+          {stageStats.filter(s => s.count > 0).map(stage => (
+            <div key={stage.stageId} className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: stage.stageColor }} />
+                  <span className="font-medium">{stage.stageName}</span>
+                </div>
+                <div className="flex items-center gap-4 text-muted-foreground">
+                  <span>{stage.count} deals</span>
+                  <span>{formatCurrency(String(stage.totalValue))}</span>
+                  <span className="text-xs">{stage.avgDaysInStage}d avg</span>
+                </div>
+              </div>
+              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${Math.round((stage.count / maxCount) * 100)}%`, backgroundColor: stage.stageColor }}
+                />
+              </div>
+            </div>
+          ))}
+          {stageStats.every(s => s.count === 0) && (
+            <p className="text-sm text-muted-foreground text-center py-4">No opportunities in any stage yet.</p>
+          )}
+        </div>
+      </div>
+
+      {/* Monthly trends */}
+      {monthlyTrends.length > 0 && (
+        <div className="rounded-xl border border-border bg-card p-4">
+          <h3 className="text-sm font-semibold mb-4">Monthly Trends (Last 6 Months)</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-muted-foreground border-b border-border">
+                  <th className="text-left pb-2 font-semibold">Month</th>
+                  <th className="text-right pb-2 font-semibold text-emerald-500">Won</th>
+                  <th className="text-right pb-2 font-semibold text-red-400">Lost</th>
+                  <th className="text-right pb-2 font-semibold text-blue-500">Open</th>
+                  <th className="text-right pb-2 font-semibold">Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyTrends.map(row => (
+                  <tr key={row.month} className="border-b border-border/50 last:border-0">
+                    <td className="py-2 text-sm">{new Date(row.month + "-01").toLocaleDateString("en-US", { month: "short", year: "numeric" })}</td>
+                    <td className="py-2 text-right font-semibold text-emerald-500">{row.won}</td>
+                    <td className="py-2 text-right font-semibold text-red-400">{row.lost}</td>
+                    <td className="py-2 text-right font-semibold text-blue-500">{row.open}</td>
+                    <td className="py-2 text-right">{formatCurrency(String(row.value))}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Stage value distribution */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <h3 className="text-sm font-semibold mb-4">Value by Stage</h3>
+        <div className="space-y-2">
+          {stageStats.filter(s => s.totalValue > 0).map(stage => (
+            <div key={stage.stageId} className="flex items-center gap-3">
+              <span className="text-xs w-32 truncate text-muted-foreground">{stage.stageName}</span>
+              <div className="flex-1 h-5 rounded bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded transition-all flex items-center justify-end pr-2"
+                  style={{ width: `${Math.round((stage.totalValue / maxValue) * 100)}%`, backgroundColor: stage.stageColor + "cc" }}
+                >
+                  <span className="text-xs font-semibold text-white">{formatCurrency(String(stage.totalValue))}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+          {stageStats.every(s => s.totalValue === 0) && (
+            <p className="text-sm text-muted-foreground text-center py-4">No deal values recorded yet.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Stage Manager Dialog ────────────────────────────────────────────────────
 function StageManagerDialog({
   pipeline,
@@ -991,7 +1161,8 @@ function ContactLinker({ opportunityId, currentContactId, onLinked }: { opportun
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Pipeline() {
   const utils = trpc.useUtils();
-  const [view, setView] = useState<"kanban" | "list">("kanban");
+  const [view, setView] = useState<"kanban" | "list" | "analytics">("kanban");
+  const [showCreatePipeline, setShowCreatePipeline] = useState(false);
   const [selectedPipelineId, setSelectedPipelineId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "open" | "won" | "lost">("all");
@@ -1140,7 +1311,14 @@ export default function Pipeline() {
               <Sparkles className="w-4 h-4" />
               {seedMut.isPending ? "Creating..." : "Seed Sample Data"}
             </Button>
+            <Button variant="outline" className="gap-2" onClick={() => setShowCreatePipeline(true)}>
+              <Plus className="w-4 h-4" />
+              Create Pipeline
+            </Button>
           </div>
+          {showCreatePipeline && (
+            <CreatePipelineInline onSuccess={() => { setShowCreatePipeline(false); utils.pipelines.listPipelines.invalidate(); }} onCancel={() => setShowCreatePipeline(false)} />
+          )}
         </div>
       </DashboardLayout>
     );
@@ -1220,14 +1398,23 @@ export default function Pipeline() {
               <button
                 className={`px-2.5 py-1.5 text-xs transition-colors ${view === "kanban" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
                 onClick={() => setView("kanban")}
+                title="Kanban view"
               >
                 <Kanban className="w-3.5 h-3.5" />
               </button>
               <button
                 className={`px-2.5 py-1.5 text-xs transition-colors ${view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
                 onClick={() => setView("list")}
+                title="List view"
               >
                 <List className="w-3.5 h-3.5" />
+              </button>
+              <button
+                className={`px-2.5 py-1.5 text-xs transition-colors ${view === "analytics" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                onClick={() => setView("analytics")}
+                title="Analytics"
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
               </button>
             </div>
 
@@ -1279,6 +1466,11 @@ export default function Pipeline() {
           </DndContext>
         )}
 
+        {/* ── Analytics View ── */}
+        {view === "analytics" && activePipeline && (
+          <PipelineAnalytics pipelineId={activePipeline.id} pipelineName={activePipeline.name} />
+        )}
+
         {/* ── List View ── */}
         {view === "list" && (
           <div className="flex-1 overflow-auto rounded-xl border border-border">
@@ -1298,7 +1490,15 @@ export default function Pipeline() {
                   <th className="py-2.5 pr-3 text-left font-semibold text-xs text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Value</th>
                   <th className="py-2.5 pr-3 text-left font-semibold text-xs text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Status</th>
                   <th className="py-2.5 pr-3 text-left font-semibold text-xs text-muted-foreground uppercase tracking-wide hidden xl:table-cell">Owner</th>
-                  <th className="py-2.5 pr-4 text-right font-semibold text-xs text-muted-foreground uppercase tracking-wide">Created</th>
+                  <th className="py-2.5 pr-4 text-right font-semibold text-xs text-muted-foreground uppercase tracking-wide">
+                    <button
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => exportToCSV(rawOpps, stages, activePipeline?.name ?? "pipeline")}
+                      title="Export to CSV"
+                    >
+                      <FileDown className="w-3.5 h-3.5" /> Export
+                    </button>
+                  </th>
                 </tr>
               </thead>
               <tbody>

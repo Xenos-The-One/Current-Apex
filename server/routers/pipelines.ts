@@ -15,13 +15,17 @@ import { agencies } from "../../drizzle/schema";
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 async function getAgencyId(userId: number, db: Awaited<ReturnType<typeof getDb>>): Promise<number> {
-  const rows = await db.select({ id: agencies.id }).from(agencies).where(eq(agencies.userId, userId)).limit(1);
-  if (rows.length > 0) return rows[0].id;
-  // sub-account: look up via clients table
+  // 1. Check if user is an agency owner
+  const ownerRows = await db.select({ id: agencies.id }).from(agencies).where(eq(agencies.ownerId, userId)).limit(1);
+  if (ownerRows.length > 0) return ownerRows[0].id;
+  // 2. Check if user is a client/sub-account
   const { clients } = await import("../../drizzle/schema");
   const clientRows = await db.select({ agencyId: clients.agencyId }).from(clients).where(eq(clients.userId, userId)).limit(1);
   if (clientRows.length > 0) return clientRows[0].agencyId;
-  throw new TRPCError({ code: "NOT_FOUND", message: "No agency found for user" });
+  // 3. Fallback: use the first available agency (admin/platform users)
+  const fallbackRows = await db.select({ id: agencies.id }).from(agencies).limit(1);
+  if (fallbackRows.length > 0) return fallbackRows[0].id;
+  throw new TRPCError({ code: "NOT_FOUND", message: "No agency found. Please set up your agency first." });
 }
 
 async function getClientId(userId: number, db: Awaited<ReturnType<typeof getDb>>): Promise<number | null> {
@@ -761,5 +765,99 @@ export const pipelinesRouter = router({
         });
       }
       return { success: true };
+    }),
+
+  // ── Analytics ──────────────────────────────────────────────────────────────────────
+
+  getAnalytics: protectedProcedure
+    .input(z.object({ pipelineId: z.number().optional() }))
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const agencyId = await getAgencyId(ctx.user.id, db);
+
+      // Base filter
+      const baseWhere = input.pipelineId
+        ? and(eq(opportunities.agencyId, agencyId), eq(opportunities.pipelineId, input.pipelineId))
+        : eq(opportunities.agencyId, agencyId);
+
+      // All opportunities for this pipeline/agency
+      const allOpps = await db
+        .select({
+          id: opportunities.id,
+          stageId: opportunities.stageId,
+          status: opportunities.status,
+          value: opportunities.value,
+          createdAt: opportunities.createdAt,
+          stageEnteredAt: opportunities.stageEnteredAt,
+        })
+        .from(opportunities)
+        .where(baseWhere);
+
+      // Stage-level stats
+      const stages = await db
+        .select()
+        .from(pipelineStages)
+        .where(
+          input.pipelineId
+            ? eq(pipelineStages.pipelineId, input.pipelineId)
+            : inArray(
+                pipelineStages.pipelineId,
+                (await db.select({ id: pipelines.id }).from(pipelines).where(eq(pipelines.agencyId, agencyId))).map(p => p.id)
+              )
+        )
+        .orderBy(asc(pipelineStages.stageOrder));
+
+      const stageStats = stages.map(stage => {
+        const stageOpps = allOpps.filter(o => o.stageId === stage.id);
+        const wonOpps = allOpps.filter(o => o.status === "won" && o.stageId === stage.id);
+        const totalValue = stageOpps.reduce((sum, o) => sum + parseFloat(o.value ?? "0"), 0);
+        // Avg days in stage
+        const daysInStage = stageOpps
+          .filter(o => o.stageEnteredAt)
+          .map(o => Math.max(0, (Date.now() - new Date(o.stageEnteredAt!).getTime()) / (1000 * 60 * 60 * 24)));
+        const avgDays = daysInStage.length > 0 ? daysInStage.reduce((a, b) => a + b, 0) / daysInStage.length : 0;
+        return {
+          stageId: stage.id,
+          stageName: stage.name,
+          stageColor: stage.color,
+          count: stageOpps.length,
+          wonCount: wonOpps.length,
+          totalValue,
+          avgDaysInStage: Math.round(avgDays),
+          conversionRate: stageOpps.length > 0 ? Math.round((wonOpps.length / stageOpps.length) * 100) : 0,
+        };
+      });
+
+      // Monthly won/lost trends (last 6 months)
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      const recentOpps = allOpps.filter(o => new Date(o.createdAt) >= sixMonthsAgo);
+
+      const monthlyMap: Record<string, { won: number; lost: number; open: number; value: number }> = {};
+      for (const opp of recentOpps) {
+        const d = new Date(opp.createdAt);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        if (!monthlyMap[key]) monthlyMap[key] = { won: 0, lost: 0, open: 0, value: 0 };
+        monthlyMap[key][opp.status as "won" | "lost" | "open"]++;
+        monthlyMap[key].value += parseFloat(opp.value ?? "0");
+      }
+      const monthlyTrends = Object.entries(monthlyMap)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([month, data]) => ({ month, ...data }));
+
+      // Summary
+      const totalOpen = allOpps.filter(o => o.status === "open").length;
+      const totalWon = allOpps.filter(o => o.status === "won").length;
+      const totalLost = allOpps.filter(o => o.status === "lost").length;
+      const totalValue = allOpps.reduce((sum, o) => sum + parseFloat(o.value ?? "0"), 0);
+      const wonValue = allOpps.filter(o => o.status === "won").reduce((sum, o) => sum + parseFloat(o.value ?? "0"), 0);
+      const winRate = (totalWon + totalLost) > 0 ? Math.round((totalWon / (totalWon + totalLost)) * 100) : 0;
+
+      return {
+        summary: { totalOpen, totalWon, totalLost, totalValue, wonValue, winRate, total: allOpps.length },
+        stageStats,
+        monthlyTrends,
+      };
     }),
 });

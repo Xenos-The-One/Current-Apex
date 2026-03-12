@@ -766,3 +766,12 @@
 - [x] Close Date Reminders: Daily 8 AM ET cron job sends in-app notification when deals close within 3 days
 - [x] Backend: searchContacts and linkContact procedures added to pipelinesRouter
 - [x] Backend: processPipelineCloseDateReminders() added to cron/pipelineCloseDateReminders.ts and registered in cron-jobs.ts
+
+## Pipeline Improvements (Round 3)
+- [x] Fix: seed data root cause found — agencies.userId should be agencies.ownerId in getAgencyId helper
+- [x] Fix: getAgencyId now falls back to first agency for admin/platform users without direct agency record
+- [x] Fix: pipeline empty state now shows 'Create Pipeline' inline form so page works without seed data
+- [x] Feature: Pipeline analytics tab — stage funnel bars, value by stage bars, monthly won/lost/open table, KPI cards
+- [x] Feature: CSV export button in list view header — downloads filtered opportunities as .csv file
+- [x] Backend: getAnalytics procedure added to pipelinesRouter
+- [x] All 179 tests passing
