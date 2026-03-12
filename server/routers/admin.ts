@@ -333,4 +333,46 @@ export const adminRouter = router({
       await deleteLeadSourceMapping(input.id);
       return { success: true };
     }),
+
+  // ============= CLIENT SENDER EMAIL =============
+
+  updateClientSenderEmail: adminProcedure
+    .input(z.object({
+      clientId: z.number(),
+      senderEmail: z.string().email().optional().or(z.literal("")),
+      senderName: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const data: Record<string, any> = {};
+      if (input.senderEmail !== undefined) data.senderEmail = input.senderEmail || null;
+      if (input.senderName !== undefined) data.senderName = input.senderName || null;
+      // Reset verification whenever the email changes
+      if (input.senderEmail !== undefined) data.senderEmailVerified = false;
+      await updateClient(input.clientId, data);
+      return { success: true };
+    }),
+
+  markClientSenderVerified: adminProcedure
+    .input(z.object({
+      clientId: z.number(),
+      verified: z.boolean(),
+    }))
+    .mutation(async ({ input }) => {
+      await updateClient(input.clientId, { senderEmailVerified: input.verified });
+      return { success: true };
+    }),
+
+  getClientById: adminProcedure
+    .input(z.object({ clientId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const [row] = await db
+        .select()
+        .from(clientsTable)
+        .where(eq(clientsTable.id, input.clientId))
+        .limit(1);
+      if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Client not found" });
+      return row;
+    }),
 });

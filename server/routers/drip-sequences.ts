@@ -21,7 +21,7 @@ import {
   campaignEnrollments,
   campaignStepLogs,
 } from "../../drizzle/schema-campaigns";
-import { leads, agencies } from "../../drizzle/schema";
+import { leads, agencies, clients } from "../../drizzle/schema";
 import { eq, and, lte, desc, asc } from "drizzle-orm";
 import { sendEmail } from "../sendgrid";
 import { sendSMS } from "../twilio";
@@ -606,6 +606,25 @@ async function processEnrollmentStep(enrollment: any, db: any): Promise<void> {
     }
   }
 
+  // Resolve sender identity: client senderEmail → agency FROM_EMAIL env fallback
+  let resolvedFromEmail = process.env.FROM_EMAIL || "noreply@crmplatform.com";
+  let resolvedFromName: string | undefined;
+  if (lead.clientId) {
+    const [clientRow] = await db
+      .select({
+        senderEmail: clients.senderEmail,
+        senderName: clients.senderName,
+        name: clients.name,
+      })
+      .from(clients)
+      .where(eq(clients.id, lead.clientId))
+      .limit(1);
+    if (clientRow?.senderEmail) {
+      resolvedFromEmail = clientRow.senderEmail;
+      resolvedFromName = clientRow.senderName ?? clientRow.name ?? undefined;
+    }
+  }
+
   // Send the message
   let sendStatus = "sent";
   let externalId: string | null = null;
@@ -616,16 +635,18 @@ async function processEnrollmentStep(enrollment: any, db: any): Promise<void> {
 
   try {
     if (step.channel === "email" && lead.email) {
-      const fromEmail = process.env.FROM_EMAIL || "info@optimallendingsolutions.com";
+      const fromField = resolvedFromName
+        ? `${resolvedFromName} <${resolvedFromEmail}>`
+        : resolvedFromEmail;
       const result = await sendEmail({
         to: [lead.email],
-        from: fromEmail,
-        subject: subject || "Following up from Optimal Lending Solutions",
+        from: fromField,
+        subject: subject || "Following up",
         html: body.includes("<") ? body : `<p>${body.replace(/\n/g, "<br>")}</p>`,
         text: body,
       });
       externalId = result?.messageId ?? null;
-      console.log(`[DripSequences] Email sent to ${lead.email} (step ${stepIndex + 1})`);
+      console.log(`[DripSequences] Email sent to ${lead.email} from ${fromField} (step ${stepIndex + 1})`);
     } else if (step.channel === "sms" && lead.phone) {
       const result = await sendSMS({ to: lead.phone, body });
       externalId = result?.messageId ?? null;

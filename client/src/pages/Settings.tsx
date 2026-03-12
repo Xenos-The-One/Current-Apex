@@ -14,10 +14,12 @@ import {
   Key,
   KeyRound,
   Lock,
+  Mail,
   Phone,
   RefreshCw,
   Save,
   Settings2,
+  ShieldAlert,
   ShieldCheck,
   User,
   Webhook,
@@ -35,6 +37,59 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+
+// ─── Sender Email Status Card ───────────────────────────────────────────────
+function SenderEmailStatusCard() {
+  const { data: client } = trpc.onboarding.getMyClientProfile.useQuery();
+
+  if (!client) return null;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-2">
+          <Mail className="w-4 h-4 text-primary" />
+          <CardTitle className="text-sm">Campaign Sender Email</CardTitle>
+        </div>
+        <CardDescription className="text-xs">
+          This is the email address your leads will see when they receive campaign emails from you.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {(client as any).senderEmail ? (
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              {(client as any).senderEmailVerified ? (
+                <ShieldCheck className="w-4 h-4 text-green-500" />
+              ) : (
+                <ShieldAlert className="w-4 h-4 text-yellow-500" />
+              )}
+              <div>
+                <p className="text-sm font-medium">{(client as any).senderName || "(no name set)"}</p>
+                <p className="text-xs text-muted-foreground">{(client as any).senderEmail}</p>
+              </div>
+            </div>
+            <Badge
+              variant="outline"
+              className={`ml-auto text-xs ${
+                (client as any).senderEmailVerified
+                  ? "border-green-500 text-green-600"
+                  : "border-yellow-500 text-yellow-600"
+              }`}
+            >
+              {(client as any).senderEmailVerified ? "Verified" : "Pending Verification"}
+            </Badge>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <ShieldAlert className="w-4 h-4 text-yellow-500" />
+            <span>No sender email configured — campaigns will use the agency default. Contact your account manager to set this up.</span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 // ─── Login History Card ─────────────────────────────────────────────────────
 function LoginHistoryCard() {
@@ -1142,6 +1197,8 @@ export default function Settings() {
               </CardContent>
             </Card>
 
+            {/* Sender Email Status */}
+            <SenderEmailStatusCard />
             {/* Change Password — only shown when user has password credentials */}
             <ChangePasswordCard />
             <LoginHistoryCard />

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
-import { CheckCircle2, Users, Phone, Mail, ArrowLeft, Globe, TrendingUp, Sparkles, Loader2, ExternalLink, DollarSign, Key, Search, AlertTriangle, CheckCircle, XCircle, BarChart2, FileText, Zap, Trash2, Wrench, BookMarked, Download, Play, GitCompare, Bell, BellOff, Layers, CalendarDays, Send, Image, ClipboardCopy, BookOpen, Target, Link2, Lightbulb, ChevronRight, History } from "lucide-react";
+import { CheckCircle2, Users, Phone, Mail, ArrowLeft, Globe, TrendingUp, Sparkles, Loader2, ExternalLink, DollarSign, Key, Search, AlertTriangle, CheckCircle, XCircle, BarChart2, FileText, Zap, Trash2, Wrench, BookMarked, Download, Play, GitCompare, Bell, BellOff, Layers, CalendarDays, Send, Image, ClipboardCopy, BookOpen, Target, Link2, Lightbulb, ChevronRight, History, Pencil, ShieldCheck, ShieldAlert } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
@@ -18,6 +18,129 @@ import { Link } from "wouter";
 import { toast } from "sonner";
 import { SetupProgressTracker } from "@/components/SetupProgressTracker";
 import { LeadSourceMappings } from "@/components/LeadSourceMappings";
+
+// Per-client sender email row component
+function ClientSenderEmailRow({ client, agencyId }: {
+  client: { id: number; name: string; email: string | null; phone: string | null; subscriptionTier: string; accessMode: string; senderEmail?: string | null; senderName?: string | null; senderEmailVerified?: boolean | null };
+  agencyId: number;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [senderEmail, setSenderEmail] = useState(client.senderEmail || "");
+  const [senderName, setSenderName] = useState(client.senderName || "");
+  const utils = trpc.useUtils();
+
+  const updateSender = trpc.admin.updateClientSenderEmail.useMutation({
+    onSuccess: () => {
+      toast.success("Sender email saved");
+      setEditing(false);
+      utils.admin.listClients.invalidate({ agencyId });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const markVerified = trpc.admin.markClientSenderVerified.useMutation({
+    onSuccess: () => {
+      toast.success("Verification status updated");
+      utils.admin.listClients.invalidate({ agencyId });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  return (
+    <div className="p-3 border rounded-lg space-y-2">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="font-medium">{client.name}</p>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground mt-0.5">
+            <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{client.email}</span>
+            {client.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{client.phone}</span>}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge>{client.subscriptionTier}</Badge>
+          <Badge variant="outline">{client.accessMode}</Badge>
+        </div>
+      </div>
+
+      {/* Sender Email Section */}
+      {editing ? (
+        <div className="bg-muted/40 rounded-md p-3 space-y-2">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Campaign Sender</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Sender Name</Label>
+              <Input
+                value={senderName}
+                onChange={(e) => setSenderName(e.target.value)}
+                placeholder="Kyle Johnson"
+                className="h-8 text-sm mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Sender Email</Label>
+              <Input
+                type="email"
+                value={senderEmail}
+                onChange={(e) => setSenderEmail(e.target.value)}
+                placeholder="kyle@domain.com"
+                className="h-8 text-sm mt-1"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => updateSender.mutate({ clientId: client.id, senderEmail, senderName })}
+              disabled={updateSender.isPending}
+            >
+              Save
+            </Button>
+            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditing(false)}>Cancel</Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-3 text-sm">
+          <div className="flex items-center gap-1.5">
+            {client.senderEmailVerified ? (
+              <ShieldCheck className="w-3.5 h-3.5 text-green-500" />
+            ) : (
+              <ShieldAlert className="w-3.5 h-3.5 text-yellow-500" />
+            )}
+            <span className="text-muted-foreground">
+              {client.senderEmail
+                ? <><span className="font-medium text-foreground">{client.senderName || "(no name)"}</span> &lt;{client.senderEmail}&gt;</>  
+                : <span className="italic">No sender email set — using agency default</span>}
+            </span>
+          </div>
+          <div className="flex gap-1 ml-auto">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs gap-1"
+              onClick={() => setEditing(true)}
+            >
+              <Pencil className="w-3 h-3" />
+              {client.senderEmail ? "Edit" : "Set"}
+            </Button>
+            {client.senderEmail && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`h-6 px-2 text-xs gap-1 ${client.senderEmailVerified ? "text-yellow-600" : "text-green-600"}`}
+                onClick={() => markVerified.mutate({ clientId: client.id, verified: !client.senderEmailVerified })}
+                disabled={markVerified.isPending}
+              >
+                {client.senderEmailVerified ? <ShieldAlert className="w-3 h-3" /> : <ShieldCheck className="w-3 h-3" />}
+                {client.senderEmailVerified ? "Unverify" : "Mark Verified"}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Avatar status select component
 function AvatarStatusSelect({ agencyId, currentStatus }: { agencyId: number; currentStatus: string }) {
@@ -499,30 +622,11 @@ export default function AgencyDetail() {
             {clients && clients.length > 0 ? (
               <div className="space-y-3">
                 {clients.map((client) => (
-                  <div
+                  <ClientSenderEmailRow
                     key={client.id}
-                    className="flex items-center justify-between p-3 border rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium">{client.name}</p>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                        <span className="flex items-center gap-1">
-                          <Mail className="w-3 h-3" />
-                          {client.email}
-                        </span>
-                        {client.phone && (
-                          <span className="flex items-center gap-1">
-                            <Phone className="w-3 h-3" />
-                            {client.phone}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge>{client.subscriptionTier}</Badge>
-                      <Badge variant="outline">{client.accessMode}</Badge>
-                    </div>
-                  </div>
+                    client={client as any}
+                    agencyId={agencyId}
+                  />
                 ))}
               </div>
             ) : (

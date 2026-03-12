@@ -86,6 +86,10 @@ export const clients = mysqlTable("clients", {
   bookingActive: boolean("booking_active").default(true),
   // Vapi call settings — set to false for clients who handle calls manually (e.g. Tim Haskins)
   vapiCallsEnabled: boolean("vapi_calls_enabled").default(true).notNull(),
+  // Email sender identity — used for all drip campaign and follow-up emails sent on behalf of this client
+  senderEmail: varchar("sender_email", { length: 320 }),       // e.g. kyle@optimallendingsolutions.com
+  senderName: varchar("sender_name", { length: 255 }),         // e.g. Kyle Dombecki | Optimal Lending
+  senderEmailVerified: boolean("sender_email_verified").default(false).notNull(), // true once SendGrid verifies the sender
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

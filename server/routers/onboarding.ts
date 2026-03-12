@@ -751,4 +751,18 @@ export const onboardingRouter = router({
 
       return entries;
     }),
+
+  /**
+   * Returns the current user's CRM client profile including sender email fields.
+   */
+  getMyClientProfile: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+    const [row] = await db
+      .select()
+      .from(clients)
+      .where(eq(clients.userId, ctx.user.id))
+      .limit(1);
+    return row ?? null;
+  }),
 });

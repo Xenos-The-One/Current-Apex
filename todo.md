@@ -720,3 +720,13 @@
 - [x] Import autoEnrollLead in facebook.ts webhook and call it after lead creation
 - [x] Import autoEnrollLead in leads.ts router and call it after lead creation (capture + create procedures)
 - [x] Wire lead type detection from loanType/leadTag into autoEnrollLead call (dscr / fix_flip / all)
+
+## Feature: Per-Client Sender Email (COMPLETED)
+- [x] Add senderEmail, senderName, senderEmailVerified columns to clients table in schema.ts
+- [x] Run DB migration via webdev_execute_sql
+- [x] Add updateClientSenderEmail and markClientSenderVerified procedures to admin.ts
+- [x] Add getMyClientProfile procedure to onboarding router
+- [x] Update drip sequence engine (processEnrollmentStep) to look up client sender email with agency fallback
+- [x] Replace old clients.map in AgencyDetail.tsx with ClientSenderEmailRow (inline edit + verify toggle)
+- [x] Add SenderEmailStatusCard to Settings.tsx My Account tab (read-only view for clients)
+- [x] All 157 tests pass
