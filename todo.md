@@ -785,3 +785,11 @@
 - [x] Pipeline goal setting: monthly_goal column added to pipelines table via SQL, setGoal/getGoal procedures added, analytics progress bar UI with color-coded progress (amber/blue/green)
 - [x] Opportunity quick-send: "Send SMS" + "Send Email" buttons in detail panel with inline compose UI, sends via Twilio/SendGrid, logs activity to timeline
 - [x] All 179 tests still passing
+
+## Pipeline Features Round 5 (COMPLETED)
+- [x] Round-robin deal assignment: roundRobinIndex column added to pipelines, assignNextOwner procedure, auto-assigns on opportunity creation
+- [x] Opportunity age alerts: amber border + clock icon (14+ days), red border (30+ days) on Kanban cards for open deals
+- [x] Won/Lost reason tracking: reason prompt dialog on Won/Lost click, closedReason/closedReasonNotes columns, updateStatus procedure
+- [x] Loss Reasons Breakdown chart in analytics tab with horizontal bars and % breakdown
+- [x] Won/Lost buttons added in OpportunityDetail panel header for open deals
+- [x] All 179 tests passing

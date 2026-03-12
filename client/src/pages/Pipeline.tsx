@@ -139,6 +139,8 @@ type Opportunity = {
   stageEnteredAt?: Date | null;
   createdAt: Date;
   contactId?: number | null;
+  closedReason?: string | null;
+  closedReasonNotes?: string | null;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -179,6 +181,8 @@ function KanbanCard({ opp, onClick }: { opp: Opportunity; onClick: () => void })
   const style = transform ? { transform: CSS.Translate.toString(transform) } : undefined;
   const days = daysInStage(opp.stageEnteredAt);
   const val = formatCurrency(opp.value);
+  const isStale = days !== null && days >= 14 && opp.status === "open";
+  const isVeryStale = days !== null && days >= 30 && opp.status === "open";
 
   return (
     <div
@@ -187,7 +191,11 @@ function KanbanCard({ opp, onClick }: { opp: Opportunity; onClick: () => void })
       {...attributes}
       {...listeners}
       onClick={onClick}
-      className={`bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all select-none ${isDragging ? "opacity-50 shadow-xl ring-2 ring-primary" : ""}`}
+      title={isStale ? `⚠️ Stale: ${days} days in this stage` : undefined}
+      className={`bg-white dark:bg-slate-800 rounded-lg p-3 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all select-none
+        ${isDragging ? "opacity-50 shadow-xl ring-2 ring-primary" : ""}
+        ${isVeryStale ? "border-2 border-red-400 dark:border-red-500" : isStale ? "border-2 border-amber-400 dark:border-amber-500" : "border border-slate-200 dark:border-slate-700"}
+      `}
     >
       <div className="flex items-start justify-between gap-1 mb-2">
         <p className="text-sm font-semibold leading-tight line-clamp-2 flex-1">{opp.name}</p>
@@ -215,7 +223,10 @@ function KanbanCard({ opp, onClick }: { opp: Opportunity; onClick: () => void })
         )}
         <div className="flex items-center gap-1.5">
           {days !== null && (
-            <span className={`text-xs ${days > 14 ? "text-red-400" : "text-muted-foreground"}`}>
+            <span className={`text-xs font-medium flex items-center gap-0.5 ${
+              isVeryStale ? "text-red-500" : isStale ? "text-amber-500" : "text-muted-foreground"
+            }`}>
+              {isStale && <Clock className="w-3 h-3" />}
               {days}d
             </span>
           )}
@@ -479,12 +490,14 @@ function OpportunityDetail({
   onClose,
   onEdit,
   onDeleted,
+  onMarkStatus,
 }: {
   oppId: number;
   stages: Stage[];
   onClose: () => void;
   onEdit: () => void;
   onDeleted: () => void;
+  onMarkStatus?: (oppId: number, status: "won" | "lost") => void;
 }) {
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.pipelines.getOpportunity.useQuery({ id: oppId });
@@ -556,7 +569,17 @@ function OpportunityDetail({
             <p className="text-sm text-muted-foreground mt-0.5">{data.contactName}{data.companyName ? ` · ${data.companyName}` : ""}</p>
           )}
         </div>
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+        <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
+          {data.status === "open" && onMarkStatus && (
+            <>
+              <Button variant="outline" size="sm" className="h-7 text-xs gap-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => onMarkStatus(data.id, "won")}>
+                <Trophy className="w-3 h-3" /> Won
+              </Button>
+              <Button variant="outline" size="sm" className="h-7 text-xs gap-1 text-red-500 border-red-200 hover:bg-red-50" onClick={() => onMarkStatus(data.id, "lost")}>
+                <XCircle className="w-3 h-3" /> Lost
+              </Button>
+            </>
+          )}
           <Button variant="outline" size="sm" onClick={onEdit}>Edit</Button>
           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteConfirm(true)}>
             <Trash2 className="w-4 h-4" />
@@ -958,6 +981,7 @@ function CreatePipelineInline({ onSuccess, onCancel }: { onSuccess: () => void; 
 function PipelineAnalytics({ pipelineId, pipelineName }: { pipelineId: number; pipelineName: string }) {
   const { data, isLoading } = trpc.pipelines.getAnalytics.useQuery({ pipelineId });
   const { data: goalData, refetch: refetchGoal } = trpc.pipelines.getGoal.useQuery({ pipelineId });
+  const { data: lossReasonsData } = trpc.pipelines.getLossReasons.useQuery({ pipelineId });
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalInput, setGoalInput] = useState("");
   const setGoalMut = trpc.pipelines.setGoal.useMutation({
@@ -1127,6 +1151,36 @@ function PipelineAnalytics({ pipelineId, pipelineName }: { pipelineId: number; p
           )}
         </div>
       </div>
+
+      {/* Loss Reasons Breakdown */}
+      {lossReasonsData && lossReasonsData.length > 0 && (() => {
+        const maxLoss = Math.max(...lossReasonsData.map(r => r.count), 1);
+        return (
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <XCircle className="w-4 h-4 text-red-400" />
+              <h3 className="text-sm font-semibold">Loss Reasons Breakdown</h3>
+              <Badge variant="secondary" className="text-xs ml-auto">{lossReasonsData.reduce((s, r) => s + r.count, 0)} lost deals</Badge>
+            </div>
+            <div className="space-y-2.5">
+              {lossReasonsData.map(r => (
+                <div key={r.reason} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium">{r.reason}</span>
+                    <span className="text-muted-foreground">{r.count} ({r.pct}%)</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-red-400 transition-all"
+                      style={{ width: `${Math.round((r.count / maxLoss) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -1327,6 +1381,9 @@ export default function Pipeline() {
   const [dragActiveId, setDragActiveId] = useState<number | null>(null);
   const [bulkAction, setBulkAction] = useState<string | null>(null);
   const [showStageManager, setShowStageManager] = useState(false);
+  const [reasonModal, setReasonModal] = useState<{ oppId: number; status: "won" | "lost" } | null>(null);
+  const [reasonInput, setReasonInput] = useState("");
+  const [reasonNotes, setReasonNotes] = useState("");
 
   // ── Data ──
   const { data: pipelines = [], isLoading: loadingPipelines } = trpc.pipelines.listPipelines.useQuery();
@@ -1395,6 +1452,18 @@ export default function Pipeline() {
       setSelectedIds(new Set());
       setBulkAction(null);
       utils.pipelines.listOpportunities.invalidate();
+    },
+    onError: e => toast.error(e.message),
+  });
+
+  const updateStatusMut = trpc.pipelines.updateStatus.useMutation({
+    onSuccess: () => {
+      toast.success("Status updated");
+      setReasonModal(null);
+      setReasonInput("");
+      setReasonNotes("");
+      utils.pipelines.listOpportunities.invalidate();
+      utils.pipelines.getOpportunity.invalidate();
     },
     onError: e => toast.error(e.message),
   });
@@ -1698,6 +1767,7 @@ export default function Pipeline() {
                 setActiveOppId(null);
                 refreshAll();
               }}
+              onMarkStatus={(id, status) => setReasonModal({ oppId: id, status })}
             />
           )}
         </SheetContent>
@@ -1753,6 +1823,80 @@ export default function Pipeline() {
           onClose={() => { setShowStageManager(false); refreshAll(); }}
         />
       )}
+
+      {/* ── Won/Lost Reason Dialog ── */}
+      <Dialog open={reasonModal !== null} onOpenChange={open => { if (!open) { setReasonModal(null); setReasonInput(""); setReasonNotes(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {reasonModal?.status === "won"
+                ? <><Trophy className="w-4 h-4 text-emerald-500" /> Mark as Won</>
+                : <><XCircle className="w-4 h-4 text-red-400" /> Mark as Lost</>}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label>Reason {reasonModal?.status === "lost" ? "(required)" : "(optional)"}</Label>
+              <Select value={reasonInput} onValueChange={setReasonInput}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a reason..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {reasonModal?.status === "won" ? (
+                    <>
+                      <SelectItem value="Best price">Best price</SelectItem>
+                      <SelectItem value="Best product fit">Best product fit</SelectItem>
+                      <SelectItem value="Referral">Referral</SelectItem>
+                      <SelectItem value="Relationship">Relationship</SelectItem>
+                      <SelectItem value="Speed of close">Speed of close</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </>
+                  ) : (
+                    <>
+                      <SelectItem value="Price too high">Price too high</SelectItem>
+                      <SelectItem value="Chose competitor">Chose competitor</SelectItem>
+                      <SelectItem value="No longer interested">No longer interested</SelectItem>
+                      <SelectItem value="Timing not right">Timing not right</SelectItem>
+                      <SelectItem value="Could not qualify">Could not qualify</SelectItem>
+                      <SelectItem value="No response">No response</SelectItem>
+                      <SelectItem value="Budget constraints">Budget constraints</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Additional notes (optional)</Label>
+              <Textarea
+                value={reasonNotes}
+                onChange={e => setReasonNotes(e.target.value)}
+                placeholder="Any additional context..."
+                rows={3}
+                className="text-sm resize-none"
+              />
+            </div>
+            <div className="flex gap-2 pt-1">
+              <Button
+                className="flex-1"
+                disabled={updateStatusMut.isPending || (reasonModal?.status === "lost" && !reasonInput)}
+                onClick={() => {
+                  if (!reasonModal) return;
+                  updateStatusMut.mutate({
+                    opportunityId: reasonModal.oppId,
+                    status: reasonModal.status,
+                    closedReason: reasonInput || undefined,
+                    closedReasonNotes: reasonNotes || undefined,
+                  });
+                }}
+              >
+                {updateStatusMut.isPending ? "Saving..." : `Confirm ${reasonModal?.status === "won" ? "Won" : "Lost"}`}
+              </Button>
+              <Button variant="outline" onClick={() => { setReasonModal(null); setReasonInput(""); setReasonNotes(""); }}>Cancel</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

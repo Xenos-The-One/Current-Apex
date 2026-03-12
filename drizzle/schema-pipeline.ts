@@ -11,6 +11,7 @@ export const pipelines = mysqlTable("pipelines", {
   isActive: boolean("is_active").default(true),
   createdBy: int("created_by").notNull(),
   monthlyGoal: decimal("monthly_goal", { precision: 12, scale: 2 }),
+  roundRobinIndex: int("round_robin_index").default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
 });
@@ -50,7 +51,9 @@ export const opportunities = mysqlTable("opportunities", {
   notes: text("notes"),
   priority: varchar("priority", { length: 16 }).default("medium"), // low | medium | high
   customFields: json("custom_fields").$type<Record<string, string | number | boolean>>().default({}),
-  stageEnteredAt: timestamp("stage_entered_at").notNull().defaultNow(),
+  stageEnteredAt: timestamp("stage_entered_at"),
+  closedReason: varchar("closed_reason", { length: 255 }),
+  closedReasonNotes: text("closed_reason_notes"),
   createdBy: int("created_by").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),

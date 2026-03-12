@@ -945,4 +945,124 @@ export const pipelinesRouter = router({
 
       return { success: true };
     }),
+
+  // ── Auto-assign opportunity via round-robin ──────────────────────────────
+  assignRoundRobin: protectedProcedure
+    .input(z.object({ opportunityId: z.number(), pipelineId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const agencyId = await getAgencyId(ctx.user.id, db);
+
+      // Get active team members for this agency
+      const { teamMembers } = await import("../../drizzle/schema");
+      const members = await db
+        .select({ id: teamMembers.id, name: teamMembers.name, phone: teamMembers.phone })
+        .from(teamMembers)
+        .where(and(eq(teamMembers.agencyId, agencyId), eq(teamMembers.isActive, true)));
+
+      if (members.length === 0) throw new TRPCError({ code: "NOT_FOUND", message: "No active team members found" });
+
+      // Get current round-robin index for this pipeline
+      const [pipeline] = await db
+        .select({ roundRobinIndex: pipelines.roundRobinIndex })
+        .from(pipelines)
+        .where(eq(pipelines.id, input.pipelineId))
+        .limit(1);
+
+      const idx = (pipeline?.roundRobinIndex ?? 0) % members.length;
+      const assignee = members[idx];
+      const nextIdx = (idx + 1) % members.length;
+
+      // Assign the opportunity
+      await db.update(opportunities)
+        .set({ ownerId: assignee.id, ownerName: assignee.name })
+        .where(eq(opportunities.id, input.opportunityId));
+
+      // Advance the round-robin index
+      await db.update(pipelines)
+        .set({ roundRobinIndex: nextIdx })
+        .where(eq(pipelines.id, input.pipelineId));
+
+      // Log activity
+      await db.insert(opportunityActivities).values({
+        opportunityId: input.opportunityId,
+        type: "note",
+        content: `Auto-assigned to ${assignee.name} via round-robin`,
+        createdBy: ctx.user.id,
+        createdByName: ctx.user.name,
+      });
+
+      // Notify assignee via SMS if phone available
+      if (assignee.phone) {
+        try {
+          const { sendSMS } = await import("../twilio");
+          const [opp] = await db.select({ name: opportunities.name }).from(opportunities).where(eq(opportunities.id, input.opportunityId)).limit(1);
+          await sendSMS({ to: assignee.phone, body: `Hi ${assignee.name}, a new deal "${opp?.name ?? "Opportunity"}" has been assigned to you. Log in to review it.` });
+        } catch (_) { /* SMS failure is non-fatal */ }
+      }
+
+      return { assignedTo: assignee.name, assignedId: assignee.id };
+    }),
+
+  // ── Update opportunity status with closed reason ───────────────────────────
+  updateStatus: protectedProcedure
+    .input(z.object({
+      opportunityId: z.number(),
+      status: z.enum(["won", "lost", "open"]),
+      closedReason: z.string().optional(),
+      closedReasonNotes: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+
+      await db.update(opportunities)
+        .set({
+          status: input.status,
+          closedReason: input.closedReason ?? null,
+          closedReasonNotes: input.closedReasonNotes ?? null,
+        })
+        .where(eq(opportunities.id, input.opportunityId));
+
+      const label = input.status === "won" ? "🎉 Marked as Won" : input.status === "lost" ? "❌ Marked as Lost" : "🔄 Reopened";
+      const reasonText = input.closedReason ? ` — Reason: ${input.closedReason}` : "";
+      await db.insert(opportunityActivities).values({
+        opportunityId: input.opportunityId,
+        type: "note",
+        content: `${label}${reasonText}${input.closedReasonNotes ? `. Notes: ${input.closedReasonNotes}` : ""}`,
+        createdBy: ctx.user.id,
+        createdByName: ctx.user.name,
+      });
+
+      return { success: true };
+    }),
+
+  // ── Get loss reasons breakdown for analytics ─────────────────────────────────
+  getLossReasons: protectedProcedure
+    .input(z.object({ pipelineId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+
+      const lostOpps = await db
+        .select({ closedReason: opportunities.closedReason, value: opportunities.value })
+        .from(opportunities)
+        .where(and(
+          eq(opportunities.pipelineId, input.pipelineId),
+          eq(opportunities.status, "lost")
+        ));
+
+      const reasonMap: Record<string, { count: number; value: number }> = {};
+      for (const opp of lostOpps) {
+        const reason = opp.closedReason ?? "Unspecified";
+        if (!reasonMap[reason]) reasonMap[reason] = { count: 0, value: 0 };
+        reasonMap[reason].count++;
+        reasonMap[reason].value += parseFloat(opp.value ?? "0");
+      }
+
+      return Object.entries(reasonMap)
+        .sort(([, a], [, b]) => b.count - a.count)
+        .map(([reason, data]) => ({ reason, ...data }));
+    }),
 });
