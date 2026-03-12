@@ -76,7 +76,6 @@ function getClientNav(): NavItem[] {
     { label: "Dashboard", href: "/client-dashboard", icon: Home },
     { label: "Contacts", href: "/contacts", icon: Users },
     { label: "Conversations", href: "/conversations", icon: MessageSquare },
-    { label: "Pipeline", href: "/pipeline", icon: BarChart3 },
     { label: "Calendar", href: "/appointments", icon: Calendar },
     { label: "Follow-Up Actions", href: "/follow-up-actions", icon: UserX },
     { label: "AI Success Coach", href: "/ai-coach", icon: Sparkles },

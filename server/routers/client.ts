@@ -236,6 +236,8 @@ export const clientRouter = router({
       phone: z.string().optional(),
       source: z.string().optional(),
       notes: z.string().optional(),
+      businessName: z.string().optional(),
+      tags: z.array(z.string()).optional(),
       // Tier 1 fields
       contactType: z.enum(["borrower", "real_estate_agent", "attorney", "insurance_agent", "title_company", "builder_developer", "lender", "other"]).optional(),
       loanAmount: z.number().optional(),
@@ -253,21 +255,30 @@ export const clientRouter = router({
         });
       }
 
-      // Skip access mode check for admins
+      // Only block read-only access — limited/trial users can still add contacts
       if (!isAdminUser(ctx.user.role)) {
-        if (client.accessMode !== "full") {
+        if (client.accessMode === "read_only") {
           throw new TRPCError({
             code: "FORBIDDEN",
-            message: client.accessMode === "limited" 
-              ? "Limited access mode. Please complete your strategy call to unlock full access."
-              : "Read-only access. Contact your agency administrator.",
+            message: "Read-only access. Contact your agency administrator.",
           });
         }
       }
 
       const leadResult = await createLead({
-        ...input,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        email: input.email,
+        phone: input.phone,
+        source: input.source,
+        notes: input.notes,
+        contactType: input.contactType,
         loanAmount: input.loanAmount ? String(input.loanAmount) : undefined,
+        loanType: input.loanType,
+        probability: input.probability,
+        partnerTier: input.partnerTier,
+        partnerStage: input.partnerStage,
+        tags: input.tags ? JSON.stringify(input.tags) : undefined,
         clientId: client.id,
         agencyId: client.agencyId,
       });

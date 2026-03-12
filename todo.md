@@ -593,3 +593,9 @@
 - [x] Add tags column to leads schema and backfill tags for Kyle's 14,027 imported leads
 - [x] Fix search query to use valid leads table columns (firstName, lastName, email, phone)
 - [x] Add smart_lists table to DB for saved filter presets
+- [ ] Fix "Client profile not found" error when adding contacts on client side
+- [ ] Rename "Pipeline" to "Contacts" in the client sidebar
+- [ ] Ensure Contacts page fully works for client-side users (not just admin)
+- [x] Fix "Client profile not found" error blocking contact creation for client-side users (limited access mode now only blocks read_only, not limited)
+- [x] Add businessName and tags fields to createLead input schema
+- [x] Rename "Pipeline" to "Contacts" in CRMLayout sidebar, DashboardLayout client/LOA nav, and breadcrumb labels

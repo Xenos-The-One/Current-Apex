@@ -211,7 +211,7 @@ const clientMenuSections: MenuSection[] = [
   {
     id: "contacts", label: "Contacts", icon: Users,
     items: [
-      { icon: Users, label: "Pipeline", path: "/leads" },
+      { icon: Users, label: "Contacts", path: "/contacts" },
       { icon: BellDot, label: "Follow-Ups", path: "/follow-ups" },
       { icon: Handshake, label: "Partner Portal", path: "/partner-portal" },
     ],
@@ -263,7 +263,7 @@ const loaMenuSections: MenuSection[] = [
   {
     id: "contacts", label: "Contacts", icon: Users,
     items: [
-      { icon: UserCircle, label: "Pipeline", path: "/leads" },
+      { icon: UserCircle, label: "Contacts", path: "/contacts" },
       { icon: Database, label: "Borrower Database", path: "/borrowers" },
       { icon: Handshake, label: "Referral Partners", path: "/referral-partners" },
     ],
@@ -500,10 +500,10 @@ function GroupedSidebarNav({
 // ─── Tab label map: path → display label ────────────────────────────────────
 const TAB_LABELS: Record<string, string> = {
   // Contacts hub
-  "/contacts": "Pipeline",
+  "/contacts": "Contacts",
   "/contacts/borrowers": "Borrowers",
   "/contacts/referral-partners": "Referral Partners",
-  "/leads": "Pipeline",
+  "/leads": "Contacts",
   "/borrowers": "Borrowers",
   "/referral-partners": "Referral Partners",
   // Activity hub

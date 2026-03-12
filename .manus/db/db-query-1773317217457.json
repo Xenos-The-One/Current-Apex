@@ -1,0 +1,31 @@
+{
+  "query": "SELECT id, name, access_mode, subscription_status, subscription_tier FROM clients ORDER BY id LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, name, access_mode, subscription_status, subscription_tier FROM clients ORDER BY id LIMIT 20;",
+  "rows": [
+    {
+      "id": "60001",
+      "name": "Optimal Lending Solutions",
+      "access_mode": "full",
+      "subscription_status": "active",
+      "subscription_tier": "done_for_you"
+    },
+    {
+      "id": "60002",
+      "name": "Premier Mortgage Resources",
+      "access_mode": "full",
+      "subscription_status": "active",
+      "subscription_tier": "done_for_you"
+    },
+    {
+      "id": "90001",
+      "name": "Tariq Test Account",
+      "access_mode": "full",
+      "subscription_status": "trial",
+      "subscription_tier": "starter"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\taccess_mode\tsubscription_status\tsubscription_tier\n60001\tOptimal Lending Solutions\tfull\tactive\tdone_for_you\n60002\tPremier Mortgage Resources\tfull\tactive\tdone_for_you\n90001\tTariq Test Account\tfull\ttrial\tstarter\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}
