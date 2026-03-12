@@ -650,3 +650,13 @@
 - [x] Add saveGoogleMyBusiness and saveBusinessInfo tRPC procedures
 - [x] Update SECTIONS array to 6 steps (gmb, business, social, website, ads, preferences)
 - [x] Progress grid updated to 6-column layout
+
+## Round 6 (Mar 12, 2026)
+- [ ] Reorder Account Setup: Business Information first, Google My Business third
+- [ ] Fix Suggested Follow-Ups panel to show all 3 items
+
+## Round 6b (Mar 12, 2026)
+- [ ] Reorder Account Setup: Business Information first, Google My Business third (already done)
+- [x] Auto-detect timezone button in Account Setup
+- [x] Google Places address autocomplete in Account Setup
+- [x] Review & Submit summary step in Account Setup

@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+/// <reference types="@types/google.maps" />
+import { useState, useEffect, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -33,19 +34,22 @@ import {
   Building2,
   Clock,
   ExternalLink,
+  LocateFixed,
+  ClipboardList,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Section = "gmb" | "business" | "social" | "website" | "ads" | "preferences";
+type Section = "gmb" | "business" | "social" | "website" | "ads" | "preferences" | "review";
 
 const SECTIONS: { id: Section; label: string; icon: any; description: string }[] = [
-  { id: "gmb", label: "Google My Business", icon: Globe, description: "Connect your Google Business Profile" },
   { id: "business", label: "Business Information", icon: Building2, description: "Legal name, EIN, address & timezone" },
   { id: "social", label: "Social Media Logins", icon: Facebook, description: "Connect your social accounts for automated posting" },
+  { id: "gmb", label: "Google My Business", icon: Globe, description: "Connect your Google Business Profile" },
   { id: "website", label: "Website Access", icon: Globe, description: "Grant access for content publishing & SEO" },
   { id: "ads", label: "Ad Account Access", icon: BarChart2, description: "Connect ad platforms for campaign management" },
   { id: "preferences", label: "Website Preferences", icon: Layout, description: "Tell us about your ideal website" },
+  { id: "review", label: "Review & Submit", icon: CheckCircle2, description: "Confirm all sections and mark setup complete" },
 ];
 
 // ─── Password field ───────────────────────────────────────────────────────────
@@ -186,6 +190,74 @@ function GoogleMyBusinessSection({ defaultValues, onSaved }: { defaultValues?: a
       </div>
       <SaveButton loading={mutation.isPending} />
     </form>
+  );
+}
+
+
+// ─── Address Autocomplete Input ───────────────────────────────────────────────
+const FORGE_BASE_URL = import.meta.env.VITE_FRONTEND_FORGE_API_URL || "https://forge.butterfly-effect.dev";
+const MAPS_PROXY_URL = `${FORGE_BASE_URL}/v1/maps/proxy`;
+const MAPS_API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
+
+function AddressAutocompleteInput({
+  value,
+  onChange,
+  onPlaceSelected,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onPlaceSelected: (place: google.maps.places.PlaceResult) => void;
+  placeholder?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  const initAutocomplete = useCallback(() => {
+    if (!inputRef.current || autocompleteRef.current) return;
+    if (!window.google?.maps?.places) return;
+    autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
+      types: ["address"],
+      fields: ["address_components", "formatted_address"],
+    });
+    autocompleteRef.current.addListener("place_changed", () => {
+      const place = autocompleteRef.current!.getPlace();
+      if (place) onPlaceSelected(place);
+    });
+  }, [onPlaceSelected]);
+
+  useEffect(() => {
+    // Load Maps script if not already loaded
+    if (window.google?.maps?.places) {
+      initAutocomplete();
+      return;
+    }
+    const existing = document.querySelector(`script[src*="maps/api/js"]`);
+    if (existing) {
+      existing.addEventListener("load", initAutocomplete);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${MAPS_API_KEY}&v=weekly&libraries=places`;
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    script.onload = initAutocomplete;
+    document.head.appendChild(script);
+  }, [initAutocomplete]);
+
+  return (
+    <div className="relative">
+      <input
+        ref={inputRef}
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder || "Start typing an address..."}
+        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        autoComplete="off"
+      />
+      <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+    </div>
   );
 }
 
@@ -370,12 +442,47 @@ function BusinessInfoSection({ defaultValues, onSaved }: { defaultValues?: any; 
           </div>
         </div>
         <Field label="Business Timezone">
-          <Select value={form.timezone} onValueChange={(v) => set("timezone", v)}>
-            <SelectTrigger><SelectValue placeholder="Select your timezone" /></SelectTrigger>
-            <SelectContent>
-              {US_TIMEZONES.map(tz => <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2 items-start">
+            <div className="flex-1">
+              <Select value={form.timezone} onValueChange={(v) => set("timezone", v)}>
+                <SelectTrigger><SelectValue placeholder="Select your timezone" /></SelectTrigger>
+                <SelectContent>
+                  {US_TIMEZONES.map(tz => <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0 gap-1.5 text-xs h-10 whitespace-nowrap"
+              onClick={() => {
+                try {
+                  const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                  const match = US_TIMEZONES.find(tz => tz.value === detected);
+                  if (match) {
+                    set("timezone", detected);
+                    toast.success(`Timezone set to ${match.label}`);
+                  } else {
+                    // Try to find a close match by region
+                    const region = detected.split("/")[0];
+                    const fallback = US_TIMEZONES.find(tz => tz.value.startsWith(region));
+                    if (fallback) {
+                      set("timezone", fallback.value);
+                      toast.success(`Timezone set to ${fallback.label}`);
+                    } else {
+                      toast.info(`Detected: ${detected}. Please select manually.`);
+                    }
+                  }
+                } catch {
+                  toast.error("Could not detect timezone automatically");
+                }
+              }}
+            >
+              <LocateFixed className="w-3.5 h-3.5" />
+              Auto-detect
+            </Button>
+          </div>
         </Field>
       </div>
 
@@ -392,7 +499,36 @@ function BusinessInfoSection({ defaultValues, onSaved }: { defaultValues?: any; 
         </div>
         <div className="space-y-4">
           <Field label="Street Address">
-            <Input value={form.addressLine1} onChange={(e) => set("addressLine1", e.target.value)} placeholder="123 Main Street" />
+            <AddressAutocompleteInput
+              value={form.addressLine1}
+              onChange={(v) => set("addressLine1", v)}
+              onPlaceSelected={(place) => {
+                // Auto-fill city, state, ZIP, country from Google Places result
+                let street = "";
+                let city = "";
+                let state = "";
+                let postal = "";
+                let country = "United States";
+                const comps = place.address_components || [];
+                for (const c of comps) {
+                  if (c.types.includes("street_number")) street = c.long_name + " ";
+                  if (c.types.includes("route")) street += c.long_name;
+                  if (c.types.includes("locality")) city = c.long_name;
+                  if (c.types.includes("administrative_area_level_1")) state = c.short_name;
+                  if (c.types.includes("postal_code")) postal = c.long_name;
+                  if (c.types.includes("country")) country = c.long_name;
+                }
+                setForm(f => ({
+                  ...f,
+                  addressLine1: street.trim() || place.formatted_address || f.addressLine1,
+                  addressCity: city || f.addressCity,
+                  addressState: state || f.addressState,
+                  addressPostalCode: postal || f.addressPostalCode,
+                  addressCountry: country || f.addressCountry,
+                }));
+              }}
+              placeholder="123 Main Street"
+            />
           </Field>
           <Field label="Address Line 2" hint="Suite, unit, floor, etc.">
             <Input value={form.addressLine2} onChange={(e) => set("addressLine2", e.target.value)} placeholder="Suite 200" />
@@ -1046,10 +1182,199 @@ function SaveButton({ loading }: { loading: boolean }) {
   );
 }
 
+
+// ─── Section: Review & Submit ─────────────────────────────────────────────────
+function ReviewSection({ setupData, completedSections, onMarkComplete, isMarkingComplete }: {
+  setupData: any;
+  completedSections: Set<Section>;
+  onMarkComplete: () => void;
+  isMarkingComplete: boolean;
+}) {
+  const sections = [
+    {
+      id: "business" as Section,
+      label: "Business Information",
+      icon: Building2,
+      color: "violet",
+      fields: [
+        { label: "Legal Name", value: setupData?.biz_legal_name },
+        { label: "DBA Name", value: setupData?.biz_dba_name },
+        { label: "Phone", value: setupData?.biz_phone },
+        { label: "Email", value: setupData?.biz_email },
+        { label: "Website", value: setupData?.biz_website },
+        { label: "Category", value: setupData?.biz_category },
+        { label: "EIN", value: setupData?.ein ? "••-•••••••" : undefined },
+        { label: "Business Type", value: BUSINESS_TYPES.find(t => t.value === setupData?.business_type)?.label },
+        { label: "Timezone", value: US_TIMEZONES.find(t => t.value === setupData?.timezone)?.label },
+        { label: "Address", value: [setupData?.address_line1, setupData?.address_city, setupData?.address_state, setupData?.address_postal_code].filter(Boolean).join(", ") },
+      ],
+    },
+    {
+      id: "social" as Section,
+      label: "Social Media",
+      icon: Globe,
+      color: "blue",
+      fields: [
+        { label: "Facebook Email", value: setupData?.fb_email },
+        { label: "Facebook Page", value: setupData?.fb_page_name },
+        { label: "Instagram", value: setupData?.ig_username },
+        { label: "LinkedIn", value: setupData?.linkedin_email },
+        { label: "TikTok", value: setupData?.tiktok_username },
+        { label: "YouTube", value: setupData?.youtube_channel_url },
+        { label: "Twitter / X", value: setupData?.twitter_username },
+      ],
+    },
+    {
+      id: "gmb" as Section,
+      label: "Google My Business",
+      icon: MapPin,
+      color: "green",
+      fields: [
+        { label: "Connected", value: setupData?.gmb_connected ? "Yes" : "No" },
+        { label: "Profile Name", value: setupData?.gmb_profile_name },
+        { label: "Profile URL", value: setupData?.gmb_profile_url },
+      ],
+    },
+    {
+      id: "website" as Section,
+      label: "Website Access",
+      icon: Server,
+      color: "emerald",
+      fields: [
+        { label: "Website URL", value: setupData?.website_url },
+        { label: "CMS Platform", value: setupData?.website_platform },
+        { label: "Admin Email", value: setupData?.website_admin_email },
+        { label: "Hosting Provider", value: setupData?.hosting_provider },
+        { label: "Domain Registrar", value: setupData?.domain_registrar },
+      ],
+    },
+    {
+      id: "ads" as Section,
+      label: "Ad Accounts",
+      icon: BarChart2,
+      color: "orange",
+      fields: [
+        { label: "Meta Ad Account ID", value: setupData?.meta_ad_account_id },
+        { label: "Google Ads Customer ID", value: setupData?.google_ads_customer_id },
+        { label: "TikTok Ads Account ID", value: setupData?.tiktok_ads_account_id },
+      ],
+    },
+    {
+      id: "preferences" as Section,
+      label: "Website Preferences",
+      icon: Layout,
+      color: "purple",
+      fields: [
+        { label: "Needs New Website", value: setupData?.wants_new_website ? "Yes" : "No" },
+        { label: "Website Goal", value: setupData?.website_goal },
+        { label: "Design Style", value: setupData?.website_style },
+      ],
+    },
+  ];
+
+  const completedCount = SECTIONS.filter(s => s.id !== "review" && completedSections.has(s.id)).length;
+  const totalCount = SECTIONS.filter(s => s.id !== "review").length;
+  const allDone = completedCount === totalCount;
+
+  return (
+    <div className="space-y-6">
+      {/* Progress summary */}
+      <div className="rounded-xl border border-border bg-card p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+            <ClipboardList className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Setup Progress</h3>
+            <p className="text-xs text-muted-foreground">{completedCount} of {totalCount} sections completed</p>
+          </div>
+          <div className="ml-auto">
+            <Badge variant={allDone ? "default" : "secondary"} className={allDone ? "bg-emerald-600 text-white" : ""}>
+              {allDone ? "Ready to Submit" : `${totalCount - completedCount} remaining`}
+            </Badge>
+          </div>
+        </div>
+        {/* Progress bar */}
+        <div className="w-full bg-muted rounded-full h-2">
+          <div
+            className="bg-primary h-2 rounded-full transition-all duration-500"
+            style={{ width: `${(completedCount / totalCount) * 100}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Section summaries */}
+      {sections.map((section) => {
+        const isDone = completedSections.has(section.id);
+        const Icon = section.icon;
+        const filledFields = section.fields.filter(f => f.value && f.value !== "No");
+        return (
+          <div key={section.id} className={`rounded-xl border bg-card p-5 ${isDone ? "border-emerald-300 dark:border-emerald-700" : "border-border"}`}>
+            <div className="flex items-center gap-3 mb-3">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDone ? "bg-emerald-100 dark:bg-emerald-950/40" : "bg-muted"}`}>
+                {isDone ? <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> : <Icon className="w-4 h-4 text-muted-foreground" />}
+              </div>
+              <h4 className="text-sm font-semibold text-foreground">{section.label}</h4>
+              <Badge variant={isDone ? "outline" : "secondary"} className={`ml-auto text-xs ${isDone ? "border-emerald-400 text-emerald-700 dark:text-emerald-400" : ""}`}>
+                {isDone ? "Complete" : "Incomplete"}
+              </Badge>
+            </div>
+            {filledFields.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
+                {filledFields.map(f => (
+                  <div key={f.label} className="flex items-baseline gap-2">
+                    <span className="text-xs text-muted-foreground shrink-0">{f.label}:</span>
+                    <span className="text-xs text-foreground font-medium truncate">{f.value}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">No information saved yet for this section.</p>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Submit button */}
+      <div className="rounded-xl border border-border bg-card p-6 flex flex-col items-center gap-4 text-center">
+        {allDone ? (
+          <>
+            <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">All sections complete!</p>
+              <p className="text-xs text-muted-foreground mt-1">Click below to mark your account setup as complete and notify your account manager.</p>
+            </div>
+            <Button
+              onClick={onMarkComplete}
+              disabled={isMarkingComplete}
+              className="gap-2 bg-emerald-600 hover:bg-emerald-700 min-w-[200px]"
+            >
+              {isMarkingComplete ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              {isMarkingComplete ? "Submitting..." : "Mark Setup Complete"}
+            </Button>
+          </>
+        ) : (
+          <>
+            <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center">
+              <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">{totalCount - completedCount} section{totalCount - completedCount > 1 ? "s" : ""} still incomplete</p>
+              <p className="text-xs text-muted-foreground mt-1">Please go back and complete all sections before marking setup as done.</p>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AccountSetup() {
-  const [activeSection, setActiveSection] = useState<Section>("gmb");
+  const [activeSection, setActiveSection] = useState<Section>("business");
   const [completedSections, setCompletedSections] = useState<Set<Section>>(new Set());
 
   const { data: setupData, isLoading } = trpc.accountSetup.getSetup.useQuery();
@@ -1091,7 +1416,7 @@ export default function AccountSetup() {
         </div>
 
         {/* Progress indicator */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
           {SECTIONS.map((section, idx) => {
             const isActive = activeSection === section.id;
             const isDone = completedSections.has(section.id);
@@ -1164,6 +1489,14 @@ export default function AccountSetup() {
                 onSaved={() => markSectionComplete("preferences")}
               />
             )}
+            {activeSection === "review" && (
+              <ReviewSection
+                setupData={setupData}
+                completedSections={completedSections}
+                onMarkComplete={() => markCompleteMutation.mutate()}
+                isMarkingComplete={markCompleteMutation.isPending}
+              />
+            )}
           </div>
         )}
 
@@ -1179,15 +1512,17 @@ export default function AccountSetup() {
           </Button>
 
           <div className="flex items-center gap-2">
-            {allComplete && (
+            {allComplete && activeSection !== "review" && (
               <Button
-                variant="default"
-                onClick={() => markCompleteMutation.mutate()}
-                disabled={markCompleteMutation.isPending}
-                className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+                variant="outline"
+                onClick={() => {
+                  const reviewIdx = SECTIONS.findIndex(s => s.id === "review");
+                  if (reviewIdx !== -1) setActiveSection("review");
+                }}
+                className="gap-2 text-emerald-700 border-emerald-400 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
               >
-                {markCompleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                Mark Setup Complete
+                <ClipboardList className="w-4 h-4" />
+                Review & Submit
               </Button>
             )}
             {!isLastSection && (
