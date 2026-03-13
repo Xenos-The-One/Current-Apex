@@ -422,3 +422,45 @@ describe("No-show follow-up automation", () => {
     });
   });
 });
+
+// ─── Analytics Tests ───────────────────────────────────────────────────────────
+describe("getAnalytics", () => {
+  it("should expose getAnalytics procedure", async () => {
+    const caller = createCaller(makeCtx());
+    expect(caller.getAnalytics).toBeDefined();
+    expect(typeof caller.getAnalytics).toBe("function");
+  });
+
+  it("should validate days input range", async () => {
+    const caller = createCaller(makeCtx());
+    // days < 7 should throw validation error
+    await expect(caller.getAnalytics({ days: 3 })).rejects.toThrow();
+  });
+
+  it("should validate days max range", async () => {
+    const caller = createCaller(makeCtx());
+    // days > 365 should throw validation error
+    await expect(caller.getAnalytics({ days: 400 })).rejects.toThrow();
+  });
+});
+
+// ─── Reminder Settings Tests ───────────────────────────────────────────────────
+describe("getReminderSettings + updateReminderSettings", () => {
+  it("should expose getReminderSettings procedure", async () => {
+    const caller = createCaller(makeCtx());
+    expect(caller.getReminderSettings).toBeDefined();
+    expect(typeof caller.getReminderSettings).toBe("function");
+  });
+
+  it("should expose updateReminderSettings procedure", async () => {
+    const caller = createCaller(makeCtx());
+    expect(caller.updateReminderSettings).toBeDefined();
+    expect(typeof caller.updateReminderSettings).toBe("function");
+  });
+
+  it("should validate updateReminderSettings input", async () => {
+    const caller = createCaller(makeCtx());
+    // Missing calendarId should throw
+    await expect((caller.updateReminderSettings as any)({})).rejects.toThrow();
+  });
+});

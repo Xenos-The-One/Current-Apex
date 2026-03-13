@@ -865,4 +865,122 @@ export const calendarsRouter = router({
       icalLines.push("END:VCALENDAR");
       return { format: "ical" as const, data: icalLines.join("\r\n"), count: rows.length };
     }),
+  // ── Reminder Settings ──────────────────────────────────────────────────────
+  getReminderSettings: protectedProcedure
+    .input(z.object({ calendarId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const agencyId = await getAgencyId(ctx.user.id);
+      const rows = await db.execute(sql`
+        SELECT id, name, reminder_24h_enabled, reminder_1h_enabled, reminder_message_template
+        FROM calendar_resources
+        WHERE id = ${input.calendarId} AND agency_id = ${agencyId}
+        LIMIT 1
+      `) as any[];
+      if (!rows[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Calendar not found" });
+      return {
+        calendarId: rows[0].id as number,
+        calendarName: rows[0].name as string,
+        reminder24hEnabled: rows[0].reminder_24h_enabled !== false,
+        reminder1hEnabled: rows[0].reminder_1h_enabled !== false,
+        reminderMessageTemplate: (rows[0].reminder_message_template as string | null) ?? "",
+      };
+    }),
+
+  updateReminderSettings: protectedProcedure
+    .input(z.object({
+      calendarId: z.number(),
+      reminder24hEnabled: z.boolean(),
+      reminder1hEnabled: z.boolean(),
+      reminderMessageTemplate: z.string().max(500).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const agencyId = await getAgencyId(ctx.user.id);
+      await db.execute(sql`
+        UPDATE calendar_resources
+        SET reminder_24h_enabled = ${input.reminder24hEnabled},
+            reminder_1h_enabled = ${input.reminder1hEnabled},
+            reminder_message_template = ${input.reminderMessageTemplate ?? null}
+        WHERE id = ${input.calendarId} AND agency_id = ${agencyId}
+      `);
+      return { success: true };
+    }),
+
+  // ── Analytics ──────────────────────────────────────────────────────────────
+  getAnalytics: protectedProcedure
+    .input(z.object({
+      calendarId: z.number().optional(),
+      days: z.number().min(7).max(365).default(30),
+    }))
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const agencyId = await getAgencyId(ctx.user.id);
+      const since = new Date(Date.now() - input.days * 24 * 60 * 60 * 1000);
+      const calFilter = input.calendarId
+        ? sql`AND a.calendar_id = ${input.calendarId}`
+        : sql``;
+      // Daily counts for chart
+      const dailyRows = await db.execute(sql`
+        SELECT
+          DATE(appointment_date) AS day,
+          COUNT(*) AS total,
+          SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed,
+          SUM(CASE WHEN status = 'no_show' THEN 1 ELSE 0 END) AS no_show,
+          SUM(CASE WHEN status IN ('scheduled','confirmed','unconfirmed') THEN 1 ELSE 0 END) AS upcoming,
+          SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled
+        FROM appointments a
+        WHERE agency_id = ${agencyId}
+          AND appointment_date >= ${since}
+          ${calFilter}
+        GROUP BY DATE(appointment_date)
+        ORDER BY day ASC
+      `) as any[];
+      // Meeting type breakdown
+      const typeRows = await db.execute(sql`
+        SELECT
+          COALESCE(meeting_type, 'unspecified') AS meeting_type,
+          COUNT(*) AS total,
+          SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed,
+          SUM(CASE WHEN status = 'no_show' THEN 1 ELSE 0 END) AS no_show
+        FROM appointments a
+        WHERE agency_id = ${agencyId}
+          AND appointment_date >= ${since}
+          ${calFilter}
+        GROUP BY meeting_type
+        ORDER BY total DESC
+      `) as any[];
+      // Summary totals
+      const totals = dailyRows.reduce((acc: any, r: any) => ({
+        total: acc.total + Number(r.total),
+        completed: acc.completed + Number(r.completed),
+        no_show: acc.no_show + Number(r.no_show),
+        upcoming: acc.upcoming + Number(r.upcoming),
+        cancelled: acc.cancelled + Number(r.cancelled),
+      }), { total: 0, completed: 0, no_show: 0, upcoming: 0, cancelled: 0 });
+      const showRate = totals.total > 0 ? Math.round((totals.completed / totals.total) * 100) : 0;
+      const noShowRate = totals.total > 0 ? Math.round((totals.no_show / totals.total) * 100) : 0;
+      return {
+        summary: { ...totals, showRate, noShowRate },
+        daily: dailyRows.map((r: any) => ({
+          day: r.day as string,
+          total: Number(r.total),
+          completed: Number(r.completed),
+          noShow: Number(r.no_show),
+          upcoming: Number(r.upcoming),
+          cancelled: Number(r.cancelled),
+        })),
+        byMeetingType: typeRows.map((r: any) => ({
+          type: r.meeting_type as string,
+          total: Number(r.total),
+          completed: Number(r.completed),
+          noShow: Number(r.no_show),
+          showRate: Number(r.total) > 0 ? Math.round((Number(r.completed) / Number(r.total)) * 100) : 0,
+        })),
+      };
+    }),
+
 });

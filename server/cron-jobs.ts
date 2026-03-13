@@ -27,6 +27,7 @@ import { sendDailyContentDigest } from './jobs/daily-content-digest';
 import { processScheduledCampaigns } from './jobs/campaign-scheduler';
 import { processSequenceQueue } from './routers/drip-sequences';
 import { processPipelineCloseDateReminders } from './cron/pipelineCloseDateReminders';
+import { sendCalendar24hReminders, sendCalendar1hReminders } from './cron/calendarReminders';
 
 /**
  * Initialize all cron jobs
@@ -438,6 +439,24 @@ export function initializeCronJobs() {
       console.error('[Cron] Pipeline close date reminders failed:', error);
     }
   }, { timezone: 'America/New_York' });
+
+  // Calendar Appointment Reminders: 24h check every hour
+  cron.schedule('0 * * * *', async () => {
+    try {
+      await sendCalendar24hReminders();
+    } catch (error) {
+      console.error('[Cron] Calendar 24h reminders failed:', error);
+    }
+  });
+
+  // Calendar Appointment Reminders: 1h check every 5 minutes
+  cron.schedule('*/5 * * * *', async () => {
+    try {
+      await sendCalendar1hReminders();
+    } catch (error) {
+      console.error('[Cron] Calendar 1h reminders failed:', error);
+    }
+  });
 
   console.log('[Cron] All cron jobs initialized successfully');
   console.log('[Cron] - Scheduled Vapi calls: DISABLED (Tim handles manually)');

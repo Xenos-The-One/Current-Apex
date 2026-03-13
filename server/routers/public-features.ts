@@ -470,25 +470,36 @@ export const publicFeaturesRouter = router({
 
       return { success: true };
     }),
-});
+  // Get public booking page by calendar slug (from calendar_resources)
+  getCalendarBookingPage: publicProcedure
+    .input(z.object({ slug: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      const rows = await db.execute(sql`
+        SELECT cr.id, cr.agency_id, cr.name, cr.description, cr.color, cr.slug,
+               a.name AS agency_name, a.business_type
+        FROM calendar_resources cr
+        JOIN agencies a ON a.id = cr.agency_id
+        WHERE cr.slug = ${input.slug} AND cr.is_active = TRUE
+        LIMIT 1
+      `) as any[];
+      if (!rows[0]) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Calendar booking page not found" });
+      }
+      const cal = rows[0];
+      return {
+        calendarId: cal.id as number,
+        agencyId: cal.agency_id as number,
+        name: cal.agency_name as string,
+        calendarName: cal.name as string,
+        bookingTitle: `Book a ${cal.name} Appointment`,
+        bookingDescription: (cal.description as string | null) ?? "Schedule your appointment. Pick a date and time that works for you.",
+        businessType: (cal.business_type as string) || "loan_officer",
+        agencyName: cal.agency_name as string,
+        calendarColor: (cal.color as string) || "#3B82F6",
+        isCalendarSlug: true,
+      };
+    }),
 
-function emptyReport() {
-  return {
-    dateRange: "30d" as const,
-    totalLeads: 0,
-    totalAppointments: 0,
-    closedWon: 0,
-    closedLost: 0,
-    closedLoanVolume: 0,
-    estimatedRevenue: 0,
-    conversionRate: 0,
-    appointmentRate: 0,
-    funnel: { leads: 0, contacted: 0, qualified: 0, appointmentsSet: 0, closedWon: 0 },
-    sourceBreakdown: [],
-    statusBreakdown: [],
-    scoreDistribution: [],
-    dailyVolume: [],
-    loanTypeBreakdown: [],
-    partnerPerformance: [],
-  };
-}
+});

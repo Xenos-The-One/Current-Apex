@@ -442,6 +442,7 @@ export const appointments = mysqlTable("appointments", {
   reminderSent: boolean("reminder_sent").default(false),
   reminderSent24h: boolean("reminder_sent_24h").default(false),
   reminderSent2h: boolean("reminder_sent_2h").default(false),
+  reminderSent1h: boolean("reminder_sent_1h").default(false),
   confirmationSent: boolean("confirmation_sent").default(false),
   // Source tracking
   source: varchar("source", { length: 100 }), // e.g., "Facebook Ad", "Instagram", "Referral"
@@ -1502,6 +1503,10 @@ export const calendarResources = mysqlTable("calendar_resources", {
   color: varchar("color", { length: 20 }).default("#3B82F6"),
   description: text("description"),
   isActive: boolean("is_active").default(true),
+  // Reminder settings (added via SQL migration)
+  reminder24hEnabled: boolean("reminder_24h_enabled").default(true),
+  reminder1hEnabled: boolean("reminder_1h_enabled").default(true),
+  reminderMessageTemplate: text("reminder_message_template"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });

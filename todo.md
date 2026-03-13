@@ -837,3 +837,9 @@
 - [x] No-show follow-up automation: auto-trigger re-booking SMS/email when appointment marked No Show, links to calendar booking slug
 - [x] Calendar export: iCal and CSV download from calendar toolbar for a given date range
 - [x] All 219 tests passing
+
+## Calendar Features Round 5
+- [x] Appointment reminders: configurable 24h and 1h SMS/email reminders auto-sent to contacts before appointments; per-calendar toggle + custom message template in new Reminders tab
+- [x] Public booking page: /book/:slug already existed; enhanced with calendar slug support via getCalendarBookingPage public procedure
+- [x] Appointment analytics dashboard: dedicated Analytics tab on Calendar page with KPI cards, daily bar chart, meeting type pie chart, show/no-show rate breakdown over 30/60/90-day window
+- [x] All 225 tests passing

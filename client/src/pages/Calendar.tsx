@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,7 @@ import {
   MapPin, Phone, Video, User, Edit2, Trash2, Check, X, RotateCcw,
   Sparkles, List, Grid3X3, AlignLeft, Filter, Search, RefreshCw,
   CheckCircle, XCircle, AlertCircle, Eye, MoreHorizontal, Loader2,
-  Link2, Settings2, Unlink,
+  Link2, Settings2, Unlink, BarChart2, Bell, BellOff, TrendingUp, TrendingDown,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 
@@ -950,8 +951,15 @@ export default function Calendar() {
   const [showBookingLink, setShowBookingLink] = useState(false);
   const [bookingLinkCalId, setBookingLinkCalId] = useState<number | null>(null);
   const [bookingSlug, setBookingSlug] = useState("");
-  const [showExportMenu, setShowExportMenu] = useState(false);
-
+   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [activeTab, setActiveTab] = useState<"calendar" | "analytics" | "reminders">("calendar");
+  const [analyticsDays, setAnalyticsDays] = useState(30);
+  const [analyticsCalId, setAnalyticsCalId] = useState<number | undefined>(undefined);
+  const [showReminderSettings, setShowReminderSettings] = useState(false);
+  const [reminderCalId, setReminderCalId] = useState<number | null>(null);
+  const [reminder24h, setReminder24h] = useState(true);
+  const [reminder1h, setReminder1h] = useState(true);
+  const [reminderTemplate, setReminderTemplate] = useState("");
   // Date range for query
   const { startDate, endDate } = useMemo(() => {
     if (view === "month") {
@@ -1045,8 +1053,27 @@ export default function Calendar() {
     },
     onError: (e) => toast.error(e.message),
   });
-
-  // Filter appointments
+  // Analytics query
+  const { data: analyticsData, isLoading: analyticsLoading } = trpc.calendars.getAnalytics.useQuery(
+    { days: analyticsDays, calendarId: analyticsCalId },
+    { enabled: activeTab === "analytics" }
+  );
+  // Reminder settings query
+  const { data: reminderSettings } = trpc.calendars.getReminderSettings.useQuery(
+    { calendarId: reminderCalId! },
+    { enabled: activeTab === "reminders" && !!reminderCalId,
+      onSuccess: (d: any) => {
+        setReminder24h(d.reminder24hEnabled);
+        setReminder1h(d.reminder1hEnabled);
+        setReminderTemplate(d.reminderMessageTemplate ?? "");
+      }
+    }
+  );
+  const updateReminderMut = trpc.calendars.updateReminderSettings.useMutation({
+    onSuccess: () => toast.success("Reminder settings saved"),
+    onError: (e) => toast.error(e.message),
+  });
+  // Filter appointmentss
   const filteredAppts = useMemo(() => {
     let list = appointmentsData as Appointment[];
     if (search) {
@@ -1334,8 +1361,25 @@ export default function Calendar() {
           </div>
         )}
 
+        {/* Tab Bar */}
+        <div className="flex items-center gap-0 px-4 pt-2 border-b shrink-0">
+          {(["calendar", "analytics", "reminders"] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === tab ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {tab === "calendar" && <><CalendarIcon className="w-3.5 h-3.5 inline mr-1.5" />Calendar</>}
+              {tab === "analytics" && <><BarChart2 className="w-3.5 h-3.5 inline mr-1.5" />Analytics</>}
+              {tab === "reminders" && <><Bell className="w-3.5 h-3.5 inline mr-1.5" />Reminders</>}
+            </button>
+          ))}
+        </div>
+
         {/* Calendar Views */}
-        {!isEmpty && !isLoading && (
+        {activeTab === "calendar" && !isEmpty && !isLoading && (
           <>
             {view === "month" && (
               <MonthView
@@ -1360,6 +1404,217 @@ export default function Calendar() {
               <AgendaView appointments={filteredAppts} calendars={calendarsData} onApptClick={handleApptClick} />
             )}
           </>
+        )}
+
+        {/* Analytics Tab */}
+        {activeTab === "analytics" && (
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="max-w-5xl mx-auto space-y-6">
+              {/* Controls */}
+              <div className="flex items-center gap-4 flex-wrap">
+                <h2 className="text-lg font-semibold">Appointment Analytics</h2>
+                <div className="flex items-center gap-2 ml-auto">
+                  <Label className="text-xs">Calendar:</Label>
+                  <Select value={analyticsCalId?.toString() ?? "all"} onValueChange={v => setAnalyticsCalId(v === "all" ? undefined : Number(v))}>
+                    <SelectTrigger className="h-8 w-44 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Calendars</SelectItem>
+                      {(calendarsData as any[]).map((c: any) => (
+                        <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Label className="text-xs">Period:</Label>
+                  <Select value={analyticsDays.toString()} onValueChange={v => setAnalyticsDays(Number(v))}>
+                    <SelectTrigger className="h-8 w-28 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="30">Last 30 days</SelectItem>
+                      <SelectItem value="60">Last 60 days</SelectItem>
+                      <SelectItem value="90">Last 90 days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {analyticsLoading && <div className="flex items-center justify-center h-40"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>}
+              {analyticsData && (
+                <>
+                  {/* KPI Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {[
+                      { label: "Total", value: analyticsData.summary.total, color: "text-foreground" },
+                      { label: "Completed", value: analyticsData.summary.completed, color: "text-green-600" },
+                      { label: "No-Shows", value: analyticsData.summary.no_show, color: analyticsData.summary.noShowRate >= 20 ? "text-red-600" : analyticsData.summary.noShowRate >= 10 ? "text-orange-500" : "text-foreground" },
+                      { label: "Upcoming", value: analyticsData.summary.upcoming, color: "text-blue-600" },
+                    ].map(kpi => (
+                      <div key={kpi.label} className="rounded-xl border bg-card p-4">
+                        <p className="text-xs text-muted-foreground mb-1">{kpi.label}</p>
+                        <p className={`text-3xl font-bold ${kpi.color}`}>{kpi.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Show/No-Show Rate */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="rounded-xl border bg-card p-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <TrendingUp className="w-4 h-4 text-green-600" />
+                        <p className="text-sm font-medium">Show Rate</p>
+                      </div>
+                      <p className="text-4xl font-bold text-green-600">{analyticsData.summary.showRate}%</p>
+                      <p className="text-xs text-muted-foreground mt-1">{analyticsData.summary.completed} of {analyticsData.summary.total} appointments</p>
+                    </div>
+                    <div className="rounded-xl border bg-card p-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <TrendingDown className={`w-4 h-4 ${analyticsData.summary.noShowRate >= 20 ? "text-red-600" : "text-orange-500"}`} />
+                        <p className="text-sm font-medium">No-Show Rate</p>
+                      </div>
+                      <p className={`text-4xl font-bold ${analyticsData.summary.noShowRate >= 20 ? "text-red-600" : analyticsData.summary.noShowRate >= 10 ? "text-orange-500" : "text-foreground"}`}>{analyticsData.summary.noShowRate}%</p>
+                      <p className="text-xs text-muted-foreground mt-1">{analyticsData.summary.no_show} no-shows in {analyticsDays} days</p>
+                    </div>
+                  </div>
+                  {/* Daily Bar Chart */}
+                  {analyticsData.daily.length > 0 && (
+                    <div className="rounded-xl border bg-card p-4">
+                      <h3 className="text-sm font-semibold mb-4">Daily Appointments</h3>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <BarChart data={analyticsData.daily} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                          <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={v => new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric" })} />
+                          <YAxis tick={{ fontSize: 10 }} />
+                          <RechartsTooltip />
+                          <Bar dataKey="completed" name="Completed" fill="#22c55e" stackId="a" />
+                          <Bar dataKey="noShow" name="No Show" fill="#f97316" stackId="a" />
+                          <Bar dataKey="upcoming" name="Upcoming" fill="#3b82f6" stackId="a" />
+                          <Bar dataKey="cancelled" name="Cancelled" fill="#94a3b8" stackId="a" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                  {/* Meeting Type Breakdown */}
+                  {analyticsData.byMeetingType.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="rounded-xl border bg-card p-4">
+                        <h3 className="text-sm font-semibold mb-4">By Meeting Type</h3>
+                        <ResponsiveContainer width="100%" height={180}>
+                          <PieChart>
+                            <Pie data={analyticsData.byMeetingType} dataKey="total" nameKey="type" cx="50%" cy="50%" outerRadius={70} label={({ type, percent }) => `${type} ${Math.round((percent ?? 0) * 100)}%`}>
+                              {analyticsData.byMeetingType.map((entry, i) => (
+                                <Cell key={i} fill={MEETING_TYPE_COLORS[entry.type] ?? ["#6366F1","#0EA5E9","#10B981"][i % 3]} />
+                              ))}
+                            </Pie>
+                            <RechartsTooltip />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="rounded-xl border bg-card p-4">
+                        <h3 className="text-sm font-semibold mb-4">Show Rate by Type</h3>
+                        <div className="space-y-3">
+                          {analyticsData.byMeetingType.map(t => (
+                            <div key={t.type}>
+                              <div className="flex items-center justify-between text-xs mb-1">
+                                <span className="capitalize font-medium">{t.type.replace("_", " ")}</span>
+                                <span className="text-muted-foreground">{t.showRate}% show rate ({t.total} total)</span>
+                              </div>
+                              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                                <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${t.showRate}%` }} />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+              {!analyticsLoading && !analyticsData && (
+                <div className="text-center py-16 text-muted-foreground">
+                  <BarChart2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p>No data available for the selected period.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Reminders Tab */}
+        {activeTab === "reminders" && (
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="max-w-2xl mx-auto space-y-6">
+              <h2 className="text-lg font-semibold">Appointment Reminder Settings</h2>
+              <p className="text-sm text-muted-foreground">Configure automatic SMS and email reminders for each calendar. Reminders are sent to the contact's phone/email on file.</p>
+              {/* Calendar selector */}
+              <div className="space-y-2">
+                <Label className="text-sm">Select Calendar</Label>
+                <Select
+                  value={reminderCalId?.toString() ?? ""}
+                  onValueChange={v => setReminderCalId(Number(v))}
+                >
+                  <SelectTrigger className="w-64"><SelectValue placeholder="Choose a calendar..." /></SelectTrigger>
+                  <SelectContent>
+                    {(calendarsData as any[]).map((c: any) => (
+                      <SelectItem key={c.id} value={c.id.toString()}>
+                        <span className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: c.color }} />
+                          {c.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {reminderCalId && (
+                <div className="rounded-xl border bg-card p-5 space-y-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">24-Hour Reminder</p>
+                      <p className="text-xs text-muted-foreground">Send SMS + email the day before the appointment</p>
+                    </div>
+                    <button
+                      onClick={() => setReminder24h(v => !v)}
+                      className={`w-10 h-6 rounded-full transition-colors relative ${reminder24h ? "bg-primary" : "bg-muted"}`}
+                    >
+                      <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${reminder24h ? "left-5" : "left-1"}`} />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">1-Hour Reminder</p>
+                      <p className="text-xs text-muted-foreground">Send SMS + email 1 hour before the appointment</p>
+                    </div>
+                    <button
+                      onClick={() => setReminder1h(v => !v)}
+                      className={`w-10 h-6 rounded-full transition-colors relative ${reminder1h ? "bg-primary" : "bg-muted"}`}
+                    >
+                      <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${reminder1h ? "left-5" : "left-1"}`} />
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Custom Message Template <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                    <Textarea
+                      value={reminderTemplate}
+                      onChange={e => setReminderTemplate(e.target.value)}
+                      placeholder={`Hi {firstName}, this is a reminder about your {calendarName} appointment on {date} at {time}.{bookingLink}`}
+                      rows={4}
+                      className="text-sm resize-none"
+                    />
+                    <p className="text-xs text-muted-foreground">Available variables: {"{"}firstName{"}"},  {"{"}calendarName{"}"},  {"{"}date{"}"},  {"{"}time{"}"},  {"{"}bookingLink{"}"}.</p>
+                  </div>
+                  <Button
+                    onClick={() => updateReminderMut.mutate({ calendarId: reminderCalId, reminder24hEnabled: reminder24h, reminder1hEnabled: reminder1h, reminderMessageTemplate: reminderTemplate || undefined })}
+                    disabled={updateReminderMut.isPending}
+                  >
+                    {updateReminderMut.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Bell className="w-4 h-4 mr-2" />}
+                    Save Reminder Settings
+                  </Button>
+                </div>
+              )}
+              {!reminderCalId && (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Bell className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p>Select a calendar above to configure its reminder settings.</p>
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </div>
 
