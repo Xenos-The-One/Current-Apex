@@ -966,7 +966,8 @@ export const calendarsRouter = router({
       return {
         summary: { ...totals, showRate, noShowRate },
         daily: dailyRows.map((r: any) => ({
-          day: r.day as string,
+          // TiDB may return DATE() as a Date object or a string — normalize to YYYY-MM-DD
+          day: r.day instanceof Date ? r.day.toISOString().slice(0, 10) : String(r.day ?? ""),
           total: Number(r.total),
           completed: Number(r.completed),
           noShow: Number(r.no_show),
@@ -974,7 +975,7 @@ export const calendarsRouter = router({
           cancelled: Number(r.cancelled),
         })),
         byMeetingType: typeRows.map((r: any) => ({
-          type: r.meeting_type as string,
+          type: String(r.meeting_type ?? "unspecified"),
           total: Number(r.total),
           completed: Number(r.completed),
           noShow: Number(r.no_show),

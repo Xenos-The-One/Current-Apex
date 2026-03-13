@@ -1475,7 +1475,7 @@ export default function Calendar() {
                       <ResponsiveContainer width="100%" height={200}>
                         <BarChart data={analyticsData.daily} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                          <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={v => new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric" })} />
+                          <XAxis dataKey="day" tick={{ fontSize: 10 }} tickFormatter={v => { try { return new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric" }); } catch { return String(v); } }} />
                           <YAxis tick={{ fontSize: 10 }} />
                           <RechartsTooltip />
                           <Bar dataKey="completed" name="Completed" fill="#22c55e" stackId="a" />
@@ -1508,7 +1508,7 @@ export default function Calendar() {
                           {analyticsData.byMeetingType.map(t => (
                             <div key={t.type}>
                               <div className="flex items-center justify-between text-xs mb-1">
-                                <span className="capitalize font-medium">{t.type.replace("_", " ")}</span>
+                                <span className="capitalize font-medium">{(t.type ?? "").replace("_", " ")}</span>
                                 <span className="text-muted-foreground">{t.showRate}% show rate ({t.total} total)</span>
                               </div>
                               <div className="h-2 rounded-full bg-muted overflow-hidden">
