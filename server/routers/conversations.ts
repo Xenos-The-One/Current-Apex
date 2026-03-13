@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
 import mysql2 from "mysql2/promise";
+import { invokeLLM } from "../_core/llm";
 
 async function getConn() {
   return mysql2.createConnection(process.env.DATABASE_URL!);
@@ -458,7 +459,7 @@ export const conversationsRouter = router({
       }
     }),
 
-  /** Search conversations */
+  /** Search conversations — includes full-text message content search */
   search: protectedProcedure
     .input(z.object({
       agencyId: z.number().default(0),
@@ -470,17 +471,62 @@ export const conversationsRouter = router({
       try {
         const s = `%${input.query}%`;
         const [rows] = await conn.execute(
-          `SELECT c.id, c.contactName, c.contactPhone, c.contactEmail, c.channel, c.lastMessagePreview, c.lastMessageAt, c.isRead, c.isStarred, c.tags
+          `SELECT DISTINCT c.id, c.contactName, c.contactPhone, c.contactEmail, c.channel,
+                  c.lastMessagePreview, c.lastMessageAt, c.isRead, c.isStarred, c.tags
            FROM conversations c
+           LEFT JOIN conversation_messages m ON m.conversationId = c.id
            WHERE c.agencyId = ? AND c.isArchived = 0
-           AND (c.contactName LIKE ? OR c.contactPhone LIKE ? OR c.contactEmail LIKE ? OR c.lastMessagePreview LIKE ?)
-           ORDER BY c.lastMessageAt DESC LIMIT 20`,
-          [agencyId, s, s, s, s]
+           AND (
+             c.contactName LIKE ? OR c.contactPhone LIKE ? OR c.contactEmail LIKE ?
+             OR c.lastMessagePreview LIKE ? OR m.content LIKE ?
+           )
+           ORDER BY c.lastMessageAt DESC LIMIT 25`,
+          [agencyId, s, s, s, s, s]
         );
         return (rows as any[]).map(r => ({
           ...r,
           tags: (() => { try { return JSON.parse(r.tags || "[]"); } catch { return []; } })(),
         }));
+      } finally {
+        await conn.end();
+      }
+    }),
+
+  /** AI-suggested reply based on conversation history */
+  suggestReply: protectedProcedure
+    .input(z.object({
+      conversationId: z.number(),
+      channel: z.enum(["sms", "email"]).default("sms"),
+      contactName: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const conn = await getConn();
+      try {
+        const [msgs] = await conn.execute(
+          `SELECT type, content, createdAt FROM conversation_messages
+           WHERE conversationId = ? ORDER BY createdAt DESC LIMIT 10`,
+          [input.conversationId]
+        );
+        const history = (msgs as any[]).reverse().map(m => {
+          const role = m.type.endsWith("_out") || m.type === "note" ? "agent" : "contact";
+          return `${role}: ${m.content}`;
+        }).join("\n");
+
+        const isEmail = input.channel === "email";
+        const systemPrompt = isEmail
+          ? `You are a professional mortgage loan officer assistant. Draft a concise, warm follow-up email reply (2-4 sentences) based on the conversation history. Address the contact by name if provided. Output only the body text — no subject line, no greeting header.`
+          : `You are a professional mortgage loan officer assistant. Draft a concise, friendly SMS reply (1-2 sentences, under 160 characters) based on the conversation history. Be direct and action-oriented.`;
+
+        const userPrompt = `Contact name: ${input.contactName || "the contact"}\n\nConversation history:\n${history || "(No messages yet — write a warm intro)"}`;
+
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+        });
+        const suggestion = (response as any)?.choices?.[0]?.message?.content?.trim() || "";
+        return { suggestion };
       } finally {
         await conn.end();
       }

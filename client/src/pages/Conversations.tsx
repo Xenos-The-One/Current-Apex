@@ -21,7 +21,7 @@ import {
   CheckCheck, Clock, Plus, RefreshCw, MessageCircle, Loader2, StickyNote,
   Paperclip, UserCheck, ChevronDown, LayoutTemplate, Tag, X, CheckSquare,
   Square, Trash2, Star, StarOff, Zap, GitBranch, PhoneCall, PhoneMissed,
-  PhoneIncoming, Info, ChevronRight, Inbox, Filter,
+  PhoneIncoming, Info, ChevronRight, Inbox, Filter, Sparkles,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -677,6 +677,15 @@ export default function Conversations() {
     { leadId: selectedLeadId! },
     { enabled: !!selectedLeadId && showContactDrawer }
   );
+  const suggestReply = trpc.conversations.suggestReply.useMutation({
+    onSuccess: (data) => {
+      if (data.suggestion) {
+        setReplyText(data.suggestion);
+        toast.success("AI reply drafted — review before sending");
+      }
+    },
+    onError: () => toast.error("Failed to generate suggestion"),
+  });
 
   useEffect(() => {
     if (selectedConvId && selectedConv && !selectedConv.isRead) {
@@ -788,7 +797,7 @@ export default function Conversations() {
 
   return (
     <DashboardLayout>
-      <div className="flex h-[calc(100vh-4rem)] -m-6 overflow-hidden bg-gray-50/50">
+      <div className="flex flex-1 min-h-0 -m-3 overflow-hidden bg-gray-50/50">
 
         {/* ── Left Panel ─────────────────────────────────────────────────── */}
         <div className="w-[280px] flex flex-col bg-white border-r border-gray-200 shrink-0">
@@ -1188,6 +1197,32 @@ export default function Conversations() {
                           ? <Loader2 className="h-4 w-4 animate-spin" />
                           : <Send className="h-4 w-4" />}
                       </Button>
+                      {/* AI Suggest Reply */}
+                      {composeTab !== "note" && selectedConvId && (
+                        <TooltipProvider delayDuration={300}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost" size="icon"
+                                className="w-9 h-9 text-purple-400 hover:text-purple-600 hover:bg-purple-50"
+                                onClick={() => suggestReply.mutate({
+                                  conversationId: selectedConvId,
+                                  channel: composeTab as "sms" | "email",
+                                  contactName: displayName,
+                                })}
+                                disabled={suggestReply.isPending}
+                              >
+                                {suggestReply.isPending
+                                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                                  : <Sparkles className="h-4 w-4" />}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-[12px]">
+                              AI Suggest Reply
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                       <Popover open={showTemplates} onOpenChange={setShowTemplates}>
                         <PopoverTrigger asChild>
                           <Button

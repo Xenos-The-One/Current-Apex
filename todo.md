@@ -904,3 +904,8 @@
 - [x] Saved quick reply templates in composer (7 pre-built SMS + email templates with variable substitution)
 - [x] Keyboard shortcuts for power users (J/K navigate, E archive, R mark unread, I toggle drawer, C compose, ⌘K search, ⌘↵ send)
 - [x] Keyboard shortcuts dialog accessible from MoreVertical menu
+## Conversations Improvements (Round 6)
+- [x] Fix scroll bug — opening a conversation pulled the page down; fixed by adding overflow-hidden + flex-col min-h-0 to DashboardLayout main and using flex-1 min-h-0 on the Conversations outer wrapper
+- [x] AI Suggest Reply button (✨ purple Sparkles icon) in composer — calls LLM with last 10 messages as context, drafts SMS (<160 chars) or email body, populates composer for review before sending
+- [x] Full-text message content search — search box now queries conversation_messages.content via LEFT JOIN in addition to contact name/phone/email
+- [x] Unread count badge on Conversations sidebar nav item — blue badge showing unread count, refreshes every 30s

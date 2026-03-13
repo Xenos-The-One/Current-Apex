@@ -476,6 +476,7 @@ function GroupedSidebarNav({
                         />
                         {item.path === "/notifications" && <NotificationBadge />}
                         {item.path === "/apex-content" && <ApprovalBadge />}
+                        {item.path === "/conversations" && <ConversationUnreadBadge />}
                       </div>
                       <span>{item.label}</span>
                     </SidebarMenuButton>
@@ -584,6 +585,19 @@ function TopBarBreadcrumb({ location, menuItems }: { location: string; menuItems
   );
 }
 
+function ConversationUnreadBadge() {
+  const { data } = trpc.conversations.getStats.useQuery({ agencyId: 0 }, {
+    refetchInterval: 30000,
+    retry: false,
+  });
+  const count = Number(data?.unread) || 0;
+  if (count === 0) return null;
+  return (
+    <span className="absolute -top-1.5 -right-1.5 bg-blue-500 text-white text-[10px] font-bold rounded-full h-4 min-w-4 flex items-center justify-center px-0.5">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
 function NotificationBadge() {
   const { data } = trpc.notifications.unreadCount.useQuery(undefined, {
     refetchInterval: 30000,
@@ -1282,7 +1296,7 @@ function DashboardLayoutContent({
             </div>
           );
         })()}
-        <main className="flex-1 p-3">{children}</main>
+        <main className="flex-1 p-3 overflow-hidden flex flex-col min-h-0">{children}</main>
       </SidebarInset>
       <AIAssistantWidget />
     </>
