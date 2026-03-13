@@ -942,3 +942,8 @@
 - [x] Fix campaigns.ts router to use content field
 - [x] Fix Campaigns.tsx form to use content field
 - [x] Add campaigns.listTemplates procedure to server
+
+## Campaigns Round 11
+- [x] Campaign template library — Use Template button in Email and SMS creation dialogs
+- [x] Bulk AI call campaigns — prominent Quick Actions cards (Single Call + Bulk Campaign) in AI Calling tab
+- [x] Campaign duplicate/clone action on Email and SMS campaign cards (wired to real tRPC mutations)

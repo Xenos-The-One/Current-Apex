@@ -58,6 +58,92 @@ const OUTCOME_LABELS: Record<string, string> = {
   voicemail: "Voicemail",
 };
 
+// ─── Built-in Campaign Templates ─────────────────────────────────────────────
+
+const EMAIL_TEMPLATES = [
+  {
+    id: "welcome",
+    name: "Welcome Email",
+    category: "Onboarding",
+    subject: "Welcome! Let's get you the best rate possible",
+    content: "Hi {name},\n\nThank you for reaching out! I'm excited to help you navigate the mortgage process and find the best rate for your situation.\n\nAs a first step, I'd love to schedule a quick 15-minute call to understand your goals. You can book directly at [your calendar link] or simply reply to this email.\n\nLooking forward to working with you!\n\nBest,\n{agent_name}",
+  },
+  {
+    id: "rate_drop",
+    name: "Rate Drop Alert",
+    category: "Market Update",
+    subject: "Rates just dropped — lock in your rate today",
+    content: "Hi {name},\n\nGreat news — mortgage rates have dropped significantly this week. This could save you hundreds of dollars per month on your payment.\n\nBased on your profile, you may qualify for a rate as low as [rate]%. I'd love to run a quick pre-qualification to show you exactly what this means for your budget.\n\nReply to this email or call me at [phone] to get started.\n\nBest,\n{agent_name}",
+  },
+  {
+    id: "follow_up",
+    name: "Follow-Up (No Response)",
+    category: "Follow-Up",
+    subject: "Still thinking about your home purchase?",
+    content: "Hi {name},\n\nI wanted to follow up on my previous message. I know buying a home is a big decision and timing matters.\n\nI'm here whenever you're ready — whether that's today or in a few months. In the meantime, I've put together a quick guide on current market conditions that might be helpful.\n\nFeel free to reach out anytime.\n\nBest,\n{agent_name}",
+  },
+  {
+    id: "pre_approval",
+    name: "Pre-Approval Invitation",
+    category: "Conversion",
+    subject: "Get pre-approved in minutes — no hard credit pull",
+    content: "Hi {name},\n\nDid you know that getting pre-approved takes less than 10 minutes and won't affect your credit score?\n\nA pre-approval letter gives you a competitive edge when making offers and shows sellers you're a serious buyer.\n\nClick here to start your pre-approval: [link]\n\nQuestions? I'm just a reply away.\n\nBest,\n{agent_name}",
+  },
+  {
+    id: "appt_confirm",
+    name: "Appointment Confirmation",
+    category: "Appointment",
+    subject: "Confirmed: Your mortgage consultation on {date}",
+    content: "Hi {name},\n\nThis is a confirmation for your mortgage consultation scheduled for {date} at {time}.\n\nWhat to expect:\n• 30-minute call to review your goals\n• Personalized rate options\n• Next steps and timeline\n\nIf you need to reschedule, please reply to this email or call [phone].\n\nLooking forward to speaking with you!\n\n{agent_name}",
+  },
+  {
+    id: "referral_ask",
+    name: "Referral Request",
+    category: "Referral",
+    subject: "Know anyone looking to buy or refinance?",
+    content: "Hi {name},\n\nI hope your mortgage experience has been smooth! If you're happy with the service, I'd love your help.\n\nDo you know anyone who might be looking to buy a home, refinance, or explore their mortgage options? A simple introduction goes a long way.\n\nFor every referral that closes, I'll send you a thank-you gift as a token of appreciation.\n\nThank you for your trust!\n\n{agent_name}",
+  },
+];
+
+const SMS_TEMPLATES = [
+  {
+    id: "intro",
+    name: "Introduction",
+    category: "Outreach",
+    message: "Hi {name}! This is {agent_name} from {company}. I specialize in helping people like you get the best mortgage rates. Would you have 5 minutes for a quick call this week? Reply STOP to opt out.",
+  },
+  {
+    id: "rate_alert",
+    name: "Rate Drop Alert",
+    category: "Market Update",
+    message: "Hi {name}! Rates just dropped to their lowest point this year. Based on your profile, you could save $200+/month. Reply YES to see your personalized rate. Reply STOP to opt out.",
+  },
+  {
+    id: "follow_up",
+    name: "Follow-Up",
+    category: "Follow-Up",
+    message: "Hi {name}, just checking in! I sent you an email last week about your mortgage options. Have you had a chance to review it? Happy to answer any questions. Reply STOP to opt out.",
+  },
+  {
+    id: "appt_reminder",
+    name: "Appointment Reminder",
+    category: "Appointment",
+    message: "Hi {name}! Reminder: your mortgage consultation is tomorrow at {time}. Reply CONFIRM to confirm or RESCHEDULE to pick a new time. Reply STOP to opt out.",
+  },
+  {
+    id: "docs_request",
+    name: "Document Request",
+    category: "Processing",
+    message: "Hi {name}! To move forward with your application, I need a few documents. I've sent the full list to your email. Questions? Just reply here. Reply STOP to opt out.",
+  },
+  {
+    id: "referral",
+    name: "Referral Ask",
+    category: "Referral",
+    message: "Hi {name}! Hope your experience was great! Do you know anyone looking to buy or refinance? I'd love to help them too. Thanks for any referrals! Reply STOP to opt out.",
+  },
+];
+
 // ─── Small Helpers ────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: string }) {
@@ -373,10 +459,14 @@ function BulkCallDialog({ onSuccess }: { onSuccess: () => void }) {
 
 // ─── Email Campaign Dialog ────────────────────────────────────────────────────
 
-function CreateEmailCampaignDialog({ clientId, onSuccess }: { clientId: number; onSuccess: () => void }) {
+function CreateEmailCampaignDialog({ clientId, onSuccess, initialTemplate }: { clientId: number; onSuccess: () => void; initialTemplate?: typeof EMAIL_TEMPLATES[0] }) {
   const [open, setOpen] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [form, setForm] = useState({
-    name: "", subject: "", previewText: "", content: "",
+    name: initialTemplate?.name ?? "",
+    subject: initialTemplate?.subject ?? "",
+    previewText: "",
+    content: initialTemplate?.content ?? "",
     recipientFilter: "all" as const, scheduledDate: "", sendNow: false,
   });
   const createCampaign = trpc.campaignsOld.createEmailCampaign.useMutation({
@@ -389,6 +479,12 @@ function CreateEmailCampaignDialog({ clientId, onSuccess }: { clientId: number; 
     onError: (e: any) => toast.error(e.message),
   });
 
+  const applyTemplate = (t: typeof EMAIL_TEMPLATES[0]) => {
+    setForm(f => ({ ...f, name: t.name, subject: t.subject, content: t.content }));
+    setShowTemplates(false);
+    toast.success(`Template "${t.name}" applied`);
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -399,6 +495,39 @@ function CreateEmailCampaignDialog({ clientId, onSuccess }: { clientId: number; 
           <DialogTitle className="flex items-center gap-2"><Mail className="w-5 h-5 text-purple-600" /> New Email Campaign</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-2">
+          {/* Template Picker */}
+          <div className="rounded-lg border border-dashed border-purple-200 bg-purple-50/50 p-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold text-purple-700 flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> Start from a template</p>
+              <Button variant="ghost" size="sm" className="h-6 text-xs text-purple-600 hover:text-purple-700 px-2" onClick={() => setShowTemplates(v => !v)}>
+                {showTemplates ? "Hide" : "Browse templates"}
+              </Button>
+            </div>
+            {showTemplates && (
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {EMAIL_TEMPLATES.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => applyTemplate(t)}
+                    className="text-left p-2.5 rounded-lg bg-white border border-purple-100 hover:border-purple-300 hover:bg-purple-50 transition-colors group"
+                  >
+                    <p className="text-xs font-semibold text-foreground group-hover:text-purple-700">{t.name}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{t.category}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+            {!showTemplates && (
+              <div className="flex gap-1.5 flex-wrap">
+                {EMAIL_TEMPLATES.slice(0, 3).map(t => (
+                  <button key={t.id} onClick={() => applyTemplate(t)} className="text-xs px-2.5 py-1 rounded-full bg-white border border-purple-200 hover:bg-purple-100 hover:border-purple-300 text-purple-700 transition-colors">
+                    {t.name}
+                  </button>
+                ))}
+                <button onClick={() => setShowTemplates(true)} className="text-xs px-2.5 py-1 rounded-full bg-white border border-purple-200 hover:bg-purple-100 text-purple-500 transition-colors">+{EMAIL_TEMPLATES.length - 3} more</button>
+              </div>
+            )}
+          </div>
           <div className="space-y-1.5">
             <Label className="text-sm">Campaign Name *</Label>
             <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Q2 Rate Drop Announcement" />
@@ -469,6 +598,7 @@ function CreateEmailCampaignDialog({ clientId, onSuccess }: { clientId: number; 
 
 function CreateSMSCampaignDialog({ clientId, onSuccess }: { clientId: number; onSuccess: () => void }) {
   const [open, setOpen] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [form, setForm] = useState({ name: "", message: "", segment: "all", scheduledFor: "", sendNow: false });
   const { data: leadsData } = trpc.crm.listMyLeads.useQuery({ limit: 200 });
   const createCampaign = trpc.smsCampaigns.createCampaign.useMutation({
@@ -480,6 +610,12 @@ function CreateSMSCampaignDialog({ clientId, onSuccess }: { clientId: number; on
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const applyTemplate = (t: typeof SMS_TEMPLATES[0]) => {
+    setForm(f => ({ ...f, name: t.name, message: t.message }));
+    setShowTemplates(false);
+    toast.success(`Template "${t.name}" applied`);
+  };
 
   const eligibleLeads = useMemo(() => {
     const all = leadsData?.leads ?? [];
@@ -500,6 +636,39 @@ function CreateSMSCampaignDialog({ clientId, onSuccess }: { clientId: number; on
           <DialogTitle className="flex items-center gap-2"><MessageSquare className="w-5 h-5 text-green-600" /> New SMS Campaign</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-2">
+          {/* Template Picker */}
+          <div className="rounded-lg border border-dashed border-green-200 bg-green-50/50 p-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold text-green-700 flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> Start from a template</p>
+              <Button variant="ghost" size="sm" className="h-6 text-xs text-green-600 hover:text-green-700 px-2" onClick={() => setShowTemplates(v => !v)}>
+                {showTemplates ? "Hide" : "Browse templates"}
+              </Button>
+            </div>
+            {showTemplates && (
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {SMS_TEMPLATES.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => applyTemplate(t)}
+                    className="text-left p-2.5 rounded-lg bg-white border border-green-100 hover:border-green-300 hover:bg-green-50 transition-colors group"
+                  >
+                    <p className="text-xs font-semibold text-foreground group-hover:text-green-700">{t.name}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{t.category}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+            {!showTemplates && (
+              <div className="flex gap-1.5 flex-wrap">
+                {SMS_TEMPLATES.slice(0, 3).map(t => (
+                  <button key={t.id} onClick={() => applyTemplate(t)} className="text-xs px-2.5 py-1 rounded-full bg-white border border-green-200 hover:bg-green-100 hover:border-green-300 text-green-700 transition-colors">
+                    {t.name}
+                  </button>
+                ))}
+                <button onClick={() => setShowTemplates(true)} className="text-xs px-2.5 py-1 rounded-full bg-white border border-green-200 hover:bg-green-100 text-green-500 transition-colors">+{SMS_TEMPLATES.length - 3} more</button>
+              </div>
+            )}
+          </div>
           <div className="space-y-1.5">
             <Label className="text-sm">Campaign Name *</Label>
             <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Rate Drop Alert — March" />
@@ -566,7 +735,7 @@ function CreateSMSCampaignDialog({ clientId, onSuccess }: { clientId: number; on
 
 // ─── Campaign Row (table-style) ───────────────────────────────────────────────
 
-function CampaignRow({ campaign, type, onViewStats }: { campaign: any; type: "email" | "sms"; onViewStats: () => void }) {
+function CampaignRow({ campaign, type, onViewStats, onDuplicate }: { campaign: any; type: "email" | "sms"; onViewStats: () => void; onDuplicate?: () => void }) {
   const sent = campaign.sentCount ?? 0;
   const openRate = type === "email" && sent > 0 ? Math.round((campaign.openCount / sent) * 100) : null;
   const deliveryRate = type === "sms" && sent > 0 ? Math.round(((campaign.deliveredCount ?? 0) / sent) * 100) : null;
@@ -634,7 +803,7 @@ function CampaignRow({ campaign, type, onViewStats }: { campaign: any; type: "em
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
             <DropdownMenuItem onClick={() => toast.info("Edit coming soon")}><FileText className="w-3.5 h-3.5 mr-2" /> Edit</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => toast.info("Duplicate coming soon")}><Copy className="w-3.5 h-3.5 mr-2" /> Duplicate</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDuplicate ? onDuplicate() : toast.info("Duplicate coming soon")}><Copy className="w-3.5 h-3.5 mr-2" /> Duplicate</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => toast.info("Pause coming soon")} className="text-amber-600">
               <Pause className="w-3.5 h-3.5 mr-2" /> Pause
@@ -827,6 +996,35 @@ export default function Campaigns() {
   const { data: smsCampaigns, isLoading: smsLoading, refetch: refetchSMS } = trpc.smsCampaigns.getCampaigns.useQuery({ clientId }, { enabled: clientId > 0 });
   const { data: vapiInfo } = trpc.vapi.testConnection.useQuery();
 
+  const duplicateEmail = trpc.campaignsOld.createEmailCampaign.useMutation({
+    onSuccess: () => { toast.success("Campaign duplicated"); refetchEmail(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const duplicateSMS = trpc.smsCampaigns.createCampaign.useMutation({
+    onSuccess: () => { toast.success("Campaign duplicated"); refetchSMS(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const handleDuplicate = (campaign: any, type: "email" | "sms") => {
+    const copyName = `${campaign.name} (Copy)`;
+    if (type === "email") {
+      duplicateEmail.mutate({
+        clientId,
+        name: copyName,
+        subject: campaign.subject ?? copyName,
+        content: campaign.content ?? "",
+        recipientFilter: campaign.recipientFilter ?? "all",
+      });
+    } else {
+      duplicateSMS.mutate({
+        clientId,
+        name: copyName,
+        message: campaign.message ?? campaign.content ?? "",
+        recipients: [],
+      });
+    }
+  };
+
   const callStats = useMemo(() => {
     const logs = callLogs ?? [];
     const answered = logs.filter((c: any) => c.outcome === "answered" || c.outcome === "appointment_booked").length;
@@ -988,6 +1186,34 @@ export default function Campaigns() {
                   { label: "Appts Booked", value: callStats.appointments, icon: Calendar, color: "text-teal-600", bg: "bg-teal-50" },
                   { label: "Answer Rate", value: `${callStats.answerRate}%`, icon: TrendingUp, color: "text-amber-600", bg: "bg-amber-50" },
                 ].map(k => <KpiCard key={k.label} {...k} />)}
+              </div>
+
+              {/* Quick Actions */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100">
+                  <CardContent className="p-4 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0">
+                      <Phone className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-blue-900">Single AI Call</p>
+                      <p className="text-xs text-blue-700/70 mt-0.5">Call one lead with a personalized AI conversation</p>
+                    </div>
+                    <InitiateCallDialog onSuccess={refetchCalls} />
+                  </CardContent>
+                </Card>
+                <Card className="border-0 shadow-sm bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-100">
+                  <CardContent className="p-4 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-purple-600 flex items-center justify-center flex-shrink-0">
+                      <Users className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-purple-900">Bulk AI Campaign</p>
+                      <p className="text-xs text-purple-700/70 mt-0.5">Launch AI calls to multiple leads simultaneously</p>
+                    </div>
+                    <BulkCallDialog onSuccess={refetchCalls} />
+                  </CardContent>
+                </Card>
               </div>
 
               {/* Sub-tabs */}
@@ -1231,7 +1457,7 @@ export default function Campaigns() {
                   ) : (emailCampaigns?.length ?? 0) > 0 ? (
                     <div>
                       {emailCampaigns!.map((c: any) => (
-                        <CampaignRow key={c.id} campaign={c} type="email" onViewStats={() => setSelectedCampaign({ campaign: c, type: "email" })} />
+                        <CampaignRow key={c.id} campaign={c} type="email" onViewStats={() => setSelectedCampaign({ campaign: c, type: "email" })} onDuplicate={() => handleDuplicate(c, "email")} />
                       ))}
                     </div>
                   ) : (
@@ -1317,7 +1543,7 @@ export default function Campaigns() {
                   ) : (smsCampaigns?.length ?? 0) > 0 ? (
                     <div>
                       {smsCampaigns!.map((c: any) => (
-                        <CampaignRow key={c.id} campaign={c} type="sms" onViewStats={() => setSelectedCampaign({ campaign: c, type: "sms" })} />
+                        <CampaignRow key={c.id} campaign={c} type="sms" onViewStats={() => setSelectedCampaign({ campaign: c, type: "sms" })} onDuplicate={() => handleDuplicate(c, "sms")} />
                       ))}
                     </div>
                   ) : (
