@@ -219,9 +219,8 @@ export const emailCampaigns = mysqlTable("email_campaigns", {
   clientId: int("client_id").references(() => clients.id), // null = agency-wide
   name: varchar("name", { length: 255 }).notNull(),
   subject: varchar("subject", { length: 500 }).notNull(),
-  htmlContent: text("html_content"),
-  textContent: text("text_content"),
-  recipientFilter: mysqlEnum("recipient_filter", ["all", "status", "custom"]).default("all").notNull(),
+  content: text("content"),
+  recipientFilter: varchar("recipient_filter", { length: 50 }).default("all").notNull(),
   recipientStatus: varchar("recipient_status", { length: 100 }),
   status: mysqlEnum("status", ["draft", "scheduled", "sending", "sent", "paused", "failed"]).default("draft").notNull(),
   scheduledDate: timestamp("scheduled_date"),

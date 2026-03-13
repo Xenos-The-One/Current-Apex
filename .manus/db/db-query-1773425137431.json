@@ -1,0 +1,142 @@
+{
+  "query": "SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'email_campaigns' AND TABLE_SCHEMA = DATABASE() ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'email_campaigns' AND TABLE_SCHEMA = DATABASE() ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "COLUMN_NAME": "id",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "agencyId",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "createdByUserId",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "name",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "subject",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "fromName",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "fromEmail",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "content",
+      "DATA_TYPE": "text"
+    },
+    {
+      "COLUMN_NAME": "templateId",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "status",
+      "DATA_TYPE": "enum"
+    },
+    {
+      "COLUMN_NAME": "audienceFilter",
+      "DATA_TYPE": "json"
+    },
+    {
+      "COLUMN_NAME": "scheduledAt",
+      "DATA_TYPE": "timestamp"
+    },
+    {
+      "COLUMN_NAME": "sentAt",
+      "DATA_TYPE": "timestamp"
+    },
+    {
+      "COLUMN_NAME": "totalRecipients",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "totalSent",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "totalOpened",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "totalClicked",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "totalBounced",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "totalUnsubscribed",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "sendgridCampaignId",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "createdAt",
+      "DATA_TYPE": "timestamp"
+    },
+    {
+      "COLUMN_NAME": "updatedAt",
+      "DATA_TYPE": "timestamp"
+    },
+    {
+      "COLUMN_NAME": "scheduled_date",
+      "DATA_TYPE": "timestamp"
+    },
+    {
+      "COLUMN_NAME": "agency_id",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "open_count",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "click_count",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "client_id",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "recipient_filter",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "recipient_status",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "sent_count",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "failed_count",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "sent_date",
+      "DATA_TYPE": "timestamp"
+    },
+    {
+      "COLUMN_NAME": "created_by",
+      "DATA_TYPE": "int"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\tDATA_TYPE\nid\tint\nagencyId\tint\ncreatedByUserId\tint\nname\tvarchar\nsubject\tvarchar\nfromName\tvarchar\nfromEmail\tvarchar\ncontent\ttext\ntemplateId\tint\nstatus\tenum\naudienceFilter\tjson\nscheduledAt\ttimestamp\nsentAt\ttimestamp\ntotalRecipients\tint\ntotalSent\tint\ntotalOpened\tint\ntotalClicked\tint\ntotalBounced\tint\ntotalUnsubscribed\tint\nsendgridCampaignId\tvarchar\ncreatedAt\ttimestamp\nupdatedAt\ttimestamp\nscheduled_date\ttimestamp\nagency_id\tint\nopen_count\tint\nclick_count\tint\nclient_id\tint\nrecipient_filter\tvarchar\nrecipient_status\tvarchar\nsent_count\tint\nfailed_count\tint\nsent_date\ttimestamp\ncreated_by\tint\n",
+  "stderr": "",
+  "execution_time_ms": 354
+}

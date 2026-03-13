@@ -134,8 +134,7 @@ export const campaignsRouter = router({
         clientId: z.number(),
         name: z.string(),
         subject: z.string(),
-        htmlContent: z.string().optional(),
-        textContent: z.string().optional(),
+        content: z.string().optional(),
         recipientFilter: z.enum(["all", "status", "custom"]),
         recipientStatus: z.string().optional(),
         recipientIds: z.array(z.number()).optional(),
@@ -159,8 +158,7 @@ export const campaignsRouter = router({
         clientId: input.clientId,
         name: input.name,
         subject: input.subject,
-        htmlContent: input.htmlContent || null,
-        textContent: input.textContent || null,
+        content: input.content || null,
         recipientFilter: input.recipientFilter,
         recipientStatus: input.recipientStatus || null,
         scheduledDate: input.scheduledDate || null,
@@ -194,8 +192,8 @@ export const campaignsRouter = router({
             to: recipients,
             from: client.email || "noreply@example.com", // Use client email or default
             subject: input.subject,
-            html: input.htmlContent,
-            text: input.textContent,
+            html: input.content,
+            text: input.content,
           });
 
           // Update campaign with results

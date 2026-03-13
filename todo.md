@@ -929,3 +929,16 @@
 - [x] Campaign scheduling - date/time picker in Email and SMS creation dialogs
 - [x] Bulk AI call campaigns - segment selector + progress bar
 - [x] Campaign analytics drill-down side panel (View Stats button on each campaign card)
+
+## Campaigns Overhaul (Round 10)
+- [x] Fix Campaigns page to use DashboardLayout (remove CRMLayout)
+- [x] Fix tRPC procedure names (campaignsOld.listEmailCampaigns, etc.)
+- [x] Add View Reports button to all campaign header variants
+- [x] Add Active KPI card to Email tab
+- [x] Add Response Rate KPI card to SMS tab
+- [x] Add Assistant column to AI Calling Call History table
+- [x] Improve How It Works section with icon-based steps
+- [x] Fix emailCampaigns schema to match actual DB (content vs htmlContent/textContent)
+- [x] Fix campaigns.ts router to use content field
+- [x] Fix Campaigns.tsx form to use content field
+- [x] Add campaigns.listTemplates procedure to server

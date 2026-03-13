@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { useAuth } from "@/_core/hooks/useAuth";
 import { useAgency } from "@/contexts/AgencyContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
@@ -13,15 +12,26 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 import { trpc } from "@/lib/trpc";
 import {
-  Bot, Calendar, CheckCircle2, Clock, ExternalLink, FileText, Loader2, Mail, MessageSquare,
-  Mic, Phone, PhoneCall, PhoneMissed, PhoneOff, Play, Plus, RefreshCw, Send, Sparkles,
-  Star, TrendingUp, Users, Zap, BarChart2, XCircle, AlertCircle, ChevronRight,
+  BarChart2, Bot, Calendar, CheckCircle2, ChevronRight, Clock, Copy, Download,
+  ExternalLink, FileText, Loader2, Mail, MessageSquare, Mic, MoreHorizontal,
+  Pause, Phone, PhoneCall, PhoneMissed, PhoneOff, Play, Plus, RefreshCw,
+  Send, Sparkles, Star, TrendingUp, Users, Zap, AlertCircle, Info,
+  ArrowUpRight, Activity, Target,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+type CampaignStatus = "draft" | "scheduled" | "sending" | "sent" | "failed" | "paused";
+type CallOutcome = "answered" | "appointment_booked" | "no_answer" | "failed" | "voicemail";
+
+// ─── Constants ───────────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-600 border-gray-200",
@@ -48,12 +58,7 @@ const OUTCOME_LABELS: Record<string, string> = {
   voicemail: "Voicemail",
 };
 
-function OutcomeIcon({ outcome }: { outcome: string }) {
-  if (outcome === "answered" || outcome === "appointment_booked") return <PhoneCall className="w-4 h-4 text-green-600" />;
-  if (outcome === "no_answer") return <PhoneMissed className="w-4 h-4 text-gray-500" />;
-  if (outcome === "failed") return <PhoneOff className="w-4 h-4 text-red-500" />;
-  return <Phone className="w-4 h-4 text-blue-500" />;
-}
+// ─── Small Helpers ────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: string }) {
   return (
@@ -63,7 +68,56 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// ─── AI Calling Sub-components ──────────────────────────────────────────────
+function OutcomeIcon({ outcome }: { outcome: string }) {
+  if (outcome === "answered" || outcome === "appointment_booked") return <PhoneCall className="w-4 h-4 text-green-600" />;
+  if (outcome === "no_answer") return <PhoneMissed className="w-4 h-4 text-gray-500" />;
+  if (outcome === "failed") return <PhoneOff className="w-4 h-4 text-red-500" />;
+  return <Phone className="w-4 h-4 text-blue-500" />;
+}
+
+function KpiCard({ label, value, icon: Icon, color, bg, trend }: {
+  label: string; value: string | number; icon: any; color: string; bg: string; trend?: string;
+}) {
+  return (
+    <Card className="border-0 shadow-sm">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center`}>
+            <Icon className={`w-4 h-4 ${color}`} />
+          </div>
+          {trend && <span className="text-xs text-green-600 font-medium flex items-center gap-0.5"><ArrowUpRight className="w-3 h-3" />{trend}</span>}
+        </div>
+        <p className="text-2xl font-bold tracking-tight">{value}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EmptyState({
+  icon: Icon, iconBg, iconColor, title, description, primaryCta, secondaryCta,
+}: {
+  icon: any; iconBg: string; iconColor: string; title: string; description: string;
+  primaryCta?: React.ReactNode; secondaryCta?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+      <div className={`w-16 h-16 rounded-2xl ${iconBg} flex items-center justify-center mb-5`}>
+        <Icon className={`w-8 h-8 ${iconColor}`} />
+      </div>
+      <h3 className="font-semibold text-base mb-1.5">{title}</h3>
+      <p className="text-sm text-muted-foreground max-w-sm mb-6">{description}</p>
+      {(primaryCta || secondaryCta) && (
+        <div className="flex items-center gap-3 flex-wrap justify-center">
+          {primaryCta}
+          {secondaryCta}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Call Detail Dialog ───────────────────────────────────────────────────────
 
 function CallDetailDialog({ call }: { call: any }) {
   const [open, setOpen] = useState(false);
@@ -84,27 +138,17 @@ function CallDetailDialog({ call }: { call: any }) {
         </DialogHeader>
         <div className="space-y-4 mt-2">
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-muted/40 rounded-lg p-3">
-              <p className="text-xs text-muted-foreground">Outcome</p>
-              <p className="font-semibold text-sm mt-0.5">{OUTCOME_LABELS[call.outcome] ?? call.outcome}</p>
-            </div>
-            <div className="bg-muted/40 rounded-lg p-3">
-              <p className="text-xs text-muted-foreground">Duration</p>
-              <p className="font-semibold text-sm mt-0.5">{duration}</p>
-            </div>
-            <div className="bg-muted/40 rounded-lg p-3">
-              <p className="text-xs text-muted-foreground">Date</p>
-              <p className="font-semibold text-sm mt-0.5">{new Date(call.createdAt).toLocaleString()}</p>
-            </div>
-            {call.sentimentScore && (
-              <div className="bg-muted/40 rounded-lg p-3">
-                <p className="text-xs text-muted-foreground">Sentiment</p>
-                <div className="flex items-center gap-1 mt-0.5">
-                  <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                  <p className="font-semibold text-sm">{call.sentimentScore}/10</p>
-                </div>
+            {[
+              { label: "Outcome", value: OUTCOME_LABELS[call.outcome] ?? call.outcome },
+              { label: "Duration", value: duration },
+              { label: "Date", value: new Date(call.createdAt).toLocaleString() },
+              call.sentimentScore ? { label: "Sentiment", value: `${call.sentimentScore}/10` } : null,
+            ].filter(Boolean).map((item: any) => (
+              <div key={item.label} className="bg-muted/40 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground">{item.label}</p>
+                <p className="font-semibold text-sm mt-0.5">{item.value}</p>
               </div>
-            )}
+            ))}
           </div>
           {call.summary && (
             <div>
@@ -125,8 +169,7 @@ function CallDetailDialog({ call }: { call: any }) {
           {call.recordingUrl && (
             <Button variant="outline" size="sm" className="gap-1.5 w-full" asChild>
               <a href={call.recordingUrl} target="_blank" rel="noopener noreferrer">
-                <Play className="w-3.5 h-3.5" /> Play Recording
-                <ExternalLink className="w-3 h-3 ml-auto" />
+                <Play className="w-3.5 h-3.5" /> Play Recording <ExternalLink className="w-3 h-3 ml-auto" />
               </a>
             </Button>
           )}
@@ -136,11 +179,11 @@ function CallDetailDialog({ call }: { call: any }) {
   );
 }
 
+// ─── Initiate Call Dialog ─────────────────────────────────────────────────────
+
 function InitiateCallDialog({ onSuccess }: { onSuccess: () => void }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ leadId: "", phoneNumber: "", assistantId: "" });
-  const { data: myInfo } = trpc.crm.getMyInfo.useQuery();
-  const clientId = myInfo?.client?.id ?? 1;
   const { data: leadsData } = trpc.crm.listMyLeads.useQuery({ limit: 100 });
   const { data: vapiInfo } = trpc.vapi.testConnection.useQuery();
   const callMutation = trpc.vapi.makeCall.useMutation({
@@ -212,7 +255,9 @@ function InitiateCallDialog({ onSuccess }: { onSuccess: () => void }) {
               leadId: form.leadId ? parseInt(form.leadId) : undefined,
             })}
           >
-            {callMutation.isPending ? <span className="flex items-center gap-2"><Phone className="w-4 h-4 animate-pulse" /> Initiating...</span> : <span className="flex items-center gap-2"><Phone className="w-4 h-4" /> Start AI Call</span>}
+            {callMutation.isPending
+              ? <span className="flex items-center gap-2"><Phone className="w-4 h-4 animate-pulse" /> Initiating...</span>
+              : <span className="flex items-center gap-2"><Phone className="w-4 h-4" /> Start AI Call</span>}
           </Button>
         </div>
       </DialogContent>
@@ -220,7 +265,7 @@ function InitiateCallDialog({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-// ─── Bulk AI Call Dialog ─────────────────────────────────────────────────────
+// ─── Bulk Call Dialog ─────────────────────────────────────────────────────────
 
 function BulkCallDialog({ onSuccess }: { onSuccess: () => void }) {
   const [open, setOpen] = useState(false);
@@ -228,7 +273,6 @@ function BulkCallDialog({ onSuccess }: { onSuccess: () => void }) {
   const [assistantId, setAssistantId] = useState("");
   const [calling, setCalling] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
-  const { data: myInfo } = trpc.crm.getMyInfo.useQuery();
   const { data: leadsData } = trpc.crm.listMyLeads.useQuery({ status: segment as any, limit: 100 });
   const { data: vapiInfo } = trpc.vapi.testConnection.useQuery();
   const callMutation = trpc.vapi.makeCall.useMutation();
@@ -254,12 +298,9 @@ function BulkCallDialog({ onSuccess }: { onSuccess: () => void }) {
           customerName: `${lead.firstName} ${lead.lastName}`,
           leadId: lead.id,
         });
-      } catch {
-        // continue on individual failures
-      }
+      } catch { /* continue on individual failures */ }
       done++;
       setProgress({ done, total: eligibleLeads.length });
-      // Small delay to avoid rate limiting
       await new Promise(r => setTimeout(r, 500));
     }
     setCalling(false);
@@ -320,7 +361,9 @@ function BulkCallDialog({ onSuccess }: { onSuccess: () => void }) {
             disabled={calling || !assistantId || eligibleLeads.length === 0}
             onClick={handleBulkCall}
           >
-            {calling ? <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Calling {progress.done}/{progress.total}...</span> : <span className="flex items-center gap-2"><Phone className="w-4 h-4" /> Start Bulk Call ({eligibleLeads.length} leads)</span>}
+            {calling
+              ? <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Calling {progress.done}/{progress.total}...</span>
+              : <span className="flex items-center gap-2"><Phone className="w-4 h-4" /> Start Bulk Call ({eligibleLeads.length} leads)</span>}
           </Button>
         </div>
       </DialogContent>
@@ -328,7 +371,282 @@ function BulkCallDialog({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-// ─── Analytics Drill-Down Sheet ──────────────────────────────────────────────
+// ─── Email Campaign Dialog ────────────────────────────────────────────────────
+
+function CreateEmailCampaignDialog({ clientId, onSuccess }: { clientId: number; onSuccess: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({
+    name: "", subject: "", previewText: "", content: "",
+    recipientFilter: "all" as const, scheduledDate: "", sendNow: false,
+  });
+  const createCampaign = trpc.campaignsOld.createEmailCampaign.useMutation({
+    onSuccess: () => {
+      toast.success("Email campaign created");
+      setOpen(false);
+      setForm({ name: "", subject: "", previewText: "", content: "", recipientFilter: "all", scheduledDate: "", sendNow: false });
+      onSuccess();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="gap-2"><Plus className="w-4 h-4" /> New Email Campaign</Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Mail className="w-5 h-5 text-purple-600" /> New Email Campaign</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 mt-2">
+          <div className="space-y-1.5">
+            <Label className="text-sm">Campaign Name *</Label>
+            <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Q2 Rate Drop Announcement" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-sm">Subject Line *</Label>
+            <Input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} placeholder="Rates just dropped — lock in your rate today" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-sm">Preview Text <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Input value={form.previewText} onChange={e => setForm(f => ({ ...f, previewText: e.target.value }))} placeholder="Short preview shown in inbox..." />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-sm">Message Body *</Label>
+            <Textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} rows={5} placeholder="Hi {name}, I wanted to reach out because..." />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-sm">Recipient Audience</Label>
+            <Select value={form.recipientFilter} onValueChange={v => setForm(f => ({ ...f, recipientFilter: v as any }))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Leads</SelectItem>
+                <SelectItem value="new">New Leads</SelectItem>
+                <SelectItem value="contacted">Contacted</SelectItem>
+                <SelectItem value="qualified">Qualified</SelectItem>
+                <SelectItem value="status">By Status</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-sm flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> Schedule Send <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Input type="datetime-local" value={form.scheduledDate} onChange={e => setForm(f => ({ ...f, scheduledDate: e.target.value, sendNow: false }))} />
+          </div>
+          <div className="flex items-center gap-2">
+            <input type="checkbox" id="sendNow" checked={form.sendNow} onChange={e => setForm(f => ({ ...f, sendNow: e.target.checked, scheduledDate: e.target.checked ? "" : f.scheduledDate }))} className="rounded" />
+            <Label htmlFor="sendNow" className="text-sm cursor-pointer">Send immediately</Label>
+          </div>
+          <div className="p-3 rounded-lg bg-muted/50 border text-xs text-muted-foreground flex items-start gap-2">
+            <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+            <span>Leave schedule blank to save as draft. Check "Send immediately" to send now. Open and click tracking are enabled automatically.</span>
+          </div>
+          <Button
+            className="w-full"
+            disabled={createCampaign.isPending || !form.name || !form.subject || !form.content}
+            onClick={() => createCampaign.mutate({
+              clientId,
+              name: form.name,
+              subject: form.subject,
+              content: form.content,
+              recipientFilter: form.recipientFilter,
+              scheduledDate: form.scheduledDate ? new Date(form.scheduledDate) : undefined,
+              sendNow: form.sendNow,
+            })}
+          >
+            {createCampaign.isPending
+              ? <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Creating...</span>
+              : form.sendNow
+                ? <span className="flex items-center gap-2"><Send className="w-4 h-4" /> Send Now</span>
+                : <span className="flex items-center gap-2"><Plus className="w-4 h-4" /> Create Campaign</span>}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── SMS Campaign Dialog ──────────────────────────────────────────────────────
+
+function CreateSMSCampaignDialog({ clientId, onSuccess }: { clientId: number; onSuccess: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ name: "", message: "", segment: "all", scheduledFor: "", sendNow: false });
+  const { data: leadsData } = trpc.crm.listMyLeads.useQuery({ limit: 200 });
+  const createCampaign = trpc.smsCampaigns.createCampaign.useMutation({
+    onSuccess: () => {
+      toast.success("SMS campaign created");
+      setOpen(false);
+      setForm({ name: "", message: "", segment: "all", scheduledFor: "", sendNow: false });
+      onSuccess();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const eligibleLeads = useMemo(() => {
+    const all = leadsData?.leads ?? [];
+    if (form.segment === "all") return all.filter((l: any) => l.phone);
+    return all.filter((l: any) => l.phone && l.status === form.segment);
+  }, [leadsData, form.segment]);
+
+  const charCount = form.message.length;
+  const msgCount = Math.ceil(charCount / 160) || 1;
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="gap-2"><Plus className="w-4 h-4" /> New SMS Campaign</Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><MessageSquare className="w-5 h-5 text-green-600" /> New SMS Campaign</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 mt-2">
+          <div className="space-y-1.5">
+            <Label className="text-sm">Campaign Name *</Label>
+            <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Rate Drop Alert — March" />
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">Message *</Label>
+              <span className={`text-xs ${charCount > 160 ? "text-amber-600" : "text-muted-foreground"}`}>
+                {charCount}/160 · {msgCount} {msgCount === 1 ? "message" : "messages"}
+              </span>
+            </div>
+            <Textarea
+              value={form.message}
+              onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
+              rows={4}
+              placeholder="Hi {name}! Rates just dropped to 6.5%. Reply CALL to schedule a free consultation. Reply STOP to opt out."
+              maxLength={1600}
+            />
+            <p className="text-xs text-muted-foreground">Use {"{name}"} to personalize. Always include opt-out instructions (STOP).</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-sm">Recipient Segment</Label>
+            <Select value={form.segment} onValueChange={v => setForm(f => ({ ...f, segment: v }))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Leads ({leadsData?.leads?.filter((l: any) => l.phone).length ?? 0})</SelectItem>
+                <SelectItem value="new">New Leads</SelectItem>
+                <SelectItem value="contacted">Contacted</SelectItem>
+                <SelectItem value="qualified">Qualified</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">{eligibleLeads.length} leads with phone numbers in this segment</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-sm flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> Schedule Send <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Input type="datetime-local" value={form.scheduledFor} onChange={e => setForm(f => ({ ...f, scheduledFor: e.target.value, sendNow: false }))} />
+          </div>
+          <div className="flex items-center gap-2">
+            <input type="checkbox" id="sendNowSms" checked={form.sendNow} onChange={e => setForm(f => ({ ...f, sendNow: e.target.checked, scheduledFor: e.target.checked ? "" : f.scheduledFor }))} className="rounded" />
+            <Label htmlFor="sendNowSms" className="text-sm cursor-pointer">Send immediately</Label>
+          </div>
+          <Button
+            className="w-full"
+            disabled={createCampaign.isPending || !form.name || !form.message || eligibleLeads.length === 0}
+            onClick={() => createCampaign.mutate({
+              clientId,
+              name: form.name,
+              message: form.message,
+              recipients: eligibleLeads.map((l: any) => ({ name: `${l.firstName} ${l.lastName}`, phone: l.phone! })),
+              scheduledFor: form.sendNow ? undefined : (form.scheduledFor ? new Date(form.scheduledFor) : undefined),
+            })}
+          >
+            {createCampaign.isPending
+              ? <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Creating...</span>
+              : form.sendNow
+                ? <span className="flex items-center gap-2"><Send className="w-4 h-4" /> Send to {eligibleLeads.length} Leads</span>
+                : <span className="flex items-center gap-2"><Plus className="w-4 h-4" /> Create Campaign</span>}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Campaign Row (table-style) ───────────────────────────────────────────────
+
+function CampaignRow({ campaign, type, onViewStats }: { campaign: any; type: "email" | "sms"; onViewStats: () => void }) {
+  const sent = campaign.sentCount ?? 0;
+  const openRate = type === "email" && sent > 0 ? Math.round((campaign.openCount / sent) * 100) : null;
+  const deliveryRate = type === "sms" && sent > 0 ? Math.round(((campaign.deliveredCount ?? 0) / sent) * 100) : null;
+
+  return (
+    <div className="flex items-center gap-4 px-4 py-3.5 hover:bg-muted/30 transition-colors border-b border-border last:border-0">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <p className="font-medium text-sm truncate">{campaign.name}</p>
+          <StatusBadge status={campaign.status} />
+        </div>
+        {type === "email" && campaign.subject && (
+          <p className="text-xs text-muted-foreground truncate">{campaign.subject}</p>
+        )}
+        {(campaign.scheduledDate || campaign.scheduledFor || campaign.sentDate) && (
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {campaign.sentDate
+              ? `Sent ${new Date(campaign.sentDate).toLocaleDateString()}`
+              : `Scheduled ${new Date(campaign.scheduledDate || campaign.scheduledFor).toLocaleDateString()}`}
+          </p>
+        )}
+      </div>
+      <div className="hidden sm:flex items-center gap-6 text-sm">
+        <div className="text-right w-14">
+          <p className="font-semibold">{sent}</p>
+          <p className="text-xs text-muted-foreground">Sent</p>
+        </div>
+        {type === "email" ? (
+          <>
+            <div className="text-right w-16">
+              <p className="font-semibold">{campaign.openCount ?? 0}</p>
+              <p className="text-xs text-muted-foreground">Opened</p>
+            </div>
+            <div className="text-right w-16">
+              <p className="font-semibold text-purple-600">{openRate ?? 0}%</p>
+              <p className="text-xs text-muted-foreground">Open Rate</p>
+            </div>
+            <div className="text-right w-16">
+              <p className="font-semibold">{campaign.clickCount ?? 0}</p>
+              <p className="text-xs text-muted-foreground">Clicks</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="text-right w-16">
+              <p className="font-semibold">{campaign.deliveredCount ?? 0}</p>
+              <p className="text-xs text-muted-foreground">Delivered</p>
+            </div>
+            <div className="text-right w-16">
+              <p className="font-semibold text-green-600">{deliveryRate ?? 0}%</p>
+              <p className="text-xs text-muted-foreground">Delivery</p>
+            </div>
+          </>
+        )}
+      </div>
+      <div className="flex items-center gap-1">
+        <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground" onClick={onViewStats}>
+          <BarChart2 className="w-3 h-3" /> Stats
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground">
+              <MoreHorizontal className="w-3.5 h-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem onClick={() => toast.info("Edit coming soon")}><FileText className="w-3.5 h-3.5 mr-2" /> Edit</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => toast.info("Duplicate coming soon")}><Copy className="w-3.5 h-3.5 mr-2" /> Duplicate</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => toast.info("Pause coming soon")} className="text-amber-600">
+              <Pause className="w-3.5 h-3.5 mr-2" /> Pause
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+  );
+}
+
+// ─── Campaign Analytics Sheet ─────────────────────────────────────────────────
 
 function CampaignAnalyticsSheet({ campaign, type, onClose }: { campaign: any; type: "email" | "sms"; onClose: () => void }) {
   const { data: details } = trpc.smsCampaigns.getCampaignDetails.useQuery(
@@ -346,7 +664,7 @@ function CampaignAnalyticsSheet({ campaign, type, onClose }: { campaign: any; ty
     deliveryRate: campaign.sentCount > 0 ? Math.round(((campaign.sentCount - campaign.failedCount) / campaign.sentCount) * 100) : 0,
   } : null;
 
-  const smsStats = type === "sms" && details ? {
+  const smsStats = type === "sms" ? {
     sent: campaign.sentCount ?? 0,
     delivered: campaign.deliveredCount ?? 0,
     failed: campaign.failedCount ?? 0,
@@ -354,84 +672,55 @@ function CampaignAnalyticsSheet({ campaign, type, onClose }: { campaign: any; ty
     deliveryRate: campaign.sentCount > 0 ? Math.round((campaign.deliveredCount / campaign.sentCount) * 100) : 0,
   } : null;
 
-  const stats = emailStats || smsStats;
-
   return (
     <Sheet open onOpenChange={onClose}>
       <SheetContent className="w-[420px] sm:w-[480px] overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
-            <BarChart2 className="w-5 h-5 text-primary" />
-            Campaign Analytics
+            <BarChart2 className="w-5 h-5 text-primary" /> Campaign Analytics
           </SheetTitle>
         </SheetHeader>
         <div className="mt-6 space-y-6">
-          {/* Campaign Info */}
           <div className="space-y-1">
             <h3 className="font-semibold text-base">{campaign.name}</h3>
             {type === "email" && <p className="text-sm text-muted-foreground">Subject: {campaign.subject}</p>}
             <div className="flex items-center gap-2 mt-1">
               <StatusBadge status={campaign.status} />
               {campaign.sentDate && <span className="text-xs text-muted-foreground">Sent {new Date(campaign.sentDate).toLocaleDateString()}</span>}
-              {campaign.scheduledDate && campaign.status === "scheduled" && <span className="text-xs text-muted-foreground">Scheduled {new Date(campaign.scheduledDate).toLocaleDateString()}</span>}
             </div>
           </div>
-
-          {/* Stats Grid */}
-          {stats && (
+          {type === "email" && emailStats && (
             <div className="grid grid-cols-2 gap-3">
-              {type === "email" && emailStats && (
-                <>
-                  <div className="bg-blue-50 rounded-xl p-4 text-center">
-                    <p className="text-2xl font-bold text-blue-700">{emailStats.sent}</p>
-                    <p className="text-xs text-blue-600 mt-0.5">Sent</p>
-                  </div>
-                  <div className="bg-green-50 rounded-xl p-4 text-center">
-                    <p className="text-2xl font-bold text-green-700">{emailStats.deliveryRate}%</p>
-                    <p className="text-xs text-green-600 mt-0.5">Delivery Rate</p>
-                  </div>
-                  <div className="bg-purple-50 rounded-xl p-4 text-center">
-                    <p className="text-2xl font-bold text-purple-700">{emailStats.openRate}%</p>
-                    <p className="text-xs text-purple-600 mt-0.5">Open Rate</p>
-                  </div>
-                  <div className="bg-teal-50 rounded-xl p-4 text-center">
-                    <p className="text-2xl font-bold text-teal-700">{emailStats.clickRate}%</p>
-                    <p className="text-xs text-teal-600 mt-0.5">Click Rate</p>
-                  </div>
-                  <div className="bg-red-50 rounded-xl p-4 text-center">
-                    <p className="text-2xl font-bold text-red-700">{emailStats.failed}</p>
-                    <p className="text-xs text-red-600 mt-0.5">Failed</p>
-                  </div>
-                  <div className="bg-amber-50 rounded-xl p-4 text-center">
-                    <p className="text-2xl font-bold text-amber-700">{emailStats.opened}</p>
-                    <p className="text-xs text-amber-600 mt-0.5">Opened</p>
-                  </div>
-                </>
-              )}
-              {type === "sms" && smsStats && (
-                <>
-                  <div className="bg-blue-50 rounded-xl p-4 text-center">
-                    <p className="text-2xl font-bold text-blue-700">{smsStats.total}</p>
-                    <p className="text-xs text-blue-600 mt-0.5">Total Recipients</p>
-                  </div>
-                  <div className="bg-green-50 rounded-xl p-4 text-center">
-                    <p className="text-2xl font-bold text-green-700">{smsStats.deliveryRate}%</p>
-                    <p className="text-xs text-green-600 mt-0.5">Delivery Rate</p>
-                  </div>
-                  <div className="bg-teal-50 rounded-xl p-4 text-center">
-                    <p className="text-2xl font-bold text-teal-700">{smsStats.delivered}</p>
-                    <p className="text-xs text-teal-600 mt-0.5">Delivered</p>
-                  </div>
-                  <div className="bg-red-50 rounded-xl p-4 text-center">
-                    <p className="text-2xl font-bold text-red-700">{smsStats.failed}</p>
-                    <p className="text-xs text-red-600 mt-0.5">Failed</p>
-                  </div>
-                </>
-              )}
+              {[
+                { label: "Sent", value: emailStats.sent, bg: "bg-blue-50", text: "text-blue-700" },
+                { label: "Delivery Rate", value: `${emailStats.deliveryRate}%`, bg: "bg-green-50", text: "text-green-700" },
+                { label: "Open Rate", value: `${emailStats.openRate}%`, bg: "bg-purple-50", text: "text-purple-700" },
+                { label: "Click Rate", value: `${emailStats.clickRate}%`, bg: "bg-teal-50", text: "text-teal-700" },
+                { label: "Opened", value: emailStats.opened, bg: "bg-amber-50", text: "text-amber-700" },
+                { label: "Failed", value: emailStats.failed, bg: "bg-red-50", text: "text-red-700" },
+              ].map(s => (
+                <div key={s.label} className={`${s.bg} rounded-xl p-4 text-center`}>
+                  <p className={`text-2xl font-bold ${s.text}`}>{s.value}</p>
+                  <p className={`text-xs mt-0.5 ${s.text} opacity-80`}>{s.label}</p>
+                </div>
+              ))}
             </div>
           )}
-
-          {/* SMS Recipients */}
+          {type === "sms" && smsStats && (
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: "Total Recipients", value: smsStats.total, bg: "bg-blue-50", text: "text-blue-700" },
+                { label: "Delivery Rate", value: `${smsStats.deliveryRate}%`, bg: "bg-green-50", text: "text-green-700" },
+                { label: "Delivered", value: smsStats.delivered, bg: "bg-teal-50", text: "text-teal-700" },
+                { label: "Failed", value: smsStats.failed, bg: "bg-red-50", text: "text-red-700" },
+              ].map(s => (
+                <div key={s.label} className={`${s.bg} rounded-xl p-4 text-center`}>
+                  <p className={`text-2xl font-bold ${s.text}`}>{s.value}</p>
+                  <p className={`text-xs mt-0.5 ${s.text} opacity-80`}>{s.label}</p>
+                </div>
+              ))}
+            </div>
+          )}
           {type === "sms" && details?.recipients && details.recipients.length > 0 && (
             <div>
               <h4 className="text-sm font-semibold mb-2">Recipients ({details.recipients.length})</h4>
@@ -459,525 +748,696 @@ function CampaignAnalyticsSheet({ campaign, type, onClose }: { campaign: any; ty
   );
 }
 
-// ─── Email Campaign Dialog ───────────────────────────────────────────────────
+// ─── AI Calling Analytics Sub-tab ────────────────────────────────────────────
 
-function CreateEmailCampaignDialog({ clientId, onSuccess }: { clientId: number; onSuccess: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    name: "", subject: "", textContent: "", recipientFilter: "all" as const,
-    scheduledDate: "", sendNow: false,
-  });
-  const createCampaign = trpc.campaignsOld.createEmailCampaign.useMutation({
-    onSuccess: () => { toast.success("Email campaign created"); setOpen(false); setForm({ name: "", subject: "", textContent: "", recipientFilter: "all", scheduledDate: "", sendNow: false }); onSuccess(); },
-    onError: (e: any) => toast.error(e.message),
-  });
+function AICallingAnalytics({ callLogs }: { callLogs: any[] }) {
+  const answered = callLogs.filter(c => c.outcome === "answered" || c.outcome === "appointment_booked").length;
+  const appointments = callLogs.filter(c => c.outcome === "appointment_booked").length;
+  const totalDuration = callLogs.reduce((s, c) => s + (c.duration || 0), 0);
+  const avgDuration = callLogs.length ? Math.round(totalDuration / callLogs.length) : 0;
+  const answerRate = callLogs.length ? Math.round((answered / callLogs.length) * 100) : 0;
+  const appointmentRate = callLogs.length ? Math.round((appointments / callLogs.length) * 100) : 0;
+  const completionRate = callLogs.length ? Math.round((callLogs.filter(c => c.duration && c.duration > 30).length / callLogs.length) * 100) : 0;
+
+  const outcomeBreakdown = [
+    { label: "Answered", count: callLogs.filter(c => c.outcome === "answered").length, color: "bg-green-500" },
+    { label: "Appt Booked", count: appointments, color: "bg-teal-500" },
+    { label: "No Answer", count: callLogs.filter(c => c.outcome === "no_answer").length, color: "bg-gray-400" },
+    { label: "Voicemail", count: callLogs.filter(c => c.outcome === "voicemail").length, color: "bg-blue-400" },
+    { label: "Failed", count: callLogs.filter(c => c.outcome === "failed").length, color: "bg-red-400" },
+  ].filter(o => o.count > 0);
+
+  if (callLogs.length === 0) {
+    return (
+      <EmptyState
+        icon={BarChart2}
+        iconBg="bg-blue-50"
+        iconColor="text-blue-400"
+        title="No analytics yet"
+        description="Analytics will appear here once you've made your first AI calls."
+        primaryCta={<InitiateCallDialog onSuccess={() => {}} />}
+      />
+    );
+  }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-2"><Plus className="w-4 h-4" /> New Email Campaign</Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle className="flex items-center gap-2"><Mail className="w-5 h-5 text-purple-600" /> New Email Campaign</DialogTitle></DialogHeader>
-        <div className="space-y-4 mt-2">
-          <div className="space-y-1.5">
-            <Label className="text-sm">Campaign Name *</Label>
-            <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Q2 Rate Update" />
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          { label: "Answer Rate", value: `${answerRate}%`, icon: PhoneCall, color: "text-green-600", bg: "bg-green-50" },
+          { label: "Appointment Rate", value: `${appointmentRate}%`, icon: Calendar, color: "text-teal-600", bg: "bg-teal-50" },
+          { label: "Avg Duration", value: `${Math.floor(avgDuration / 60)}m ${avgDuration % 60}s`, icon: Clock, color: "text-purple-600", bg: "bg-purple-50" },
+          { label: "Completion Rate", value: `${completionRate}%`, icon: CheckCircle2, color: "text-blue-600", bg: "bg-blue-50" },
+        ].map(k => <KpiCard key={k.label} {...k} />)}
+      </div>
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-2 px-4 pt-4">
+          <CardTitle className="text-sm font-semibold">Outcome Breakdown</CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-4">
+          <div className="space-y-3">
+            {outcomeBreakdown.map(o => (
+              <div key={o.label} className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground w-24 flex-shrink-0">{o.label}</span>
+                <div className="flex-1 bg-muted rounded-full h-2">
+                  <div className={`${o.color} h-2 rounded-full transition-all`} style={{ width: `${callLogs.length > 0 ? (o.count / callLogs.length) * 100 : 0}%` }} />
+                </div>
+                <span className="text-xs font-semibold w-8 text-right">{o.count}</span>
+              </div>
+            ))}
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-sm">Subject Line *</Label>
-            <Input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} placeholder="Rates just dropped — here's what it means for you" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-sm">Message Body *</Label>
-            <Textarea value={form.textContent} onChange={e => setForm(f => ({ ...f, textContent: e.target.value }))} rows={5} placeholder="Hi {name}, I wanted to reach out..." />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-sm">Recipients</Label>
-            <Select value={form.recipientFilter} onValueChange={(v: any) => setForm(f => ({ ...f, recipientFilter: v }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Leads</SelectItem>
-                <SelectItem value="status">By Status</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-sm flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> Schedule Send (optional)</Label>
-            <Input type="datetime-local" value={form.scheduledDate} onChange={e => setForm(f => ({ ...f, scheduledDate: e.target.value, sendNow: false }))} />
-            <p className="text-xs text-muted-foreground">Leave blank to save as draft, or check "Send Now" below</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" id="sendNow" checked={form.sendNow} onChange={e => setForm(f => ({ ...f, sendNow: e.target.checked, scheduledDate: e.target.checked ? "" : f.scheduledDate }))} className="rounded" />
-            <Label htmlFor="sendNow" className="text-sm cursor-pointer">Send immediately</Label>
-          </div>
-          <Button
-            className="w-full"
-            disabled={createCampaign.isPending || !form.name || !form.subject || !form.textContent}
-            onClick={() => createCampaign.mutate({
-              clientId,
-              name: form.name,
-              subject: form.subject,
-              textContent: form.textContent,
-              recipientFilter: form.recipientFilter,
-              scheduledDate: form.scheduledDate ? new Date(form.scheduledDate) : undefined,
-              sendNow: form.sendNow,
-            })}
-          >
-            {createCampaign.isPending ? <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Creating...</span> : form.sendNow ? <span className="flex items-center gap-2"><Send className="w-4 h-4" /> Send Now</span> : <span className="flex items-center gap-2"><Plus className="w-4 h-4" /> Create Campaign</span>}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
-// ─── SMS Campaign Dialog ─────────────────────────────────────────────────────
-
-function CreateSMSCampaignDialog({ clientId, onSuccess }: { clientId: number; onSuccess: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", message: "", segment: "all", scheduledFor: "", sendNow: false });
-  const { data: leadsData } = trpc.crm.listMyLeads.useQuery({ limit: 200 });
-  const createCampaign = trpc.smsCampaigns.createCampaign.useMutation({
-    onSuccess: () => { toast.success("SMS campaign created"); setOpen(false); setForm({ name: "", message: "", segment: "all", scheduledFor: "", sendNow: false }); onSuccess(); },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const eligibleLeads = useMemo(() => {
-    const all = leadsData?.leads ?? [];
-    if (form.segment === "all") return all.filter((l: any) => l.phone);
-    return all.filter((l: any) => l.phone && l.status === form.segment);
-  }, [leadsData, form.segment]);
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-2"><Plus className="w-4 h-4" /> New SMS Campaign</Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle className="flex items-center gap-2"><MessageSquare className="w-5 h-5 text-green-600" /> New SMS Campaign</DialogTitle></DialogHeader>
-        <div className="space-y-4 mt-2">
-          <div className="space-y-1.5">
-            <Label className="text-sm">Campaign Name *</Label>
-            <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Rate Drop Alert" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-sm">Message * <span className="text-muted-foreground font-normal">({form.message.length}/160)</span></Label>
-            <Textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} rows={4} placeholder="Hi {name}! Rates just dropped to 6.5%. Reply CALL to schedule a free consultation." maxLength={1600} />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-sm">Recipient Segment</Label>
-            <Select value={form.segment} onValueChange={v => setForm(f => ({ ...f, segment: v }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Leads ({leadsData?.leads?.filter((l: any) => l.phone).length ?? 0})</SelectItem>
-                <SelectItem value="new">New Leads</SelectItem>
-                <SelectItem value="contacted">Contacted</SelectItem>
-                <SelectItem value="qualified">Qualified</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">{eligibleLeads.length} leads with phone numbers</p>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-sm flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> Schedule Send (optional)</Label>
-            <Input type="datetime-local" value={form.scheduledFor} onChange={e => setForm(f => ({ ...f, scheduledFor: e.target.value, sendNow: false }))} />
-          </div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" id="sendNowSms" checked={form.sendNow} onChange={e => setForm(f => ({ ...f, sendNow: e.target.checked, scheduledFor: e.target.checked ? "" : f.scheduledFor }))} className="rounded" />
-            <Label htmlFor="sendNowSms" className="text-sm cursor-pointer">Send immediately</Label>
-          </div>
-          <Button
-            className="w-full"
-            disabled={createCampaign.isPending || !form.name || !form.message || eligibleLeads.length === 0}
-            onClick={() => createCampaign.mutate({
-              clientId,
-              name: form.name,
-              message: form.message,
-              recipients: eligibleLeads.map((l: any) => ({ name: `${l.firstName} ${l.lastName}`, phone: l.phone! })),
-              scheduledFor: form.sendNow ? undefined : (form.scheduledFor ? new Date(form.scheduledFor) : undefined),
-            })}
-          >
-            {createCampaign.isPending ? <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Creating...</span> : form.sendNow ? <span className="flex items-center gap-2"><Send className="w-4 h-4" /> Send to {eligibleLeads.length} Leads</span> : <span className="flex items-center gap-2"><Plus className="w-4 h-4" /> Create Campaign</span>}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// ─── Campaign Card ───────────────────────────────────────────────────────────
-
-function CampaignCard({ campaign, type, onViewStats }: { campaign: any; type: "email" | "sms"; onViewStats: () => void }) {
-  const icon = type === "email" ? <Mail className="w-4 h-4 text-purple-600" /> : <MessageSquare className="w-4 h-4 text-green-600" />;
-  const sent = campaign.sentCount ?? 0;
-  const failed = campaign.failedCount ?? 0;
-  const total = campaign.totalRecipients ?? sent;
-
-  return (
-    <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">{icon}</div>
-            <div className="min-w-0">
-              <p className="font-semibold text-sm truncate">{campaign.name}</p>
-              {type === "email" && campaign.subject && <p className="text-xs text-muted-foreground truncate">{campaign.subject}</p>}
-            </div>
-          </div>
-          <StatusBadge status={campaign.status} />
-        </div>
-        <div className="grid grid-cols-3 gap-2 mb-3">
-          <div className="text-center">
-            <p className="text-lg font-bold">{sent}</p>
-            <p className="text-xs text-muted-foreground">Sent</p>
-          </div>
-          {type === "email" ? (
-            <>
-              <div className="text-center">
-                <p className="text-lg font-bold">{campaign.openCount ?? 0}</p>
-                <p className="text-xs text-muted-foreground">Opened</p>
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-bold">{sent > 0 ? Math.round((campaign.openCount / sent) * 100) : 0}%</p>
-                <p className="text-xs text-muted-foreground">Open Rate</p>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="text-center">
-                <p className="text-lg font-bold">{campaign.deliveredCount ?? 0}</p>
-                <p className="text-xs text-muted-foreground">Delivered</p>
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-bold">{sent > 0 ? Math.round(((campaign.deliveredCount ?? 0) / sent) * 100) : 0}%</p>
-                <p className="text-xs text-muted-foreground">Delivery Rate</p>
-              </div>
-            </>
-          )}
-        </div>
-        {(campaign.sentDate || campaign.scheduledDate || campaign.scheduledFor) && (
-          <p className="text-xs text-muted-foreground mb-3">
-            {campaign.sentDate ? `Sent ${new Date(campaign.sentDate).toLocaleDateString()}` :
-             (campaign.scheduledDate || campaign.scheduledFor) ? `Scheduled ${new Date(campaign.scheduledDate || campaign.scheduledFor).toLocaleDateString()}` : ""}
-          </p>
-        )}
-        <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs" onClick={onViewStats}>
-          <BarChart2 className="w-3.5 h-3.5" /> View Stats
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ─── Main Component ──────────────────────────────────────────────────────────
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function Campaigns() {
-  const { agencyId } = useAgency();
   const [mainTab, setMainTab] = useState("ai-calling");
   const [callSubTab, setCallSubTab] = useState("history");
   const [selectedCampaign, setSelectedCampaign] = useState<{ campaign: any; type: "email" | "sms" } | null>(null);
 
-  // Get current user's client info
   const { data: myInfo } = trpc.crm.getMyInfo.useQuery();
   const clientId = myInfo?.client?.id ?? 1;
 
-  // AI Calling data
-  const { data: callLogs, isLoading: callsLoading, refetch: refetchCalls } = trpc.vapi.listCalls.useQuery({ limit: 50 });
+  const { data: callLogs, isLoading: callsLoading, refetch: refetchCalls } = trpc.vapi.listCalls.useQuery({ limit: 100 });
+  const { data: emailCampaigns, isLoading: emailLoading, refetch: refetchEmail } = trpc.campaignsOld.listEmailCampaigns.useQuery({ clientId }, { enabled: clientId > 0 });
+  const { data: smsCampaigns, isLoading: smsLoading, refetch: refetchSMS } = trpc.smsCampaigns.getCampaigns.useQuery({ clientId }, { enabled: clientId > 0 });
+  const { data: vapiInfo } = trpc.vapi.testConnection.useQuery();
 
-  // Email campaigns
-  const { data: emailCampaigns, isLoading: emailLoading, refetch: refetchEmail } = trpc.campaignsOld.listEmailCampaigns.useQuery(
-    { clientId },
-    { enabled: clientId > 0 }
-  );
+  const callStats = useMemo(() => {
+    const logs = callLogs ?? [];
+    const answered = logs.filter((c: any) => c.outcome === "answered" || c.outcome === "appointment_booked").length;
+    const avgDuration = logs.length ? Math.round(logs.reduce((s: number, c: any) => s + (c.duration || 0), 0) / logs.length) : 0;
+    return {
+      total: logs.length,
+      answered,
+      avgDuration,
+      appointments: logs.filter((c: any) => c.outcome === "appointment_booked").length,
+      answerRate: logs.length ? Math.round((answered / logs.length) * 100) : 0,
+    };
+  }, [callLogs]);
 
-  // SMS campaigns
-  const { data: smsCampaigns, isLoading: smsLoading, refetch: refetchSMS } = trpc.smsCampaigns.getCampaigns.useQuery(
-    { clientId },
-    { enabled: clientId > 0 }
-  );
+  const emailStats = useMemo(() => {
+    const campaigns = emailCampaigns ?? [];
+    return {
+      drafts: campaigns.filter((c: any) => c.status === "draft").length,
+      scheduled: campaigns.filter((c: any) => c.status === "scheduled").length,
+      active: campaigns.filter((c: any) => c.status === "active" || c.status === "sending").length,
+      sent: campaigns.filter((c: any) => c.status === "sent").length,
+      totalSent: campaigns.reduce((s: number, c: any) => s + (c.sentCount ?? 0), 0),
+      avgOpenRate: (() => {
+        const withSends = campaigns.filter((c: any) => c.sentCount > 0);
+        if (!withSends.length) return 0;
+        return Math.round(withSends.reduce((s: number, c: any) => s + (c.openCount / c.sentCount) * 100, 0) / withSends.length);
+      })(),
+    };
+  }, [emailCampaigns]);
 
-  // Summary stats
-  const callStats = useMemo(() => ({
-    total: callLogs?.length ?? 0,
-    answered: callLogs?.filter((c: any) => c.outcome === "answered" || c.outcome === "appointment_booked").length ?? 0,
-    avgDuration: callLogs?.length
-      ? Math.round(callLogs.reduce((s: number, c: any) => s + (c.duration || 0), 0) / callLogs.length)
-      : 0,
-    appointments: callLogs?.filter((c: any) => c.outcome === "appointment_booked").length ?? 0,
-    answerRate: callLogs?.length
-      ? Math.round((callLogs.filter((c: any) => c.outcome === "answered" || c.outcome === "appointment_booked").length / callLogs.length) * 100)
-      : 0,
-  }), [callLogs]);
+  const smsStats = useMemo(() => {
+    const campaigns = smsCampaigns ?? [];
+    return {
+      drafts: campaigns.filter((c: any) => c.status === "draft").length,
+      scheduled: campaigns.filter((c: any) => c.status === "scheduled").length,
+      sent: campaigns.filter((c: any) => c.status === "sent").length,
+      totalSent: campaigns.reduce((s: number, c: any) => s + (c.sentCount ?? 0), 0),
+      avgDeliveryRate: (() => {
+        const withSends = campaigns.filter((c: any) => c.sentCount > 0);
+        if (!withSends.length) return 0;
+        return Math.round(withSends.reduce((s: number, c: any) => s + ((c.deliveredCount ?? 0) / c.sentCount) * 100, 0) / withSends.length);
+      })(),
+      responseRate: (() => {
+        const withSends = campaigns.filter((c: any) => c.sentCount > 0);
+        if (!withSends.length) return 0;
+        return Math.round(withSends.reduce((s: number, c: any) => s + ((c.responseCount ?? c.clickCount ?? 0) / c.sentCount) * 100, 0) / withSends.length);
+      })(),
+    };
+  }, [smsCampaigns]);
+
+  const assistants = vapiInfo?.assistants
+    ? Object.entries(vapiInfo.assistants)
+        .filter(([, v]: any) => v.configured)
+        .map(([k, v]: any) => ({ key: k, id: (v as any).id, label: k.charAt(0).toUpperCase() + k.slice(1) + " Assistant", configured: (v as any).configured }))
+    : [];
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-5 max-w-7xl mx-auto">
-        {/* Page Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-2xl font-bold font-display">Campaigns</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">AI Calling, Email, and SMS campaigns in one place</p>
-          </div>
-          {mainTab === "ai-calling" && (
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => refetchCalls()}>
-                <RefreshCw className="w-3.5 h-3.5" /> Refresh
+      <div className="h-full overflow-y-auto">
+        <div className="p-6 space-y-5 max-w-7xl mx-auto">
+
+          {/* ── Page Header ─────────────────────────────────────────────── */}
+          <div className="flex items-start justify-between flex-wrap gap-3">
+            <div>
+              <h1 className="text-2xl font-bold font-display">Campaigns</h1>
+              <p className="text-muted-foreground text-sm mt-0.5">Manage AI calling, email, and SMS campaigns in one place</p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={() => toast.info("Reports coming soon")}>
+                <BarChart2 className="w-3.5 h-3.5" /> View Reports
               </Button>
-              <BulkCallDialog onSuccess={refetchCalls} />
-              <InitiateCallDialog onSuccess={refetchCalls} />
+              {mainTab === "ai-calling" && (
+                <>
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => refetchCalls()}>
+                    <RefreshCw className="w-3.5 h-3.5" /> Refresh
+                  </Button>
+                  <BulkCallDialog onSuccess={refetchCalls} />
+                  <InitiateCallDialog onSuccess={refetchCalls} />
+                </>
+              )}
+              {mainTab === "email" && (
+                <>
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => toast.info("Import coming soon")}>
+                    <Download className="w-3.5 h-3.5" /> Import Leads
+                  </Button>
+                  <CreateEmailCampaignDialog clientId={clientId} onSuccess={refetchEmail} />
+                </>
+              )}
+              {mainTab === "sms" && (
+                <>
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => toast.info("Import coming soon")}>
+                    <Download className="w-3.5 h-3.5" /> Import Leads
+                  </Button>
+                  <CreateSMSCampaignDialog clientId={clientId} onSuccess={refetchSMS} />
+                </>
+              )}
             </div>
-          )}
-          {mainTab === "email" && <CreateEmailCampaignDialog clientId={clientId} onSuccess={refetchEmail} />}
-          {mainTab === "sms" && <CreateSMSCampaignDialog clientId={clientId} onSuccess={refetchSMS} />}
-        </div>
+          </div>
 
-        {/* Summary KPI row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Card className="border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow" onClick={() => setMainTab("ai-calling")}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0"><Phone className="w-4 h-4 text-blue-600" /></div>
-              <div><p className="text-xl font-bold">{callStats.total}</p><p className="text-xs text-muted-foreground">AI Calls</p></div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow" onClick={() => setMainTab("email")}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center flex-shrink-0"><Mail className="w-4 h-4 text-purple-600" /></div>
-              <div><p className="text-xl font-bold">{emailCampaigns?.length ?? 0}</p><p className="text-xs text-muted-foreground">Email Campaigns</p></div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow" onClick={() => setMainTab("sms")}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0"><MessageSquare className="w-4 h-4 text-green-600" /></div>
-              <div><p className="text-xl font-bold">{smsCampaigns?.length ?? 0}</p><p className="text-xs text-muted-foreground">SMS Campaigns</p></div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center flex-shrink-0"><CheckCircle2 className="w-4 h-4 text-teal-600" /></div>
-              <div>
-                <p className="text-xl font-bold">
-                  {(emailCampaigns?.filter((c: any) => c.status === "sent").length ?? 0) +
-                   (smsCampaigns?.filter((c: any) => c.status === "sent").length ?? 0)}
-                </p>
-                <p className="text-xs text-muted-foreground">Active / Sent</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Tabs */}
-        <Tabs value={mainTab} onValueChange={setMainTab}>
-          <TabsList>
-            <TabsTrigger value="ai-calling" className="gap-1.5">
-              <Phone className="w-3.5 h-3.5" /> AI Calling
-              {callStats.total > 0 && <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">{callStats.total}</Badge>}
-            </TabsTrigger>
-            <TabsTrigger value="email" className="gap-1.5">
-              <Mail className="w-3.5 h-3.5" /> Email
-            </TabsTrigger>
-            <TabsTrigger value="sms" className="gap-1.5">
-              <MessageSquare className="w-3.5 h-3.5" /> SMS
-            </TabsTrigger>
-          </TabsList>
-
-          {/* ── AI Calling Tab ─────────────────────────────────────────────── */}
-          <TabsContent value="ai-calling" className="mt-4 space-y-4">
-            {/* KPI Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-              {[
-                { label: "Total Calls", value: callStats.total, icon: Phone, color: "text-blue-600", bg: "bg-blue-50" },
-                { label: "Answered", value: callStats.answered, icon: PhoneCall, color: "text-green-600", bg: "bg-green-50" },
-                { label: "Avg Duration", value: `${Math.floor(callStats.avgDuration / 60)}m ${callStats.avgDuration % 60}s`, icon: Clock, color: "text-purple-600", bg: "bg-purple-50" },
-                { label: "Appts Booked", value: callStats.appointments, icon: Calendar, color: "text-teal-600", bg: "bg-teal-50" },
-                { label: "Answer Rate", value: `${callStats.answerRate}%`, icon: TrendingUp, color: "text-amber-600", bg: "bg-amber-50" },
-              ].map(({ label, value, icon: Icon, color, bg }) => (
-                <Card key={label} className="border-0 shadow-sm">
-                  <CardContent className="p-4 flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center flex-shrink-0`}>
-                      <Icon className={`w-5 h-5 ${color}`} />
+          {/* ── Top Summary Cards ────────────────────────────────────────── */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: "AI Calls", value: callStats.total, icon: Phone, color: "text-blue-600", bg: "bg-blue-50", tab: "ai-calling" },
+              { label: "Email Campaigns", value: emailCampaigns?.length ?? 0, icon: Mail, color: "text-purple-600", bg: "bg-purple-50", tab: "email" },
+              { label: "SMS Campaigns", value: smsCampaigns?.length ?? 0, icon: MessageSquare, color: "text-green-600", bg: "bg-green-50", tab: "sms" },
+              {
+                label: "Active / Sent",
+                value: (emailCampaigns?.filter((c: any) => c.status === "sent").length ?? 0) + (smsCampaigns?.filter((c: any) => c.status === "sent").length ?? 0),
+                icon: CheckCircle2, color: "text-teal-600", bg: "bg-teal-50", tab: null,
+              },
+            ].map(({ label, value, icon: Icon, color, bg, tab }) => (
+              <Card
+                key={label}
+                className={`border-0 shadow-sm transition-shadow ${tab ? "cursor-pointer hover:shadow-md" : ""} ${mainTab === tab ? "ring-2 ring-primary/30" : ""}`}
+                onClick={() => tab && setMainTab(tab)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center`}>
+                      <Icon className={`w-4 h-4 ${color}`} />
                     </div>
-                    <div><p className="text-xl font-bold">{value}</p><p className="text-xs text-muted-foreground">{label}</p></div>
-                  </CardContent>
-                </Card>
-              ))}
+                    {tab && <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 mt-1" />}
+                  </div>
+                  <p className="text-2xl font-bold tracking-tight">{value}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* ── Channel Tabs ─────────────────────────────────────────────── */}
+          <Tabs value={mainTab} onValueChange={setMainTab}>
+            <div className="flex items-center justify-between">
+              <TabsList className="h-9">
+                <TabsTrigger value="ai-calling" className="gap-1.5 text-xs sm:text-sm">
+                  <Phone className="w-3.5 h-3.5" /> AI Calling
+                  {callStats.total > 0 && <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">{callStats.total}</Badge>}
+                </TabsTrigger>
+                <TabsTrigger value="email" className="gap-1.5 text-xs sm:text-sm">
+                  <Mail className="w-3.5 h-3.5" /> Email
+                  {(emailCampaigns?.length ?? 0) > 0 && <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">{emailCampaigns?.length}</Badge>}
+                </TabsTrigger>
+                <TabsTrigger value="sms" className="gap-1.5 text-xs sm:text-sm">
+                  <MessageSquare className="w-3.5 h-3.5" /> SMS
+                  {(smsCampaigns?.length ?? 0) > 0 && <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">{smsCampaigns?.length}</Badge>}
+                </TabsTrigger>
+              </TabsList>
             </div>
 
-            {/* Sub-tabs */}
-            <Tabs value={callSubTab} onValueChange={setCallSubTab}>
-              <div className="flex items-center justify-between">
-                <TabsList>
-                  <TabsTrigger value="history" className="gap-1.5">
-                    <Phone className="w-3.5 h-3.5" /> Call History
-                    {callStats.total > 0 && <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">{callStats.total}</Badge>}
-                  </TabsTrigger>
-                  <TabsTrigger value="assistants" className="gap-1.5"><Bot className="w-3.5 h-3.5" /> AI Assistants</TabsTrigger>
-                  <TabsTrigger value="how-it-works" className="gap-1.5"><Sparkles className="w-3.5 h-3.5" /> How It Works</TabsTrigger>
-                </TabsList>
-                <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => refetchCalls()}>
-                  <RefreshCw className="w-3 h-3" /> Refresh
-                </Button>
+            {/* ════════════════════════════════════════════════════════════
+                AI CALLING TAB
+            ════════════════════════════════════════════════════════════ */}
+            <TabsContent value="ai-calling" className="mt-4 space-y-4">
+              {/* KPI Row */}
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                {[
+                  { label: "Total Calls", value: callStats.total, icon: Phone, color: "text-blue-600", bg: "bg-blue-50" },
+                  { label: "Answered", value: callStats.answered, icon: PhoneCall, color: "text-green-600", bg: "bg-green-50" },
+                  { label: "Avg Duration", value: `${Math.floor(callStats.avgDuration / 60)}m ${callStats.avgDuration % 60}s`, icon: Clock, color: "text-purple-600", bg: "bg-purple-50" },
+                  { label: "Appts Booked", value: callStats.appointments, icon: Calendar, color: "text-teal-600", bg: "bg-teal-50" },
+                  { label: "Answer Rate", value: `${callStats.answerRate}%`, icon: TrendingUp, color: "text-amber-600", bg: "bg-amber-50" },
+                ].map(k => <KpiCard key={k.label} {...k} />)}
               </div>
 
-              <TabsContent value="history" className="mt-3">
-                <Card className="border-0 shadow-sm">
-                  <CardHeader className="pb-2 px-4 pt-4">
-                    <CardTitle className="text-sm font-semibold flex items-center justify-between">
-                      Recent Calls
-                      <span className="text-xs font-normal text-muted-foreground">{callStats.answerRate}% answer rate</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    {callsLoading ? (
-                      <div className="p-4 space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}</div>
-                    ) : callLogs?.length ? (
-                      <div className="divide-y divide-border">
-                        {callLogs.map((call: any) => {
-                          const duration = call.duration ? `${Math.floor(call.duration / 60)}m ${call.duration % 60}s` : "—";
-                          return (
-                            <div key={call.id} className="flex items-center justify-between px-4 py-3.5 hover:bg-muted/30 transition-colors">
-                              <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                                  <OutcomeIcon outcome={call.outcome} />
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium">{call.leadName || call.phoneNumber || "Unknown"}</p>
-                                  <p className="text-xs text-muted-foreground">{call.phoneNumber && call.leadName ? `${call.phoneNumber} · ` : ""}{new Date(call.createdAt).toLocaleString()}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <div className="text-right hidden sm:block">
-                                  <p className="text-xs text-muted-foreground">{duration}</p>
-                                  {call.sentimentScore && (
-                                    <div className="flex items-center gap-0.5 justify-end">
-                                      <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                                      <span className="text-xs font-medium">{call.sentimentScore}/10</span>
-                                    </div>
-                                  )}
-                                </div>
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${OUTCOME_COLORS[call.outcome] || "bg-gray-100 text-gray-600 border-gray-200"}`}>
-                                  {OUTCOME_LABELS[call.outcome] ?? call.outcome?.replace(/_/g, " ")}
-                                </span>
-                                <CallDetailDialog call={call} />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="py-20 text-center">
-                        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                          <Bot className="w-8 h-8 text-primary/60" />
-                        </div>
-                        <p className="font-semibold text-base">No calls yet</p>
-                        <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">Click "Start AI Call" to initiate your first Vapi-powered call.</p>
-                        <div className="mt-4"><InitiateCallDialog onSuccess={refetchCalls} /></div>
+              {/* Sub-tabs */}
+              <Tabs value={callSubTab} onValueChange={setCallSubTab}>
+                <div className="flex items-center justify-between">
+                  <TabsList>
+                    <TabsTrigger value="history" className="gap-1.5 text-xs">
+                      <Phone className="w-3.5 h-3.5" /> Call History
+                      {callStats.total > 0 && <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">{callStats.total}</Badge>}
+                    </TabsTrigger>
+                    <TabsTrigger value="assistants" className="gap-1.5 text-xs"><Bot className="w-3.5 h-3.5" /> AI Assistants</TabsTrigger>
+                    <TabsTrigger value="analytics" className="gap-1.5 text-xs"><BarChart2 className="w-3.5 h-3.5" /> Analytics</TabsTrigger>
+                    <TabsTrigger value="how-it-works" className="gap-1.5 text-xs"><Sparkles className="w-3.5 h-3.5" /> How It Works</TabsTrigger>
+                  </TabsList>
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => refetchCalls()}>
+                    <RefreshCw className="w-3 h-3" /> Refresh
+                  </Button>
+                </div>
+
+                {/* Call History */}
+                <TabsContent value="history" className="mt-3">
+                  <Card className="border-0 shadow-sm">
+                    {/* Table header */}
+                    <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                      <h3 className="text-sm font-semibold">Recent Calls</h3>
+                      <span className="text-xs text-muted-foreground">{callStats.answerRate}% answer rate</span>
+                    </div>
+                    {/* Column headers */}
+                    {(callLogs?.length ?? 0) > 0 && (
+                      <div className="hidden sm:flex items-center gap-4 px-4 py-2 bg-muted/30 text-xs text-muted-foreground font-medium border-b border-border">
+                        <span className="flex-1">Contact</span>
+                        <span className="w-32">Date & Time</span>
+                        <span className="w-20">Duration</span>
+                        <span className="w-24">Assistant</span>
+                        <span className="w-28">Outcome</span>
+                        <span className="w-16 text-right">Action</span>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                    <CardContent className="p-0">
+                      {callsLoading ? (
+                        <div className="p-4 space-y-3">{[1,2,3,4].map(i => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}</div>
+                      ) : (callLogs?.length ?? 0) > 0 ? (
+                        <div className="divide-y divide-border">
+                          {callLogs!.map((call: any) => {
+                            const duration = call.duration ? `${Math.floor(call.duration / 60)}m ${call.duration % 60}s` : "—";
+                            return (
+                              <div key={call.id} className="flex items-center gap-4 px-4 py-3.5 hover:bg-muted/30 transition-colors">
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                  <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                                    <OutcomeIcon outcome={call.outcome} />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium truncate">{call.leadName || "Unknown"}</p>
+                                    <p className="text-xs text-muted-foreground truncate">{call.phoneNumber || "—"}</p>
+                                  </div>
+                                </div>
+                                <div className="hidden sm:block w-32 text-xs text-muted-foreground">
+                                  {new Date(call.createdAt).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                </div>
+                                <div className="hidden sm:block w-20 text-xs text-muted-foreground">{duration}</div>
+                                <div className="hidden sm:block w-24 text-xs text-muted-foreground capitalize">
+                                  {call.assistantType ? call.assistantType.replace(/_/g, " ") : "—"}
+                                </div>
+                                <div className="w-28">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${OUTCOME_COLORS[call.outcome] || "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                                    {OUTCOME_LABELS[call.outcome] ?? call.outcome?.replace(/_/g, " ")}
+                                  </span>
+                                </div>
+                                <div className="w-16 text-right">
+                                  <CallDetailDialog call={call} />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <EmptyState
+                          icon={Bot}
+                          iconBg="bg-primary/10"
+                          iconColor="text-primary/60"
+                          title="No calls yet"
+                          description="Start your first AI call to see call history, transcripts, and outcomes here."
+                          primaryCta={<InitiateCallDialog onSuccess={refetchCalls} />}
+                          secondaryCta={
+                            <Button variant="outline" onClick={() => setCallSubTab("how-it-works")}>
+                              <Info className="w-4 h-4 mr-2" /> How It Works
+                            </Button>
+                          }
+                        />
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
 
-              <TabsContent value="assistants" className="mt-3">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[
-                    { name: "Facebook Lead Assistant", desc: "Handles inbound Facebook lead inquiries, qualifies borrowers, and schedules consultations.", icon: Users, color: "bg-blue-50 text-blue-600", calls: callLogs?.filter((c: any) => c.assistantType === "facebook").length ?? 0 },
-                    { name: "Instagram Lead Assistant", desc: "Engages Instagram leads, answers mortgage questions, and books discovery calls.", icon: Bot, color: "bg-pink-50 text-pink-600", calls: callLogs?.filter((c: any) => c.assistantType === "instagram").length ?? 0 },
-                    { name: "Referral Follow-Up", desc: "Follows up with referral leads, nurtures relationships, and converts warm introductions.", icon: Phone, color: "bg-green-50 text-green-600", calls: callLogs?.filter((c: any) => c.assistantType === "referral").length ?? 0 },
-                  ].map(({ name, desc, icon: Icon, color, calls }) => (
-                    <Card key={name} className="border-0 shadow-sm">
-                      <CardContent className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center flex-shrink-0`}><Icon className="w-5 h-5" /></div>
+                {/* AI Assistants */}
+                <TabsContent value="assistants" className="mt-3">
+                  {assistants.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {assistants.map(({ key, id, label, configured }) => {
+                        const callCount = callLogs?.filter((c: any) => c.assistantType === key).length ?? 0;
+                        const lastCall = callLogs?.find((c: any) => c.assistantType === key);
+                        const descriptions: Record<string, string> = {
+                          facebook: "Handles inbound Facebook lead inquiries, qualifies borrowers, and schedules consultations.",
+                          instagram: "Engages Instagram leads, answers mortgage questions, and books discovery calls.",
+                          referral: "Follows up with referral leads, nurtures relationships, and converts warm introductions.",
+                        };
+                        return (
+                          <Card key={key} className="border-0 shadow-sm">
+                            <CardContent className="p-5">
+                              <div className="flex items-start justify-between mb-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                                    <Bot className="w-5 h-5 text-primary" />
+                                  </div>
+                                  <div>
+                                    <p className="font-semibold text-sm">{label}</p>
+                                    <Badge variant="outline" className="text-[10px] mt-0.5 text-green-700 border-green-300 bg-green-50">
+                                      {configured ? "Active" : "Inactive"}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              </div>
+                              <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+                                {descriptions[key] || "AI assistant for lead qualification and follow-up."}
+                              </p>
+                              <Separator className="mb-3" />
+                              <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+                                <span>{callCount} calls handled</span>
+                                {lastCall && <span>Last active {new Date(lastCall.createdAt).toLocaleDateString()}</span>}
+                              </div>
+                              <div className="flex gap-2">
+                                <Button size="sm" variant="outline" className="flex-1 h-7 text-xs" onClick={() => toast.info("Configure coming soon")}>Configure</Button>
+                                <Button size="sm" variant="ghost" className="flex-1 h-7 text-xs" onClick={() => toast.info("Test call coming soon")}>Test</Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <EmptyState
+                      icon={Bot}
+                      iconBg="bg-primary/10"
+                      iconColor="text-primary/60"
+                      title="No AI assistants configured"
+                      description="Connect your Vapi account to enable AI calling assistants for Facebook, Instagram, and referral leads."
+                      primaryCta={<Button onClick={() => toast.info("Vapi setup coming soon")}><Zap className="w-4 h-4 mr-2" /> Connect Vapi</Button>}
+                      secondaryCta={<Button variant="outline" onClick={() => setCallSubTab("how-it-works")}><Info className="w-4 h-4 mr-2" /> Learn More</Button>}
+                    />
+                  )}
+                </TabsContent>
+
+                {/* Analytics */}
+                <TabsContent value="analytics" className="mt-3">
+                  <AICallingAnalytics callLogs={callLogs ?? []} />
+                </TabsContent>
+
+                {/* How It Works */}
+                <TabsContent value="how-it-works" className="mt-3">
+                  <Card className="border-0 shadow-sm">
+                    <CardContent className="p-6 space-y-6">
+                      <div>
+                        <h3 className="font-semibold text-base mb-4">How AI Calling Works</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          {[
+                            { step: "1", title: "Select a Lead", desc: "Choose a lead from your pipeline or enter a phone number. The AI uses their profile to personalize the conversation.", icon: Users, color: "bg-blue-50 text-blue-600" },
+                            { step: "2", title: "AI Handles the Call", desc: "Your Vapi assistant calls the lead, qualifies them, answers mortgage questions, and handles objections automatically.", icon: Bot, color: "bg-purple-50 text-purple-600" },
+                            { step: "3", title: "Review Outcome", desc: "Get a full transcript, sentiment score, and outcome summary within minutes of the call completing.", icon: FileText, color: "bg-green-50 text-green-600" },
+                            { step: "4", title: "Follow Up", desc: "Appointments are booked automatically. Leads are updated in your pipeline based on call outcome.", icon: Calendar, color: "bg-teal-50 text-teal-600" },
+                          ].map(({ step, title, desc, icon: Icon, color }) => (
+                            <div key={step} className="flex flex-col items-start gap-3">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center flex-shrink-0`}>
+                                  <Icon className="w-5 h-5" />
+                                </div>
+                                <span className="text-xs font-bold text-muted-foreground/60 uppercase tracking-wider">Step {step}</span>
+                              </div>
+                              <div>
+                                <p className="font-semibold text-sm mb-1">{title}</p>
+                                <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
+                        <div className="flex items-start gap-3">
+                          <Zap className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                           <div>
-                            <p className="font-semibold text-sm">{name}</p>
-                            <Badge variant="outline" className="text-[10px] mt-0.5 text-green-700 border-green-300 bg-green-50">Active</Badge>
+                            <p className="text-sm font-semibold">Powered by Vapi AI</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">Our AI calling system uses Vapi's advanced voice AI to conduct natural, human-like conversations. Each call is recorded, transcribed, and analyzed for sentiment — giving you full visibility into every interaction.</p>
                           </div>
                         </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed mb-3">{desc}</p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">{calls} calls</span>
-                          <Button size="sm" variant="outline" className="h-6 text-xs px-2">Configure</Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </TabsContent>
+                      </div>
+                      <div className="flex gap-3">
+                        <InitiateCallDialog onSuccess={refetchCalls} />
+                        <BulkCallDialog onSuccess={refetchCalls} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
 
-              <TabsContent value="how-it-works" className="mt-3">
+            {/* ════════════════════════════════════════════════════════════
+                EMAIL TAB
+            ════════════════════════════════════════════════════════════ */}
+            <TabsContent value="email" className="mt-4 space-y-4">
+              {/* Email KPI Row */}
+              <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+                {[
+                  { label: "Drafts", value: emailStats.drafts, icon: FileText, color: "text-gray-600", bg: "bg-gray-100" },
+                  { label: "Scheduled", value: emailStats.scheduled, icon: Calendar, color: "text-blue-600", bg: "bg-blue-50" },
+                  { label: "Active", value: emailStats.active, icon: Zap, color: "text-orange-600", bg: "bg-orange-50" },
+                  { label: "Sent", value: emailStats.sent, icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" },
+                  { label: "Total Delivered", value: emailStats.totalSent, icon: Send, color: "text-purple-600", bg: "bg-purple-50" },
+                  { label: "Avg Open Rate", value: `${emailStats.avgOpenRate}%`, icon: TrendingUp, color: "text-amber-600", bg: "bg-amber-50" },
+                ].map(k => <KpiCard key={k.label} {...k} />)}
+              </div>
+
+              {/* Campaign List */}
+              <Card className="border-0 shadow-sm">
+                <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                  <h3 className="text-sm font-semibold">Email Campaigns</h3>
+                  <CreateEmailCampaignDialog clientId={clientId} onSuccess={refetchEmail} />
+                </div>
+                {/* Column headers */}
+                {(emailCampaigns?.length ?? 0) > 0 && (
+                  <div className="hidden sm:flex items-center gap-4 px-4 py-2 bg-muted/30 text-xs text-muted-foreground font-medium border-b border-border">
+                    <span className="flex-1">Campaign</span>
+                    <span className="w-14 text-right">Sent</span>
+                    <span className="w-16 text-right">Opened</span>
+                    <span className="w-16 text-right">Open Rate</span>
+                    <span className="w-16 text-right">Clicks</span>
+                    <span className="w-24 text-right">Actions</span>
+                  </div>
+                )}
+                <CardContent className="p-0">
+                  {emailLoading ? (
+                    <div className="p-4 space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}</div>
+                  ) : (emailCampaigns?.length ?? 0) > 0 ? (
+                    <div>
+                      {emailCampaigns!.map((c: any) => (
+                        <CampaignRow key={c.id} campaign={c} type="email" onViewStats={() => setSelectedCampaign({ campaign: c, type: "email" })} />
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState
+                      icon={Mail}
+                      iconBg="bg-purple-50"
+                      iconColor="text-purple-400"
+                      title="No email campaigns yet"
+                      description="Create your first email campaign to start reaching leads with personalized messages, rate updates, and follow-ups."
+                      primaryCta={<CreateEmailCampaignDialog clientId={clientId} onSuccess={refetchEmail} />}
+                      secondaryCta={
+                        <Button variant="outline" onClick={() => toast.info("Templates coming soon")}>
+                          <FileText className="w-4 h-4 mr-2" /> Use a Template
+                        </Button>
+                      }
+                    />
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Email Reporting Summary */}
+              {(emailCampaigns?.length ?? 0) > 0 && (
                 <Card className="border-0 shadow-sm">
-                  <CardContent className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <CardHeader className="pb-2 px-4 pt-4">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <BarChart2 className="w-4 h-4 text-purple-600" /> Reporting Summary
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                       {[
-                        { step: "1", title: "Select a Lead", desc: "Choose a lead from your pipeline or enter a phone number manually. The AI will use their profile to personalize the conversation.", icon: Phone, color: "bg-blue-50 text-blue-600" },
-                        { step: "2", title: "AI Handles the Call", desc: "Your Vapi assistant calls the lead, qualifies them, answers mortgage questions, and handles objections — all without you lifting a finger.", icon: Bot, color: "bg-purple-50 text-purple-600" },
-                        { step: "3", title: "Review & Follow Up", desc: "Get a full transcript, sentiment score, and outcome summary. Appointments are booked automatically and synced to your calendar.", icon: FileText, color: "bg-green-50 text-green-600" },
-                      ].map(({ step, title, desc, icon: Icon, color }) => (
-                        <div key={step} className="flex gap-4">
-                          <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center flex-shrink-0 font-bold text-sm`}>{step}</div>
-                          <div><p className="font-semibold text-sm mb-1">{title}</p><p className="text-xs text-muted-foreground leading-relaxed">{desc}</p></div>
+                        { label: "Total Sent", value: emailStats.totalSent, color: "text-blue-600" },
+                        { label: "Avg Open Rate", value: `${emailStats.avgOpenRate}%`, color: "text-purple-600" },
+                        { label: "Active Campaigns", value: emailStats.active, color: "text-orange-600" },
+                        { label: "Drafts Pending", value: emailStats.drafts, color: "text-gray-600" },
+                      ].map(s => (
+                        <div key={s.label} className="bg-muted/40 rounded-xl p-4 text-center">
+                          <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
                         </div>
                       ))}
                     </div>
-                    <div className="mt-6 p-4 rounded-xl bg-primary/5 border border-primary/20">
-                      <div className="flex items-start gap-3">
-                        <Zap className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm font-semibold">Powered by Vapi AI</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">Our AI calling system uses Vapi's advanced voice AI to conduct natural, human-like conversations. Each call is recorded, transcribed, and analyzed for sentiment — giving you full visibility into every interaction.</p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            {/* ════════════════════════════════════════════════════════════
+                SMS TAB
+            ════════════════════════════════════════════════════════════ */}
+            <TabsContent value="sms" className="mt-4 space-y-4">
+              {/* SMS KPI Row */}
+              <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+                {[
+                  { label: "Drafts", value: smsStats.drafts, icon: FileText, color: "text-gray-600", bg: "bg-gray-100" },
+                  { label: "Scheduled", value: smsStats.scheduled, icon: Calendar, color: "text-blue-600", bg: "bg-blue-50" },
+                  { label: "Sent", value: smsStats.sent, icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" },
+                  { label: "Total Messages", value: smsStats.totalSent, icon: Send, color: "text-green-600", bg: "bg-green-50" },
+                  { label: "Avg Delivery Rate", value: `${smsStats.avgDeliveryRate}%`, icon: TrendingUp, color: "text-amber-600", bg: "bg-amber-50" },
+                  { label: "Response Rate", value: `${smsStats.responseRate}%`, icon: MessageSquare, color: "text-teal-600", bg: "bg-teal-50" },
+                ].map(k => <KpiCard key={k.label} {...k} />)}
+              </div>
+
+              {/* Campaign List */}
+              <Card className="border-0 shadow-sm">
+                <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                  <h3 className="text-sm font-semibold">SMS Campaigns</h3>
+                  <CreateSMSCampaignDialog clientId={clientId} onSuccess={refetchSMS} />
+                </div>
+                {/* Column headers */}
+                {(smsCampaigns?.length ?? 0) > 0 && (
+                  <div className="hidden sm:flex items-center gap-4 px-4 py-2 bg-muted/30 text-xs text-muted-foreground font-medium border-b border-border">
+                    <span className="flex-1">Campaign</span>
+                    <span className="w-14 text-right">Sent</span>
+                    <span className="w-16 text-right">Delivered</span>
+                    <span className="w-16 text-right">Delivery %</span>
+                    <span className="w-24 text-right">Actions</span>
+                  </div>
+                )}
+                <CardContent className="p-0">
+                  {smsLoading ? (
+                    <div className="p-4 space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}</div>
+                  ) : (smsCampaigns?.length ?? 0) > 0 ? (
+                    <div>
+                      {smsCampaigns!.map((c: any) => (
+                        <CampaignRow key={c.id} campaign={c} type="sms" onViewStats={() => setSelectedCampaign({ campaign: c, type: "sms" })} />
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState
+                      icon={MessageSquare}
+                      iconBg="bg-green-50"
+                      iconColor="text-green-400"
+                      title="No SMS campaigns yet"
+                      description="Send your first SMS blast to reach leads instantly. SMS has a 98% open rate — the most effective channel for mortgage follow-ups."
+                      primaryCta={<CreateSMSCampaignDialog clientId={clientId} onSuccess={refetchSMS} />}
+                      secondaryCta={
+                        <Button variant="outline" onClick={() => toast.info("Templates coming soon")}>
+                          <FileText className="w-4 h-4 mr-2" /> Use a Template
+                        </Button>
+                      }
+                    />
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* SMS Reporting Summary */}
+              {(smsCampaigns?.length ?? 0) > 0 && (
+                <Card className="border-0 shadow-sm">
+                  <CardHeader className="pb-2 px-4 pt-4">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                      <BarChart2 className="w-4 h-4 text-green-600" /> Reporting Summary
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                      {[
+                        { label: "Total Sent", value: smsStats.totalSent, color: "text-blue-600" },
+                        { label: "Avg Delivery Rate", value: `${smsStats.avgDeliveryRate}%`, color: "text-green-600" },
+                        { label: "Campaigns Sent", value: smsStats.sent, color: "text-teal-600" },
+                        { label: "Drafts Pending", value: smsStats.drafts, color: "text-gray-600" },
+                      ].map(s => (
+                        <div key={s.label} className="bg-muted/40 rounded-xl p-4 text-center">
+                          <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
                         </div>
-                      </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
-              </TabsContent>
-            </Tabs>
-          </TabsContent>
+              )}
+            </TabsContent>
+          </Tabs>
 
-          {/* ── Email Tab ─────────────────────────────────────────────────── */}
-          <TabsContent value="email" className="mt-4">
-            {emailLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                {[1,2,3].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)}
-              </div>
-            ) : emailCampaigns?.length ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                {emailCampaigns.map((c: any) => (
-                  <CampaignCard key={c.id} campaign={c} type="email" onViewStats={() => setSelectedCampaign({ campaign: c, type: "email" })} />
-                ))}
-              </div>
-            ) : (
-              <div className="py-20 text-center">
-                <Mail className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-muted-foreground font-medium">No email campaigns yet</p>
-                <p className="text-sm text-muted-foreground/70 mt-1">Create your first campaign to start reaching leads</p>
-                <div className="mt-4"><CreateEmailCampaignDialog clientId={clientId} onSuccess={refetchEmail} /></div>
-              </div>
-            )}
-          </TabsContent>
+          {/* ── Recent Activity ──────────────────────────────────────────── */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="pb-2 px-4 pt-4">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Activity className="w-4 h-4 text-muted-foreground" /> Recent Activity
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {(() => {
+                const activities: { id: string; icon: any; iconColor: string; iconBg: string; text: string; time: string }[] = [];
 
-          {/* ── SMS Tab ───────────────────────────────────────────────────── */}
-          <TabsContent value="sms" className="mt-4">
-            {smsLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                {[1,2,3].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)}
-              </div>
-            ) : smsCampaigns?.length ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                {smsCampaigns.map((c: any) => (
-                  <CampaignCard key={c.id} campaign={c} type="sms" onViewStats={() => setSelectedCampaign({ campaign: c, type: "sms" })} />
-                ))}
-              </div>
-            ) : (
-              <div className="py-20 text-center">
-                <MessageSquare className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-muted-foreground font-medium">No SMS campaigns yet</p>
-                <p className="text-sm text-muted-foreground/70 mt-1">Send your first SMS blast to your lead list</p>
-                <div className="mt-4"><CreateSMSCampaignDialog clientId={clientId} onSuccess={refetchSMS} /></div>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+                // Build activity from real data
+                callLogs?.slice(0, 3).forEach((c: any) => {
+                  activities.push({
+                    id: `call-${c.id}`,
+                    icon: Phone,
+                    iconColor: c.outcome === "appointment_booked" ? "text-teal-600" : c.outcome === "answered" ? "text-green-600" : "text-gray-500",
+                    iconBg: c.outcome === "appointment_booked" ? "bg-teal-50" : c.outcome === "answered" ? "bg-green-50" : "bg-gray-100",
+                    text: `AI call ${c.outcome === "appointment_booked" ? "booked appointment with" : c.outcome === "answered" ? "answered by" : "to"} ${c.leadName || c.phoneNumber || "unknown contact"}`,
+                    time: new Date(c.createdAt).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }),
+                  });
+                });
+
+                emailCampaigns?.slice(0, 2).forEach((c: any) => {
+                  activities.push({
+                    id: `email-${c.id}`,
+                    icon: Mail,
+                    iconColor: "text-purple-600",
+                    iconBg: "bg-purple-50",
+                    text: `Email campaign "${c.name}" ${c.status === "sent" ? "sent" : c.status === "scheduled" ? "scheduled" : "created as draft"}`,
+                    time: new Date(c.createdAt || Date.now()).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }),
+                  });
+                });
+
+                smsCampaigns?.slice(0, 2).forEach((c: any) => {
+                  activities.push({
+                    id: `sms-${c.id}`,
+                    icon: MessageSquare,
+                    iconColor: "text-green-600",
+                    iconBg: "bg-green-50",
+                    text: `SMS campaign "${c.name}" ${c.status === "sent" ? `sent to ${c.totalRecipients ?? 0} recipients` : c.status === "scheduled" ? "scheduled" : "created as draft"}`,
+                    time: new Date(c.createdAt || Date.now()).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }),
+                  });
+                });
+
+                if (activities.length === 0) {
+                  return (
+                    <div className="py-10 text-center">
+                      <Activity className="w-8 h-8 mx-auto text-muted-foreground/30 mb-2" />
+                      <p className="text-sm text-muted-foreground">No activity yet — create your first campaign or AI call to see activity here.</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="divide-y divide-border">
+                    {activities.slice(0, 6).map(a => (
+                      <div key={a.id} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/20 transition-colors">
+                        <div className={`w-8 h-8 rounded-lg ${a.iconBg} flex items-center justify-center flex-shrink-0`}>
+                          <a.icon className={`w-4 h-4 ${a.iconColor}`} />
+                        </div>
+                        <p className="text-sm flex-1 min-w-0 truncate">{a.text}</p>
+                        <span className="text-xs text-muted-foreground flex-shrink-0">{a.time}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+
+        </div>
       </div>
 
       {/* Analytics Drill-Down Sheet */}
