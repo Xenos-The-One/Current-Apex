@@ -407,6 +407,7 @@ export default function Conversations() {
     return base;
   }, [activeList, searchQuery, AGENCY_ID]);
 
+   const { data: conversations = [], isLoading, refetch } = trpc.conversations.list.useQuery(queryParams, { refetchInterval: 30000 });
   // Client-side filter for "mine" tab
   const filteredConversations = useMemo(() => {
     const all = conversations as Conversation[];
@@ -415,8 +416,6 @@ export default function Conversations() {
     }
     return all;
   }, [conversations, activeList, user]);
-
-  const { data: conversations = [], isLoading, refetch } = trpc.conversations.list.useQuery(queryParams, { refetchInterval: 30000 });
   const { data: stats } = trpc.conversations.getStats.useQuery({ agencyId: AGENCY_ID });
   const { data: messages = [], isLoading: msgsLoading } = trpc.conversations.getMessages.useQuery(
     { conversationId: selectedConvId!, agencyId: AGENCY_ID },
