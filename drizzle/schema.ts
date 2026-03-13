@@ -1511,3 +1511,19 @@ export const calendarResources = mysqlTable("calendar_resources", {
 });
 export type CalendarResource = typeof calendarResources.$inferSelect;
 export type InsertCalendarResource = typeof calendarResources.$inferInsert;
+
+// ─── Social Platform Connections ─────────────────────────────────────────────
+// Tracks which social platforms a client has connected (UI state — not OAuth tokens)
+export const socialPlatformConnections = mysqlTable("social_platform_connections", {
+  id: int("id").primaryKey().autoincrement(),
+  clientId: int("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  platform: varchar("platform", { length: 50 }).notNull(), // facebook, instagram, linkedin, twitter, google_business, tiktok, youtube
+  connected: boolean("connected").default(false).notNull(),
+  username: varchar("username", { length: 255 }),
+  pageName: varchar("page_name", { length: 255 }),
+  lastSyncAt: timestamp("last_sync_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type SocialPlatformConnection = typeof socialPlatformConnections.$inferSelect;
+export type InsertSocialPlatformConnection = typeof socialPlatformConnections.$inferInsert;

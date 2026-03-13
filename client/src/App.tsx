@@ -101,6 +101,7 @@ const PortalPerformance = lazy(() => import("./pages/seo/portal/PortalPerformanc
 const PortalPublishing = lazy(() => import("./pages/seo/portal/PortalPublishing"));
 const PortalFollowUps = lazy(() => import("./pages/seo/portal/PortalFollowUps"));
 const PortalApexContent = lazy(() => import("./pages/seo/portal/PortalApexContent"));
+const PortalSocialMedia = lazy(() => import("./pages/seo/portal/PortalSocialMedia"));
 function PortalFallback() {
   return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 }
@@ -241,6 +242,7 @@ function Router() {
       <Route path="/seo/portal/performance"><Suspense fallback={<PortalFallback />}><PortalPerformance /></Suspense></Route>
       <Route path="/seo/portal/publishing"><Suspense fallback={<PortalFallback />}><PortalPublishing /></Suspense></Route>
       <Route path="/seo/portal/follow-ups"><Suspense fallback={<PortalFallback />}><PortalFollowUps /></Suspense></Route>
+      <Route path="/seo/portal/social"><Suspense fallback={<PortalFallback />}><PortalSocialMedia /></Suspense></Route>
       {/* /seo/portal/approvals kept for backward compat — redirects to apex-content */}
       <Route path="/seo/portal/approvals"><Suspense fallback={<PortalFallback />}><PortalApexContent /></Suspense></Route>
       <Route path="/seo/portal/dashboard"><Suspense fallback={<PortalFallback />}><PortalDashboard /></Suspense></Route>

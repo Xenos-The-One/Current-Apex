@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { LogOut, LayoutDashboard, FileText, Calendar, TrendingUp, Send, Menu, X, CheckSquare, Sparkles } from "lucide-react";
+import { LogOut, LayoutDashboard, FileText, Calendar, TrendingUp, Send, Menu, X, CheckSquare, Sparkles, Share2 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
@@ -15,6 +15,7 @@ interface PortalLayoutProps {
 const NAV_ITEMS = [
   { label: "Dashboard", path: "/seo/portal/dashboard", icon: LayoutDashboard },
   { label: "Apex Content", path: "/seo/portal/apex-content", icon: CheckSquare },
+  { label: "Social Media", path: "/seo/portal/social", icon: Share2 },
   { label: "Calendar", path: "/seo/portal/calendar", icon: Calendar },
   { label: "Performance", path: "/seo/portal/performance", icon: TrendingUp },
   { label: "Publishing", path: "/seo/portal/publishing", icon: Send },

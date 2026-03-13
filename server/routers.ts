@@ -8,6 +8,7 @@ import { adminRouter } from "./routers/admin";
 import { vapiRouter } from "./routers/vapi";
 import { clientRouter as crmRouter } from "./routers/client";
 import { socialRouter } from "./routers/social";
+import { socialConnectionsRouter } from "./routers/social-connections";
 import { aiRouter } from "./routers/ai";
 import { campaignsRouter } from "./routers/campaigns";
 import { campaignsMonitoringRouter } from "./routers/campaigns-monitoring";
@@ -67,6 +68,7 @@ export const appRouter = router({
   vapi: vapiRouter,
   crm: crmRouter,
   social: socialRouter,
+  socialConnections: socialConnectionsRouter,
   ai: aiRouter,
   campaigns: campaignsMonitoringRouter,
   campaignsOld: campaignsRouter,

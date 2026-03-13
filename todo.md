@@ -947,3 +947,12 @@
 - [x] Campaign template library — Use Template button in Email and SMS creation dialogs
 - [x] Bulk AI call campaigns — prominent Quick Actions cards (Single Call + Bulk Campaign) in AI Calling tab
 - [x] Campaign duplicate/clone action on Email and SMS campaign cards (wired to real tRPC mutations)
+
+## Social Media & Apex Content Studio Round 1
+- [x] Shared components: CreditUsageIndicator, ContentStatusBadge, PlatformConnectionCard, SocialPostPreview
+- [x] PortalSocialMedia page — platform connection UI, AI post generation flow, live right-side preview panel, post list with filter/status
+- [x] PortalApexContent — added "Generate" tab with grouped content types, credit display, topic/keywords/tone/instructions form, blog/website content generation flow
+- [x] PortalLayout — added "Social Media" nav item (/seo/portal/social)
+- [x] App.tsx — registered /seo/portal/social route
+- [x] Backend: social_platform_connections table + socialConnectionsRouter (connect/disconnect/generatePost procedures)
+- [x] 20 new vitest tests for credit costs, platform support, prompt builder, state machine, content type groupings, and generation validation

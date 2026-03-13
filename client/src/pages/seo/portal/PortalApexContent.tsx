@@ -23,8 +23,13 @@ import {
 import PortalLayout from "@/components/PortalLayout";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { FeedbackThread } from "@/components/FeedbackThread";
+import { CreditUsageIndicator } from "@/components/CreditUsageIndicator";
+import { ContentStatusBadge } from "@/components/ContentStatusBadge";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
-type Tab = "my-content" | "approvals";
+type Tab = "my-content" | "approvals" | "generate";
 
 // ─── Content Detail Sheet (inline drawer) ────────────────────────────────────
 function ContentDetailSheet({
@@ -840,6 +845,251 @@ function ApprovalsTab() {
   );
 }
 
+// ─── Generate Content Tab ─────────────────────────────────────────────────────
+const CONTENT_TYPES = [
+  { value: "blog-post", label: "Blog Post", description: "Long-form article for your website", credits: 5 },
+  { value: "how-to", label: "How-To Guide", description: "Step-by-step instructional content", credits: 4 },
+  { value: "listicle", label: "Listicle", description: "List-based article format", credits: 3 },
+  { value: "case-study", label: "Case Study", description: "Client success story", credits: 5 },
+  { value: "newsletter", label: "Newsletter", description: "Email newsletter content", credits: 3 },
+  { value: "social-post", label: "Social Post", description: "Platform-optimized social content", credits: 2 },
+  { value: "press-release", label: "Press Release", description: "Official announcement", credits: 4 },
+  { value: "video-script", label: "Video Script", description: "Script for video content", credits: 4 },
+] as const;
+
+function GenerateContentTab() {
+  const { user } = useAuth();
+  const [contentType, setContentType] = useState<string>("blog-post");
+  const [topic, setTopic] = useState("");
+  const [targetKeywords, setTargetKeywords] = useState("");
+  const [tone, setTone] = useState("professional");
+  const [customInstructions, setCustomInstructions] = useState("");
+  const [enableWebResearch, setEnableWebResearch] = useState(true);
+  const [shouldGenerateImage, setShouldGenerateImage] = useState(false);
+  const utils = trpc.useUtils();
+
+  // Resolve seo client ID for this portal user
+  const { data: myInfo } = trpc.crm.getMyInfo.useQuery(undefined, { enabled: !!user });
+  const { data: seoClient } = trpc.seo.clients.getByCrmId.useQuery(
+    { crmClientId: myInfo?.client?.id ?? 0 },
+    { enabled: !!myInfo?.client?.id }
+  );
+
+  const generateMutation = trpc.seo.content.generate.useMutation({
+    onSuccess: () => {
+      toast.success("Content is being generated! Check 'My Content' in a few minutes.");
+      setTopic("");
+      setTargetKeywords("");
+      setCustomInstructions("");
+      utils.seo.content.listForPortal.invalidate();
+    },
+    onError: (e: any) => toast.error(e.message || "Generation failed"),
+  });
+
+  const selectedType = CONTENT_TYPES.find((t) => t.value === contentType);
+
+  const handleGenerate = () => {
+    if (!seoClient?.id) {
+      toast.error("Your account is not fully set up yet. Please contact your agency.");
+      return;
+    }
+    if (!topic.trim()) {
+      toast.error("Please enter a topic");
+      return;
+    }
+    const customPrompt = [
+      targetKeywords ? `Target keywords: ${targetKeywords}` : "",
+      tone !== "professional" ? `Tone: ${tone}` : "",
+      customInstructions,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    generateMutation.mutate({
+      clientId: seoClient.id,
+      topic,
+      contentType: contentType as any,
+      customPrompt: customPrompt || undefined,
+      enableWebResearch,
+      shouldGenerateImage,
+    });
+  };
+
+  return (
+    <div className="max-w-2xl space-y-6">
+      {/* Credit indicator */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-white">Generate New Content</h3>
+          <p className="text-sm text-white/45 mt-0.5">AI-powered content creation for your business</p>
+        </div>
+        <CreditUsageIndicator contentType={contentType} variant="badge" />
+      </div>
+
+      {/* Content type grid */}
+      <div>
+        <Label className="text-sm text-white/60 mb-3 block">Content Type</Label>
+        <div className="grid grid-cols-2 gap-2">
+          {CONTENT_TYPES.map((ct) => {
+            const isActive = contentType === ct.value;
+            return (
+              <button
+                key={ct.value}
+                onClick={() => setContentType(ct.value)}
+                className="flex items-start gap-3 p-3 rounded-xl text-left transition-all border"
+                style={
+                  isActive
+                    ? {
+                        background: "rgba(0,255,255,0.08)",
+                        borderColor: "rgba(0,255,255,0.3)",
+                      }
+                    : {
+                        background: "rgba(255,255,255,0.02)",
+                        borderColor: "rgba(255,255,255,0.07)",
+                      }
+                }
+              >
+                <div
+                  className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                  style={{
+                    background: isActive ? "rgba(0,255,255,0.15)" : "rgba(255,255,255,0.06)",
+                  }}
+                >
+                  <FileText
+                    className="h-3.5 w-3.5"
+                    style={{ color: isActive ? "#00FFFF" : "rgba(255,255,255,0.4)" }}
+                  />
+                </div>
+                <div>
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color: isActive ? "#00FFFF" : "rgba(255,255,255,0.8)" }}
+                  >
+                    {ct.label}
+                  </p>
+                  <p className="text-xs text-white/40 mt-0.5">{ct.description}</p>
+                  <p className="text-[10px] mt-1" style={{ color: isActive ? "rgba(0,255,255,0.6)" : "rgba(255,255,255,0.25)" }}>
+                    {ct.credits} credits
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Topic */}
+      <div className="space-y-1.5">
+        <Label htmlFor="topic">Topic *</Label>
+        <Textarea
+          id="topic"
+          placeholder="e.g. 5 reasons first-time homebuyers should work with a local mortgage broker in Dallas"
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          rows={3}
+          className="resize-none"
+        />
+      </div>
+
+      {/* Target keywords */}
+      <div className="space-y-1.5">
+        <Label htmlFor="keywords">Target Keywords <span className="text-white/30">(optional)</span></Label>
+        <Input
+          id="keywords"
+          placeholder="e.g. first-time homebuyer, Dallas mortgage, FHA loan"
+          value={targetKeywords}
+          onChange={(e) => setTargetKeywords(e.target.value)}
+        />
+      </div>
+
+      {/* Tone */}
+      <div className="space-y-1.5">
+        <Label>Tone</Label>
+        <Select value={tone} onValueChange={setTone}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="professional">Professional</SelectItem>
+            <SelectItem value="friendly">Friendly</SelectItem>
+            <SelectItem value="casual">Casual</SelectItem>
+            <SelectItem value="authoritative">Authoritative</SelectItem>
+            <SelectItem value="inspirational">Inspirational</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Custom instructions */}
+      <div className="space-y-1.5">
+        <Label htmlFor="instructions">Custom Instructions <span className="text-white/30">(optional)</span></Label>
+        <Textarea
+          id="instructions"
+          placeholder="e.g. Include a section about down payment assistance programs. Mention our 5-star Google rating."
+          value={customInstructions}
+          onChange={(e) => setCustomInstructions(e.target.value)}
+          rows={2}
+          className="resize-none"
+        />
+      </div>
+
+      {/* Options */}
+      <div className="flex gap-6">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={enableWebResearch}
+            onChange={(e) => setEnableWebResearch(e.target.checked)}
+            className="rounded"
+          />
+          <span className="text-sm text-white/70">Enable web research</span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={shouldGenerateImage}
+            onChange={(e) => setShouldGenerateImage(e.target.checked)}
+            className="rounded"
+          />
+          <span className="text-sm text-white/70">Generate featured image</span>
+        </label>
+      </div>
+
+      {/* Credit summary */}
+      <CreditUsageIndicator contentType={contentType} variant="card" />
+
+      {/* Generate button */}
+      <Button
+        className="w-full"
+        onClick={handleGenerate}
+        disabled={!topic.trim() || generateMutation.isPending || !seoClient?.id}
+        style={{
+          background: "linear-gradient(135deg, rgba(0,255,255,0.2), rgba(0,102,255,0.2))",
+          border: "1px solid rgba(0,255,255,0.3)",
+          color: "#00FFFF",
+        }}
+      >
+        {generateMutation.isPending ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            Generating…
+          </>
+        ) : (
+          <>
+            <Sparkles className="h-4 w-4 mr-2" />
+            Generate {selectedType?.label ?? "Content"}
+          </>
+        )}
+      </Button>
+
+      {!seoClient?.id && myInfo?.client && (
+        <p className="text-xs text-amber-400/70 text-center">
+          Your SEO profile is being set up. Content generation will be available shortly.
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function PortalApexContent() {
   const [activeTab, setActiveTab] = useState<Tab>("approvals");
@@ -847,16 +1097,33 @@ export default function PortalApexContent() {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "approvals", label: "Approvals", icon: <CheckSquare className="h-4 w-4" /> },
     { id: "my-content", label: "My Content", icon: <LayoutGrid className="h-4 w-4" /> },
+    { id: "generate", label: "Generate", icon: <Sparkles className="h-4 w-4" /> },
   ];
 
   return (
     <PortalLayout activePath="/seo/portal/apex-content">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-white">Apex Content</h2>
-        <p className="text-sm mt-1" style={{ color: "rgba(0,255,255,0.5)" }}>
-          Review approvals and manage your published content
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Apex Content</h2>
+            <p className="text-sm mt-1" style={{ color: "rgba(0,255,255,0.5)" }}>
+              Review approvals, manage published content, and generate new AI content
+            </p>
+          </div>
+          <Button
+            onClick={() => setActiveTab("generate")}
+            className="shrink-0 hidden sm:flex"
+            style={{
+              background: "linear-gradient(135deg, rgba(0,255,255,0.12), rgba(0,102,255,0.12))",
+              border: "1px solid rgba(0,255,255,0.25)",
+              color: "#00FFFF",
+            }}
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Generate Content
+          </Button>
+        </div>
       </div>
 
       {/* Tab switcher */}
@@ -881,7 +1148,9 @@ export default function PortalApexContent() {
         ))}
       </div>
 
-      {activeTab === "approvals" ? <ApprovalsTab /> : <MyContentTab />}
+      {activeTab === "approvals" && <ApprovalsTab />}
+      {activeTab === "my-content" && <MyContentTab />}
+      {activeTab === "generate" && <GenerateContentTab />}
     </PortalLayout>
   );
 }
