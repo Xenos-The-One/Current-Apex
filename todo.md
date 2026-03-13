@@ -847,3 +847,8 @@
 ## Conversations Page Fixes
 - [x] Add SMS/Email/Note compose bar at the bottom of the conversation thread (matching contacts page)
 - [x] Fix lead isolation: New Conversation lead search now scoped to current client's agency via resolveAgencyId (Drizzle sql template tag)
+
+## Conversations Features Round 2
+- [x] Auto read/unread marking: mark conversation as read when opened, mark-all-read button (CheckCheck icon) in filter bar header
+- [x] Message templates in compose bar: LayoutTemplate button opens popover with agency SMS/email templates for one-click insert; pre-fills subject for email templates
+- [x] Conversation assignment: Assign dropdown in conversation header, Mine filter tab in left panel, getTeamMembers + assignConversation procedures added

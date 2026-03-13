@@ -205,4 +205,48 @@ export const conversationsRouter = router({
       );
       return (rows as any[])[0];
     }),
+
+  markAllRead: protectedProcedure
+    .input(z.object({ agencyId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const agencyId = await resolveAgencyId(ctx, input.agencyId);
+      await (db as any).execute(
+        `UPDATE conversations SET isRead = 1, updatedAt = NOW() WHERE agencyId = ? AND isRead = 0 AND isArchived = 0`,
+        [agencyId]
+      );
+      return { success: true };
+    }),
+
+  assignConversation: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      agencyId: z.number(),
+      assignedToUserId: z.number().nullable(),
+      assignedToName: z.string().nullable(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const agencyId = await resolveAgencyId(ctx, input.agencyId);
+      await (db as any).execute(
+        `UPDATE conversations SET assignedToUserId = ?, assignedToName = ?, updatedAt = NOW() WHERE id = ? AND agencyId = ?`,
+        [input.assignedToUserId, input.assignedToName, input.id, agencyId]
+      );
+      return { success: true };
+    }),
+
+  getTeamMembers: protectedProcedure
+    .input(z.object({ agencyId: z.number() }))
+    .query(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const agencyId = await resolveAgencyId(ctx, input.agencyId);
+      const [rows] = await (db as any).execute(
+        `SELECT id, user_id, name, email, role FROM team_members WHERE agency_id = ? AND is_active = 1 ORDER BY name ASC LIMIT 50`,
+        [agencyId]
+      );
+      return rows as { id: number; user_id: number | null; name: string; email: string; role: string }[];
+    }),
 });

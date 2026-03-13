@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import AISuccessCoachPanel from "@/components/AISuccessCoachPanel";
 import { useAgency } from "@/contexts/AgencyContext";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +29,12 @@ import {
   Loader2,
   StickyNote,
   Paperclip,
+  UserCheck,
+  ChevronDown,
+  LayoutTemplate,
+  CheckCheck as DoubleCheck,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,6 +80,7 @@ const CHANNEL_COLORS: Record<string, string> = {
 const SMART_LISTS = [
   { id: "all", label: "All" },
   { id: "unread", label: "Unread" },
+  { id: "mine", label: "Mine" },
   { id: "sms", label: "SMS" },
   { id: "email", label: "Email" },
   { id: "archived", label: "Archived" },
@@ -382,8 +389,12 @@ export default function Conversations() {
   const [replyText, setReplyText] = useState("");
   const [composeTab, setComposeTab] = useState<"sms" | "email" | "note">("sms");
   const [emailSubject, setEmailSubject] = useState("");
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const utils = trpc.useUtils();
+
+  const { user } = useAuth();
 
   const queryParams = useMemo(() => {
     const base: Record<string, any> = { agencyId: AGENCY_ID };
@@ -392,8 +403,18 @@ export default function Conversations() {
     else if (activeList === "archived") base.isArchived = true;
     else if (activeList === "sms") base.channel = "sms";
     else if (activeList === "email") base.channel = "email";
+    // "mine" filter: client-side filter by assignedToUserId after fetch
     return base;
   }, [activeList, searchQuery, AGENCY_ID]);
+
+  // Client-side filter for "mine" tab
+  const filteredConversations = useMemo(() => {
+    const all = conversations as Conversation[];
+    if (activeList === "mine" && user) {
+      return all.filter((c: any) => c.assignedToUserId === user.id);
+    }
+    return all;
+  }, [conversations, activeList, user]);
 
   const { data: conversations = [], isLoading, refetch } = trpc.conversations.list.useQuery(queryParams, { refetchInterval: 30000 });
   const { data: stats } = trpc.conversations.getStats.useQuery({ agencyId: AGENCY_ID });
@@ -401,10 +422,21 @@ export default function Conversations() {
     { conversationId: selectedConvId!, agencyId: AGENCY_ID },
     { enabled: !!selectedConvId, refetchInterval: 10000 }
   );
+  const { data: teamMembers = [] } = trpc.conversations.getTeamMembers.useQuery({ agencyId: AGENCY_ID });
+  const { data: smsTemplates = [] } = trpc.templates.list.useQuery(
+    { type: "sms", agencyId: AGENCY_ID },
+    { enabled: showTemplates && composeTab === "sms" }
+  );
+  const { data: emailTemplates = [] } = trpc.templates.list.useQuery(
+    { type: "email", agencyId: AGENCY_ID },
+    { enabled: showTemplates && composeTab === "email" }
+  );
 
   const markRead = trpc.conversations.markRead.useMutation({ onSuccess: () => utils.conversations.list.invalidate() });
   const markUnread = trpc.conversations.markUnread.useMutation({ onSuccess: () => { utils.conversations.list.invalidate(); toast.success("Marked as unread"); } });
   const archiveConv = trpc.conversations.archive.useMutation({ onSuccess: () => { utils.conversations.list.invalidate(); setSelectedConvId(null); toast.success("Archived"); } });
+  const markAllRead = trpc.conversations.markAllRead.useMutation({ onSuccess: () => { utils.conversations.list.invalidate(); utils.conversations.getStats.invalidate(); toast.success("All conversations marked as read"); } });
+  const assignConv = trpc.conversations.assignConversation.useMutation({ onSuccess: () => { utils.conversations.list.invalidate(); setAssignOpen(false); toast.success("Conversation assigned"); } });
   const sendMessage = trpc.conversations.sendMessage.useMutation({
     onSuccess: () => {
       setReplyText("");
@@ -463,6 +495,14 @@ export default function Conversations() {
                 <Button variant="ghost" size="icon" className="h-7 w-7" title="Refresh" onClick={() => refetch()}>
                   <RefreshCw className="h-3.5 w-3.5 text-gray-500" />
                 </Button>
+                <Button
+                  variant="ghost" size="icon" className="h-7 w-7"
+                  title="Mark all as read"
+                  onClick={() => markAllRead.mutate({ agencyId: AGENCY_ID })}
+                  disabled={markAllRead.isPending}
+                >
+                  {markAllRead.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-500" /> : <CheckCheck className="h-3.5 w-3.5 text-gray-500" />}
+                </Button>
                 <NewConversationDialog
                   agencyId={AGENCY_ID}
                   onCreated={(convId) => setSelectedConvId(convId)}
@@ -509,10 +549,12 @@ export default function Conversations() {
               <div className="flex items-center justify-center py-8">
                 <RefreshCw className="h-5 w-5 animate-spin text-gray-400" />
               </div>
-            ) : (conversations as Conversation[]).length === 0 ? (
+            ) : filteredConversations.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center px-4">
                 <MessageSquare className="h-8 w-8 text-gray-300 mb-2" />
-                <p className="text-sm font-medium text-gray-500">No conversations</p>
+                <p className="text-sm font-medium text-gray-500">
+                  {activeList === "mine" ? "No conversations assigned to you" : "No conversations"}
+                </p>
                 <p className="text-xs text-gray-400 mt-1 mb-3">Start a new conversation by clicking the + button above</p>
                 <NewConversationDialog
                   agencyId={AGENCY_ID}
@@ -520,7 +562,7 @@ export default function Conversations() {
                 />
               </div>
             ) : (
-              (conversations as Conversation[]).map(conv => (
+              filteredConversations.map(conv => (
                 <ConversationItem
                   key={conv.id}
                   conv={conv}
@@ -559,6 +601,38 @@ export default function Conversations() {
                       View Lead
                     </Button>
                   )}
+                  {/* Assignment dropdown */}
+                  <Popover open={assignOpen} onOpenChange={setAssignOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                        <UserCheck className="h-3 w-3" />
+                        {(selectedConv as any).assignedToName || "Assign"}
+                        <ChevronDown className="h-3 w-3 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-52 p-1" align="end">
+                      <div className="text-[10px] text-gray-400 px-2 py-1 font-medium uppercase tracking-wide">Assign to</div>
+                      <button
+                        className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-gray-100 text-gray-500"
+                        onClick={() => assignConv.mutate({ id: selectedConv.id, agencyId: AGENCY_ID, assignedToUserId: null, assignedToName: null })}
+                      >
+                        Unassigned
+                      </button>
+                      {(teamMembers as any[]).map(m => (
+                        <button
+                          key={m.id}
+                          className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-gray-100 text-gray-800"
+                          onClick={() => assignConv.mutate({ id: selectedConv.id, agencyId: AGENCY_ID, assignedToUserId: m.user_id || m.id, assignedToName: m.name })}
+                        >
+                          {m.name}
+                          {m.role && <span className="ml-1 text-gray-400">· {m.role}</span>}
+                        </button>
+                      ))}
+                      {(teamMembers as any[]).length === 0 && (
+                        <p className="text-xs text-gray-400 px-2 py-2">No team members found</p>
+                      )}
+                    </PopoverContent>
+                  </Popover>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -653,15 +727,42 @@ export default function Conversations() {
                     >
                       {sendMessage.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-9 h-9 text-gray-400"
-                      title="Templates (coming soon)"
-                      onClick={() => toast.info("Templates — coming soon")}
-                    >
-                      <Paperclip className="h-4 w-4" />
-                    </Button>
+                    <Popover open={showTemplates} onOpenChange={setShowTemplates}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="w-9 h-9 text-gray-400 hover:text-blue-600"
+                          title="Insert template"
+                          disabled={composeTab === "note"}
+                        >
+                          <LayoutTemplate className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-72 p-1" align="end" side="top">
+                        <div className="text-[10px] text-gray-400 px-2 py-1 font-medium uppercase tracking-wide">
+                          {composeTab === "sms" ? "SMS Templates" : "Email Templates"}
+                        </div>
+                        {(composeTab === "sms" ? smsTemplates : emailTemplates).length === 0 ? (
+                          <p className="text-xs text-gray-400 px-2 py-3 text-center">No templates yet — create them in Campaigns</p>
+                        ) : (
+                          (composeTab === "sms" ? smsTemplates : emailTemplates).map((t: any) => (
+                            <button
+                              key={t.id}
+                              className="w-full text-left px-2 py-2 rounded hover:bg-gray-50 group"
+                              onClick={() => {
+                                if (composeTab === "email" && t.subject) setEmailSubject(t.subject);
+                                setReplyText(prev => prev ? prev + "\n" + t.content : t.content);
+                                setShowTemplates(false);
+                              }}
+                            >
+                              <div className="text-xs font-medium text-gray-800 truncate">{t.name}</div>
+                              <div className="text-[10px] text-gray-400 truncate mt-0.5">{t.content.slice(0, 60)}...</div>
+                            </button>
+                          ))
+                        )}
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
                 <p className="text-[10px] text-gray-400 mt-1">Cmd+Enter to send</p>
