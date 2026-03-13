@@ -909,3 +909,10 @@
 - [x] AI Suggest Reply button (✨ purple Sparkles icon) in composer — calls LLM with last 10 messages as context, drafts SMS (<160 chars) or email body, populates composer for review before sending
 - [x] Full-text message content search — search box now queries conversation_messages.content via LEFT JOIN in addition to contact name/phone/email
 - [x] Unread count badge on Conversations sidebar nav item — blue badge showing unread count, refreshes every 30s
+
+## SMS Delivery Status Indicators (Round 7)
+- [x] Created /api/twilio/status-callback webhook endpoint (server/webhooks/twilio-status.ts) — receives Twilio delivery callbacks and updates conversation_messages.status
+- [x] Registered the new webhook route in server/_core/index.ts
+- [x] Updated conversations.sendMessage to send actual SMS via Twilio with statusCallback URL and store MessageSid in externalMessageId
+- [x] Added DeliveryStatus component — tooltip-enabled icons for Sent (faint ✓✓), Delivered (bright ✓✓), Read (full-opacity ✓✓), Failed (✗ red) on all outbound SMS and email bubbles
+- [x] Frontend passes window.location.origin so statusCallback URL resolves correctly in all environments

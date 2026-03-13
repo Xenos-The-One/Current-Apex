@@ -295,6 +295,65 @@ function ConversationItem({
   );
 }
 
+// ─── Delivery Status Icon ────────────────────────────────────────────────────
+function DeliveryStatus({ status, isOutbound, colorClass }: { status?: string; isOutbound: boolean; colorClass: string }) {
+  if (!isOutbound) return null;
+  if (status === "read") {
+    return (
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex items-center">
+              <CheckCheck className={`h-3 w-3 ${colorClass} opacity-100`} />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-[11px] py-0.5 px-2">Read</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+  if (status === "delivered") {
+    return (
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex items-center">
+              <CheckCheck className={`h-3 w-3 ${colorClass} opacity-80`} />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-[11px] py-0.5 px-2">Delivered</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+  if (status === "failed") {
+    return (
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex items-center">
+              <X className={`h-3 w-3 text-red-400`} />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-[11px] py-0.5 px-2">Failed to deliver</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+  // Default: "sent" / queued — single faint tick
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex items-center">
+            <CheckCheck className={`h-3 w-3 ${colorClass} opacity-40`} />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="text-[11px] py-0.5 px-2">Sent</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 // ─── Message Bubble ───────────────────────────────────────────────────────────
 function MessageBubble({ msg, channel }: { msg: Message; channel?: string }) {
   const isOutbound = msg.direction === "outbound";
@@ -366,7 +425,7 @@ function MessageBubble({ msg, channel }: { msg: Message; channel?: string }) {
             <span className={`text-[10px] ${isOutbound ? "text-blue-200" : "text-gray-400"}`}>
               {formatMessageTime(msg.createdAt)}
             </span>
-            {isOutbound && <CheckCheck className="h-3 w-3 text-blue-200" />}
+            <DeliveryStatus status={msg.status} isOutbound={isOutbound} colorClass="text-blue-200" />
           </div>
         </div>
       </div>
@@ -386,11 +445,7 @@ function MessageBubble({ msg, channel }: { msg: Message; channel?: string }) {
           <span className={`text-[10px] ${isOutbound ? "text-blue-200" : "text-gray-400"}`}>
             {formatMessageTime(msg.createdAt)}
           </span>
-          {isOutbound && (
-            msg.status === "delivered"
-              ? <CheckCheck className="h-3 w-3 text-blue-200" />
-              : <CheckCheck className="h-3 w-3 text-blue-300 opacity-60" />
-          )}
+          <DeliveryStatus status={msg.status} isOutbound={isOutbound} colorClass="text-blue-200" />
         </div>
       </div>
     </div>
@@ -768,6 +823,7 @@ export default function Conversations() {
       type: msgType as any,
       content: replyText.trim(),
       subject: composeTab === "email" && emailSubject.trim() ? emailSubject.trim() : undefined,
+      origin: window.location.origin,
     });
     setEmailSubject("");
   };

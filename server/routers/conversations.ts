@@ -2,6 +2,8 @@ import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
 import mysql2 from "mysql2/promise";
 import { invokeLLM } from "../_core/llm";
+import { sendSMS } from "../twilio";
+import twilio from "twilio";
 
 async function getConn() {
   return mysql2.createConnection(process.env.DATABASE_URL!);
@@ -204,17 +206,88 @@ export const conversationsRouter = router({
       type: z.enum(["sms_out", "email_out", "note"]),
       content: z.string().min(1),
       subject: z.string().optional(),
+      origin: z.string().optional(), // frontend passes window.location.origin for statusCallback
     }))
     .mutation(async ({ ctx, input }) => {
       const agencyId = await resolveAgencyId(ctx, input.agencyId);
       const conn = await getConn();
       try {
         const actor = ctx.user.name || ctx.user.email || "Agent";
-        await conn.execute(
+        // Insert the message first so we have an ID to correlate with Twilio
+        const [insertResult] = await conn.execute(
           `INSERT INTO conversation_messages (conversationId, agencyId, type, subject, content, actor, direction, status, sentByUserId, createdAt)
            VALUES (?, ?, ?, ?, ?, ?, 'outbound', 'sent', ?, NOW())`,
           [input.conversationId, agencyId, input.type, input.subject || null, input.content, actor, ctx.user.id]
-        );
+        ) as [any, any];
+        const messageRowId = (insertResult as any).insertId;
+
+        // For outbound SMS, actually send via Twilio and store the MessageSid
+        if (input.type === "sms_out") {
+          try {
+            // Fetch the contact's phone number from the conversation
+            const [convRows] = await conn.execute(
+              `SELECT c.contactPhone, l.phone as leadPhone
+               FROM conversations c
+               LEFT JOIN leads l ON c.leadId = l.id
+               WHERE c.id = ? LIMIT 1`,
+              [input.conversationId]
+            ) as [any[], any];
+            const toPhone = convRows[0]?.contactPhone || convRows[0]?.leadPhone;
+            if (toPhone) {
+              // Build the statusCallback URL using the origin the frontend passed,
+              // falling back to the request origin header
+              const origin = input.origin ||
+                (ctx.req as any)?.headers?.origin ||
+                process.env.VITE_FRONTEND_FORGE_API_URL?.replace('/api', '') ||
+                "";
+              const statusCallbackUrl = origin
+                ? `${origin}/api/twilio/status-callback`
+                : undefined;
+
+              // Use Twilio client directly so we can pass statusCallback
+              const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
+              const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+              const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
+              const TWILIO_MESSAGING_SERVICE_SID = process.env.TWILIO_MESSAGING_SERVICE_SID;
+
+              if (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_PHONE_NUMBER) {
+                const twilioClient = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+                const msgParams: any = {
+                  to: toPhone.startsWith("+") ? toPhone : `+1${toPhone.replace(/\D/g, "")}`,
+                  body: input.content,
+                };
+                if (TWILIO_MESSAGING_SERVICE_SID) {
+                  msgParams.messagingServiceSid = TWILIO_MESSAGING_SERVICE_SID;
+                } else {
+                  msgParams.from = TWILIO_PHONE_NUMBER;
+                }
+                if (statusCallbackUrl) {
+                  msgParams.statusCallback = statusCallbackUrl;
+                }
+                const message = await twilioClient.messages.create(msgParams);
+                // Store the Twilio MessageSid so the status callback can find this row
+                await conn.execute(
+                  `UPDATE conversation_messages SET externalMessageId = ? WHERE id = ?`,
+                  [message.sid, messageRowId]
+                );
+                console.log(`[Conversations] SMS sent via Twilio: ${message.sid} (statusCallback: ${statusCallbackUrl || 'none'})`);
+              } else {
+                // Demo mode — use the shared sendSMS helper (fallback)
+                const result = await sendSMS({ to: toPhone, body: input.content });
+                if (result.messageId) {
+                  await conn.execute(
+                    `UPDATE conversation_messages SET externalMessageId = ? WHERE id = ?`,
+                    [result.messageId, messageRowId]
+                  );
+                }
+              }
+            }
+          } catch (smsErr: any) {
+            // SMS send failure is non-fatal — the message is already saved locally
+            console.error(`[Conversations] SMS send error for conv ${input.conversationId}:`, smsErr?.message);
+          }
+        }
+
         await conn.execute(
           `UPDATE conversations SET lastMessageAt = NOW(), lastMessagePreview = ?, isRead = 1, updatedAt = NOW() WHERE id = ?`,
           [input.content.substring(0, 120), input.conversationId]

@@ -9,6 +9,7 @@ import { facebookWebhookVerify, facebookWebhookHandler } from "../webhooks/faceb
 import { handleStripeWebhook } from "../webhooks/stripe";
 import { handleSquareWebhook } from "../webhooks/square";
 import { handleInboundSms } from "../webhooks/inbound-sms";
+import { handleTwilioStatusCallback } from "../webhooks/twilio-status";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -68,6 +69,8 @@ async function startServer() {
 
   // Twilio inbound SMS — lead replies land here and are saved to conversations
   app.post("/api/twilio/inbound-sms", handleInboundSms);
+  // Twilio SMS delivery status callbacks — updates message status in conversation_messages
+  app.post("/api/twilio/status-callback", handleTwilioStatusCallback);
 
   // tRPC API
   app.use(
