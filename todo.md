@@ -921,3 +921,11 @@
 - [x] Unified Campaigns page with AI Calling, Email, and SMS sub-tabs
 - [x] Removed separate "Communicate" section from client sidebar nav (AI Calling, Email Campaigns, SMS Campaigns)
 - [x] Updated App.tsx routes — /campaigns now loads unified page; /ai-calling, /email-campaigns, /sms-campaigns redirect to /campaigns
+
+## Campaigns Page Overhaul (Round 9)
+- [x] Fix Campaigns page UI - replace CRMLayout with DashboardLayout
+- [x] Fix wrong tRPC procedure names (campaigns.listEmail → campaignsOld.listEmailCampaigns etc.)
+- [x] Unified Campaigns page with AI Calling, Email, SMS sub-tabs
+- [x] Campaign scheduling - date/time picker in Email and SMS creation dialogs
+- [x] Bulk AI call campaigns - segment selector + progress bar
+- [x] Campaign analytics drill-down side panel (View Stats button on each campaign card)
