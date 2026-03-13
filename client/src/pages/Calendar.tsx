@@ -1288,8 +1288,30 @@ export default function Calendar() {
           </div>
         )}
 
-        {/* Empty State */}
-        {isEmpty && !isLoading && (
+         {/* Tab Bar — always visible */}
+        <div className="flex items-center gap-0 px-4 pt-2 border-b shrink-0">
+          {(["calendar", "analytics", "reminders"] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === tab ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {tab === "calendar" && <><CalendarIcon className="w-3.5 h-3.5 inline mr-1.5" />Calendar</>}
+              {tab === "analytics" && <><BarChart2 className="w-3.5 h-3.5 inline mr-1.5" />Analytics</>}
+              {tab === "reminders" && <><Bell className="w-3.5 h-3.5 inline mr-1.5" />Reminders</>}
+            </button>
+          ))}
+        </div>
+        {/* Loading */}
+        {isLoading && activeTab === "calendar" && (
+          <div className="flex-1 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          </div>
+        )}
+        {/* Empty State — only on calendar tab when no data */}
+        {isEmpty && !isLoading && activeTab === "calendar" && (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center max-w-sm">
               <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center mx-auto mb-4">
@@ -1311,16 +1333,8 @@ export default function Calendar() {
             </div>
           </div>
         )}
-
-        {/* Loading */}
-        {isLoading && (
-          <div className="flex-1 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-          </div>
-        )}
-
         {/* KPI Stats Bar */}
-        {!isEmpty && !isLoading && appointmentsData.length > 0 && (
+        {!isEmpty && !isLoading && appointmentsData.length > 0 && activeTab === "calendar" && (
           <div className="flex items-center gap-6 px-4 py-2 border-b bg-muted/20 shrink-0 overflow-x-auto">
             {(() => {
               const all = appointmentsData as Appointment[];
@@ -1360,23 +1374,6 @@ export default function Calendar() {
             })()}
           </div>
         )}
-
-        {/* Tab Bar */}
-        <div className="flex items-center gap-0 px-4 pt-2 border-b shrink-0">
-          {(["calendar", "analytics", "reminders"] as const).map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tab === "calendar" && <><CalendarIcon className="w-3.5 h-3.5 inline mr-1.5" />Calendar</>}
-              {tab === "analytics" && <><BarChart2 className="w-3.5 h-3.5 inline mr-1.5" />Analytics</>}
-              {tab === "reminders" && <><Bell className="w-3.5 h-3.5 inline mr-1.5" />Reminders</>}
-            </button>
-          ))}
-        </div>
 
         {/* Calendar Views */}
         {activeTab === "calendar" && !isEmpty && !isLoading && (
