@@ -418,6 +418,16 @@ export const appointments = mysqlTable("appointments", {
   lastName: varchar("last_name", { length: 255 }).notNull(),
   email: varchar("email", { length: 320 }).notNull(),
   phone: varchar("phone", { length: 20 }).notNull(),
+  // Extended calendar fields (added via SQL migration)
+  title: varchar("title", { length: 500 }),
+  calendarId: int("calendar_id"),
+  calendarName: varchar("calendar_name", { length: 255 }),
+  endTime: timestamp("end_time"),
+  meetingType: varchar("meeting_type", { length: 20 }),
+  location: text("location"),
+  timezone: varchar("timezone", { length: 100 }),
+  assignedUserId: int("assigned_user_id"),
+  assignedUserName: varchar("assigned_user_name", { length: 255 }),
   // Appointment details
   appointmentDate: timestamp("appointment_date").notNull(),
   duration: int("duration").default(30).notNull(), // minutes
@@ -428,13 +438,17 @@ export const appointments = mysqlTable("appointments", {
   // Assignment
   assignedTo: mysqlEnum("assigned_to", ["loan_officer", "loa"]).default("loan_officer").notNull(),
   // Status tracking
-  status: mysqlEnum("status", ["scheduled", "confirmed", "completed", "cancelled", "no_show", "no_answer", "busy"]).default("scheduled").notNull(),
+  status: mysqlEnum("status", ["scheduled", "confirmed", "unconfirmed", "completed", "cancelled", "no_show", "no_answer", "busy"]).default("scheduled").notNull(),
   reminderSent: boolean("reminder_sent").default(false),
   reminderSent24h: boolean("reminder_sent_24h").default(false),
   reminderSent2h: boolean("reminder_sent_2h").default(false),
   confirmationSent: boolean("confirmation_sent").default(false),
   // Source tracking
   source: varchar("source", { length: 100 }), // e.g., "Facebook Ad", "Instagram", "Referral"
+  // Recurrence fields (added via SQL migration)
+  recurrenceRule: varchar("recurrence_rule", { length: 20 }),
+  recurrenceSeriesId: varchar("recurrence_series_id", { length: 36 }),
+  recurrenceEndDate: timestamp("recurrence_end_date"),
   // Timestamps
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),

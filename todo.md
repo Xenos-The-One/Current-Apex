@@ -825,3 +825,9 @@
 - [x] Public booking page: slug column added to calendar_resources, setCalendarSlug procedure added, Booking Link button in Calendar top bar opens dialog with slug editor and copy button
 - [x] Google Calendar sync: getGoogleSyncStatus, initiateGoogleSync, disconnectGoogleSync procedures added; Google Sync button in Calendar top bar opens OAuth dialog (requires GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET in Secrets)
 - [x] All 199 tests passing
+
+## Calendar Features Round 3
+- [x] Meeting type color-coding: distinct colors for phone/video/in-person on Month/Week/Day views, legend in filter bar
+- [x] No-show tracking: "No Show" status action in detail panel, no-show rate KPI in calendar analytics
+- [x] Recurring appointments: Repeat option in Add modal (weekly/bi-weekly/monthly), series creation, cancel-series option on detail panel
+- [x] All 209 tests passing

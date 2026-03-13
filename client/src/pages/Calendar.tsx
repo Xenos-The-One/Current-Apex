@@ -44,6 +44,10 @@ type Appointment = {
   assignedUserName?: string | null;
   source?: string | null;
   appointmentType?: string | null;
+  // Recurrence
+  recurrenceRule?: string | null;
+  recurrenceSeriesId?: string | null;
+  recurrenceEndDate?: Date | null;
 };
 
 type CalendarResource = {
@@ -71,6 +75,18 @@ const MEETING_TYPE_ICONS: Record<string, React.ReactNode> = {
   video:     <Video className="w-3 h-3" />,
   in_person: <MapPin className="w-3 h-3" />,
 };
+
+// Meeting type color palette — used for appointment card color-coding
+const MEETING_TYPE_COLORS: Record<string, string> = {
+  phone:     "#6366F1", // indigo
+  video:     "#0EA5E9", // sky blue
+  in_person: "#10B981", // emerald
+};
+
+function getMeetingTypeColor(meetingType: string | null | undefined, calendarColor: string): string {
+  if (!meetingType) return calendarColor;
+  return MEETING_TYPE_COLORS[meetingType] ?? calendarColor;
+}
 
 const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -135,15 +151,18 @@ function StatusBadge({ status }: { status: string }) {
 
 // ─── Appointment Card (mini) ──────────────────────────────────────────────────
 
-function ApptChip({ appt, onClick, color }: { appt: Appointment; onClick: () => void; color: string }) {
+function ApptChip({ appt, onClick, calendarColor }: { appt: Appointment; onClick: () => void; calendarColor: string }) {
   const isCancel = appt.status === "cancelled" || appt.status === "no_show";
+  const color = getMeetingTypeColor(appt.meetingType, calendarColor);
   return (
     <button
       onClick={onClick}
       className={`w-full text-left px-1.5 py-0.5 rounded text-xs font-medium truncate transition-opacity hover:opacity-80 ${isCancel ? "opacity-50 line-through" : ""}`}
       style={{ backgroundColor: color + "22", color, borderLeft: `3px solid ${color}` }}
+      title={`${getContactName(appt)} · ${appt.meetingType?.replace("_", " ") ?? ""}`}
     >
       {formatTime(appt.appointmentDate)} {getContactName(appt)}
+      {appt.recurrenceSeriesId && <span className="ml-1 opacity-60">↻</span>}
     </button>
   );
 }
@@ -190,9 +209,21 @@ function AppointmentModal({
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [apptType, setApptType] = useState(initial?.appointmentType ?? "consultation");
   const [assignedTo, setAssignedTo] = useState(initial?.assignedUserName ?? "");
+  const [recurrenceRule, setRecurrenceRule] = useState(initial?.recurrenceRule ?? "none");
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState(() => {
+    if (initial?.recurrenceEndDate) return new Date(initial.recurrenceEndDate).toISOString().slice(0, 10);
+    // Default end date: 3 months from now
+    const d = new Date();
+    d.setMonth(d.getMonth() + 3);
+    return d.toISOString().slice(0, 10);
+  });
 
   const createMut = trpc.calendars.createAppointment.useMutation({
     onSuccess: () => { toast.success("Appointment created"); utils.calendars.listAppointments.invalidate(); onSaved(); onClose(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const createRecurringMut = trpc.calendars.createRecurringAppointments.useMutation({
+    onSuccess: (r: any) => { toast.success(`Created ${r.count} recurring appointments`); utils.calendars.listAppointments.invalidate(); onSaved(); onClose(); },
     onError: (e) => toast.error(e.message),
   });
   const updateMut = trpc.calendars.updateAppointment.useMutation({
@@ -224,12 +255,15 @@ function AppointmentModal({
       notes,
       appointmentType: apptType as any,
       assignedUserName: assignedTo || undefined,
+      recurrenceRule: recurrenceRule !== "none" ? recurrenceRule : undefined,
+      recurrenceEndDate: recurrenceRule !== "none" ? new Date(recurrenceEndDate) : undefined,
     };
     if (isEdit) updateMut.mutate({ id: initial!.id!, ...payload });
+    else if (recurrenceRule !== "none") createRecurringMut.mutate(payload as any);
     else createMut.mutate(payload);
   };
 
-  const isPending = createMut.isPending || updateMut.isPending;
+  const isPending = createMut.isPending || updateMut.isPending || createRecurringMut.isPending;
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
@@ -332,12 +366,46 @@ function AppointmentModal({
             <Label>Notes</Label>
             <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Internal notes..." rows={3} />
           </div>
+
+          {/* Recurrence — only show for new appointments */}
+          {!isEdit && (
+            <div className="space-y-3 border rounded-lg p-3 bg-muted/20">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Repeat</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Frequency</Label>
+                  <Select value={recurrenceRule} onValueChange={setRecurrenceRule}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Does not repeat</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="biweekly">Bi-weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {recurrenceRule !== "none" && (
+                  <div className="space-y-1">
+                    <Label className="text-xs">End Date</Label>
+                    <Input type="date" value={recurrenceEndDate} onChange={e => setRecurrenceEndDate(e.target.value)} className="h-8 text-sm" />
+                  </div>
+                )}
+              </div>
+              {recurrenceRule !== "none" && (
+                <p className="text-xs text-muted-foreground">
+                  Appointments will be created {recurrenceRule === "weekly" ? "every week" : recurrenceRule === "biweekly" ? "every 2 weeks" : "every month"} until {new Date(recurrenceEndDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}.
+                </p>
+              )}
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={isPending}>
             {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {isEdit ? "Save Changes" : "Create Appointment"}
+            {isEdit ? "Save Changes" : recurrenceRule !== "none" ? "Create Recurring Series" : "Create Appointment"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -385,6 +453,10 @@ function AppointmentDetail({
     onSuccess: () => { toast.success("Appointment deleted"); invalidate(); onClose(); },
     onError: (e) => toast.error(e.message),
   });
+  const cancelSeriesMut = trpc.calendars.cancelRecurringSeries.useMutation({
+    onSuccess: (r: any) => { toast.success(`Cancelled ${r.count} appointments in series`); invalidate(); onClose(); },
+    onError: (e) => toast.error(e.message),
+  });
 
   const color = getCalendarColor(appt.calendarId, calendars);
 
@@ -400,6 +472,11 @@ function AppointmentDetail({
               {appt.calendarName && (
                 <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: color + "22", color }}>
                   {appt.calendarName}
+                </span>
+              )}
+              {appt.recurrenceSeriesId && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-medium">
+                  ↻ {appt.recurrenceRule?.replace("biweekly", "bi-weekly") ?? "recurring"}
                 </span>
               )}
             </div>
@@ -451,6 +528,30 @@ function AppointmentDetail({
             <User className="w-4 h-4 text-muted-foreground" />
             <span className="text-muted-foreground">Assigned to</span>
             <span className="font-medium">{appt.assignedUserName}</span>
+          </div>
+        )}
+
+        {/* Recurring Series Indicator */}
+        {appt.recurrenceSeriesId && (
+          <div className="flex items-center justify-between p-2.5 rounded-lg bg-indigo-50 border border-indigo-200">
+            <div className="flex items-center gap-2">
+              <span className="text-indigo-600 text-sm">↻</span>
+              <div>
+                <p className="text-xs font-medium text-indigo-800">Recurring appointment</p>
+                <p className="text-xs text-indigo-600 capitalize">{appt.recurrenceRule?.replace("biweekly", "bi-weekly")} series</p>
+              </div>
+            </div>
+            <Button
+              size="sm" variant="ghost" className="text-red-500 hover:text-red-600 text-xs h-7"
+              onClick={() => {
+                if (confirm("Cancel all future appointments in this series?")) {
+                  cancelSeriesMut.mutate({ seriesId: appt.recurrenceSeriesId!, fromDate: new Date(appt.appointmentDate) });
+                }
+              }}
+              disabled={cancelSeriesMut.isPending}
+            >
+              Cancel Series
+            </Button>
           </div>
         )}
 
@@ -583,7 +684,7 @@ function MonthView({
               </div>
               <div className="space-y-0.5">
                 {dayAppts.slice(0, 3).map(a => (
-                  <ApptChip key={a.id} appt={a} color={getCalendarColor(a.calendarId, calendars)}
+                  <ApptChip key={a.id} appt={a} calendarColor={getCalendarColor(a.calendarId, calendars)}
                     onClick={e => { (e as any).stopPropagation?.(); onApptClick(a); }} />
                 ))}
                 {dayAppts.length > 3 && (
@@ -644,7 +745,7 @@ function WeekView({
                   onClick={() => { const dt = new Date(d); dt.setHours(hour, 0, 0, 0); onSlotClick(dt); }}
                 >
                   {slotAppts.map(a => (
-                    <ApptChip key={a.id} appt={a} color={getCalendarColor(a.calendarId, calendars)}
+                    <ApptChip key={a.id} appt={a} calendarColor={getCalendarColor(a.calendarId, calendars)}
                       onClick={e => { (e as any).stopPropagation?.(); onApptClick(a); }} />
                   ))}
                 </div>
@@ -687,7 +788,8 @@ function DayView({
                 onClick={() => { const dt = new Date(date); dt.setHours(hour, 0, 0, 0); onSlotClick(dt); }}
               >
                 {slotAppts.map(a => {
-                  const color = getCalendarColor(a.calendarId, calendars);
+                  const calColor = getCalendarColor(a.calendarId, calendars);
+                  const color = getMeetingTypeColor(a.meetingType, calColor);
                   return (
                     <div
                       key={a.id}
@@ -699,6 +801,7 @@ function DayView({
                       <p className="text-xs text-muted-foreground">
                         {formatTime(a.appointmentDate)}{a.endTime && ` – ${formatTime(a.endTime)}`}
                         {a.meetingType && ` · ${a.meetingType.replace("_", " ")}`}
+                        {a.recurrenceSeriesId && " · ↻ recurring"}
                       </p>
                       <StatusBadge status={a.status} />
                     </div>
@@ -755,7 +858,8 @@ function AgendaView({
           </div>
           <div className="space-y-2">
             {appts.map(a => {
-              const color = getCalendarColor(a.calendarId, calendars);
+              const calColor = getCalendarColor(a.calendarId, calendars);
+              const color = getMeetingTypeColor(a.meetingType, calColor);
               return (
                 <div
                   key={a.id}
@@ -1059,6 +1163,13 @@ export default function Calendar() {
                 {c.name}
               </button>
             ))}
+            <div className="w-px h-4 bg-border mx-1" />
+            {Object.entries(MEETING_TYPE_COLORS).map(([type, color]) => (
+              <span key={type} className="flex items-center gap-1.5 text-xs whitespace-nowrap text-muted-foreground">
+                <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: color }} />
+                {type === "in_person" ? "In Person" : type.charAt(0).toUpperCase() + type.slice(1)}
+              </span>
+            ))}
           </div>
         )}
 
@@ -1090,6 +1201,48 @@ export default function Calendar() {
         {isLoading && (
           <div className="flex-1 flex items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          </div>
+        )}
+
+        {/* KPI Stats Bar */}
+        {!isEmpty && !isLoading && appointmentsData.length > 0 && (
+          <div className="flex items-center gap-6 px-4 py-2 border-b bg-muted/20 shrink-0 overflow-x-auto">
+            {(() => {
+              const all = appointmentsData as Appointment[];
+              const total = all.length;
+              const completed = all.filter(a => a.status === "completed").length;
+              const noShow = all.filter(a => a.status === "no_show").length;
+              const confirmed = all.filter(a => a.status === "confirmed" || a.status === "scheduled").length;
+              const noShowRate = total > 0 ? Math.round((noShow / total) * 100) : 0;
+              const showRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+              return (
+                <>
+                  <div className="flex items-center gap-2 text-xs whitespace-nowrap">
+                    <span className="font-semibold text-foreground">{total}</span>
+                    <span className="text-muted-foreground">Total</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs whitespace-nowrap">
+                    <span className="font-semibold text-green-600">{confirmed}</span>
+                    <span className="text-muted-foreground">Confirmed</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs whitespace-nowrap">
+                    <span className="font-semibold text-blue-600">{completed}</span>
+                    <span className="text-muted-foreground">Completed ({showRate}%)</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs whitespace-nowrap">
+                    <span className={`font-semibold ${noShowRate >= 20 ? "text-red-600" : noShowRate >= 10 ? "text-orange-500" : "text-muted-foreground"}`}>{noShow}</span>
+                    <span className="text-muted-foreground">No-Shows</span>
+                    {noShowRate > 0 && (
+                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
+                        noShowRate >= 20 ? "bg-red-100 text-red-700" :
+                        noShowRate >= 10 ? "bg-orange-100 text-orange-700" :
+                        "bg-muted text-muted-foreground"
+                      }`}>{noShowRate}% rate</span>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
           </div>
         )}
 

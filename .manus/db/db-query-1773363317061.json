@@ -1,0 +1,148 @@
+{
+  "query": "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = 'appointments' AND TABLE_SCHEMA = DATABASE() ORDER BY ORDINAL_POSITION",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = 'appointments' AND TABLE_SCHEMA = DATABASE() ORDER BY ORDINAL_POSITION",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "agency_id"
+    },
+    {
+      "COLUMN_NAME": "calendar_id"
+    },
+    {
+      "COLUMN_NAME": "calendar_name"
+    },
+    {
+      "COLUMN_NAME": "user_id"
+    },
+    {
+      "COLUMN_NAME": "lead_id"
+    },
+    {
+      "COLUMN_NAME": "borrower_id"
+    },
+    {
+      "COLUMN_NAME": "title"
+    },
+    {
+      "COLUMN_NAME": "description"
+    },
+    {
+      "COLUMN_NAME": "type"
+    },
+    {
+      "COLUMN_NAME": "status"
+    },
+    {
+      "COLUMN_NAME": "start_at"
+    },
+    {
+      "COLUMN_NAME": "end_at"
+    },
+    {
+      "COLUMN_NAME": "timezone"
+    },
+    {
+      "COLUMN_NAME": "location"
+    },
+    {
+      "COLUMN_NAME": "meeting_url"
+    },
+    {
+      "COLUMN_NAME": "reminder_sent"
+    },
+    {
+      "COLUMN_NAME": "notes"
+    },
+    {
+      "COLUMN_NAME": "created_at"
+    },
+    {
+      "COLUMN_NAME": "updated_at"
+    },
+    {
+      "COLUMN_NAME": "client_id"
+    },
+    {
+      "COLUMN_NAME": "calendar_event_id"
+    },
+    {
+      "COLUMN_NAME": "first_name"
+    },
+    {
+      "COLUMN_NAME": "last_name"
+    },
+    {
+      "COLUMN_NAME": "contact_name"
+    },
+    {
+      "COLUMN_NAME": "phone"
+    },
+    {
+      "COLUMN_NAME": "appointment_date"
+    },
+    {
+      "COLUMN_NAME": "end_time"
+    },
+    {
+      "COLUMN_NAME": "duration"
+    },
+    {
+      "COLUMN_NAME": "appointment_type"
+    },
+    {
+      "COLUMN_NAME": "meeting_type"
+    },
+    {
+      "COLUMN_NAME": "loan_type"
+    },
+    {
+      "COLUMN_NAME": "property_address"
+    },
+    {
+      "COLUMN_NAME": "assigned_to"
+    },
+    {
+      "COLUMN_NAME": "assigned_user_id"
+    },
+    {
+      "COLUMN_NAME": "assigned_user_name"
+    },
+    {
+      "COLUMN_NAME": "reminder_sent_24h"
+    },
+    {
+      "COLUMN_NAME": "reminder_sent_2h"
+    },
+    {
+      "COLUMN_NAME": "confirmation_sent"
+    },
+    {
+      "COLUMN_NAME": "source"
+    },
+    {
+      "COLUMN_NAME": "email"
+    },
+    {
+      "COLUMN_NAME": "scheduled_at"
+    },
+    {
+      "COLUMN_NAME": "duration_minutes"
+    },
+    {
+      "COLUMN_NAME": "zoom_link"
+    },
+    {
+      "COLUMN_NAME": "outcome"
+    },
+    {
+      "COLUMN_NAME": "no_show_reason"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\nagency_id\ncalendar_id\ncalendar_name\nuser_id\nlead_id\nborrower_id\ntitle\ndescription\ntype\nstatus\nstart_at\nend_at\ntimezone\nlocation\nmeeting_url\nreminder_sent\nnotes\ncreated_at\nupdated_at\nclient_id\ncalendar_event_id\nfirst_name\nlast_name\ncontact_name\nphone\nappointment_date\nend_time\nduration\nappointment_type\nmeeting_type\nloan_type\nproperty_address\nassigned_to\nassigned_user_id\nassigned_user_name\nreminder_sent_24h\nreminder_sent_2h\nconfirmation_sent\nsource\nemail\nscheduled_at\nduration_minutes\nzoom_link\noutcome\nno_show_reason\n",
+  "stderr": "",
+  "execution_time_ms": 371
+}

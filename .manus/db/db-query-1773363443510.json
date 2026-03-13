@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE appointments \n  ADD COLUMN IF NOT EXISTS recurrence_rule VARCHAR(20) NULL COMMENT 'weekly, biweekly, monthly, or NULL for one-time',\n  ADD COLUMN IF NOT EXISTS recurrence_series_id VARCHAR(36) NULL COMMENT 'UUID shared by all appointments in a recurring series',\n  ADD COLUMN IF NOT EXISTS recurrence_end_date TIMESTAMP NULL COMMENT 'Last date to generate occurrences'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute ALTER TABLE appointments \n  ADD COLUMN IF NOT EXISTS recurrence_rule VARCHAR(20) NULL COMMENT 'weekly, biweekly, monthly, or NULL for one-time',\n  ADD COLUMN IF NOT EXISTS recurrence_series_id VARCHAR(36) NULL COMMENT 'UUID shared by all appointments in a recurring series',\n  ADD COLUMN IF NOT EXISTS recurrence_end_date TIMESTAMP NULL COMMENT 'Last date to generate occurrences'",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1847
+}

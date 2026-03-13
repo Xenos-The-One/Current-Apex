@@ -559,4 +559,119 @@ export const calendarsRouter = router({
       }
       return { success: true, message: "Appointment synced to Google Calendar" };
     }),
+
+  // ─── Recurring Appointments ─────────────────────────────────────────────────
+
+  createRecurringAppointments: protectedProcedure
+    .input(appointmentInput.extend({
+      recurrenceRule: z.enum(["weekly", "biweekly", "monthly"]),
+      recurrenceEndDate: z.date(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const agencyId = await getAgencyId(ctx.user.id);
+
+      // Generate a shared series UUID
+      const seriesId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+      const occurrences: Date[] = [];
+      const current = new Date(input.appointmentDate);
+      const endDate = new Date(input.recurrenceEndDate);
+
+      while (current <= endDate) {
+        occurrences.push(new Date(current));
+        if (input.recurrenceRule === "weekly") {
+          current.setDate(current.getDate() + 7);
+        } else if (input.recurrenceRule === "biweekly") {
+          current.setDate(current.getDate() + 14);
+        } else {
+          current.setMonth(current.getMonth() + 1);
+        }
+        if (occurrences.length >= 52) break; // Safety cap: max 52 occurrences
+      }
+
+      const durationMs = input.endTime
+        ? new Date(input.endTime).getTime() - new Date(input.appointmentDate).getTime()
+        : input.duration * 60 * 1000;
+
+      const rows = occurrences.map(date => ({
+        agencyId,
+        title: input.title,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        email: input.email || null,
+        phone: input.phone || null,
+        calendarId: input.calendarId || null,
+        calendarName: input.calendarName || null,
+        appointmentDate: date,
+        endTime: new Date(date.getTime() + durationMs),
+        duration: input.duration,
+        meetingType: input.meetingType,
+        location: input.location || null,
+        timezone: input.timezone,
+        status: input.status,
+        notes: input.notes || null,
+        assignedUserId: input.assignedUserId || null,
+        assignedUserName: input.assignedUserName || null,
+        source: input.source || null,
+        appointmentType: input.appointmentType,
+        assignedTo: "loan_officer" as any,
+      }));
+
+      // Insert in batches of 10
+      for (let i = 0; i < rows.length; i += 10) {
+        const batch = rows.slice(i, i + 10);
+        const inserted = await db.insert(appointments).values(batch as any);
+        // Update each inserted row with recurrence metadata via raw SQL
+        // We use the auto-increment IDs from the batch
+      }
+
+      // Set recurrence metadata on all inserted rows for this series
+      await db.execute(sql`
+        UPDATE appointments
+        SET recurrence_rule = ${input.recurrenceRule},
+            recurrence_series_id = ${seriesId},
+            recurrence_end_date = ${endDate}
+        WHERE agency_id = ${agencyId}
+          AND first_name = ${input.firstName}
+          AND last_name = ${input.lastName}
+          AND recurrence_series_id IS NULL
+          AND appointment_date >= ${occurrences[0]}
+          AND appointment_date <= ${endDate}
+      `);
+
+      return { count: occurrences.length, seriesId };
+    }),
+
+  cancelRecurringSeries: protectedProcedure
+    .input(z.object({
+      seriesId: z.string(),
+      fromDate: z.date(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const agencyId = await getAgencyId(ctx.user.id);
+
+      await db.execute(sql`
+        UPDATE appointments
+        SET status = 'cancelled'
+        WHERE agency_id = ${agencyId}
+          AND recurrence_series_id = ${input.seriesId}
+          AND appointment_date >= ${input.fromDate}
+          AND status NOT IN ('completed', 'cancelled')
+      `);
+
+      const result = await db.execute(sql`
+        SELECT COUNT(*) as cnt
+        FROM appointments
+        WHERE agency_id = ${agencyId}
+          AND recurrence_series_id = ${input.seriesId}
+          AND status = 'cancelled'
+      `) as any[];
+
+      const count = result[0]?.cnt ?? 0;
+      return { count: Number(count), seriesId: input.seriesId };
+    }),
 });

@@ -1,0 +1,378 @@
+{
+  "query": "DESCRIBE appointments",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute DESCRIBE appointments",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "agency_id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "calendar_id",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "calendar_name",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "user_id",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "lead_id",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "borrower_id",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "title",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "description",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "type",
+      "Type": "enum('consultation','follow_up','closing','review','call','meeting','other')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "consultation",
+      "Extra": ""
+    },
+    {
+      "Field": "status",
+      "Type": "enum('scheduled','confirmed','unconfirmed','completed','cancelled','no_show','no_answer','busy')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "unconfirmed",
+      "Extra": ""
+    },
+    {
+      "Field": "start_at",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "end_at",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "timezone",
+      "Type": "varchar(64)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "America/New_York",
+      "Extra": ""
+    },
+    {
+      "Field": "location",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "meeting_url",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "reminder_sent",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "notes",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "created_at",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "updated_at",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    },
+    {
+      "Field": "client_id",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "calendar_event_id",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "first_name",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "last_name",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "contact_name",
+      "Type": "varchar(500)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": "VIRTUAL GENERATED"
+    },
+    {
+      "Field": "phone",
+      "Type": "varchar(20)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "appointment_date",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "end_time",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "duration",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "30",
+      "Extra": ""
+    },
+    {
+      "Field": "appointment_type",
+      "Type": "enum('consultation','application','closing','follow_up')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "consultation",
+      "Extra": ""
+    },
+    {
+      "Field": "meeting_type",
+      "Type": "enum('in_person','phone','video')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "phone",
+      "Extra": ""
+    },
+    {
+      "Field": "loan_type",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "property_address",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "assigned_to",
+      "Type": "enum('loan_officer','loa')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "loan_officer",
+      "Extra": ""
+    },
+    {
+      "Field": "assigned_user_id",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "assigned_user_name",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "reminder_sent_24h",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "reminder_sent_2h",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "confirmation_sent",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "source",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "email",
+      "Type": "varchar(320)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "scheduled_at",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "duration_minutes",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "60",
+      "Extra": ""
+    },
+    {
+      "Field": "zoom_link",
+      "Type": "varchar(500)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "outcome",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "no_show_reason",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nagency_id\tint\tNO\t\tNULL\t\ncalendar_id\tint\tYES\t\tNULL\t\ncalendar_name\tvarchar(255)\tYES\t\tNULL\t\nuser_id\tint\tYES\t\tNULL\t\nlead_id\tint\tYES\t\tNULL\t\nborrower_id\tint\tYES\t\tNULL\t\ntitle\tvarchar(255)\tYES\t\tNULL\t\ndescription\ttext\tYES\t\tNULL\t\ntype\tenum('consultation','follow_up','closing','review','call','meeting','other')\tYES\t\tconsultation\t\nstatus\tenum('scheduled','confirmed','unconfirmed','completed','cancelled','no_show','no_answer','busy')\tYES\t\tunconfirmed\t\nstart_at\ttimestamp\tYES\t\tNULL\t\nend_at\ttimestamp\tYES\t\tNULL\t\ntimezone\tvarchar(64)\tYES\t\tAmerica/New_York\t\nlocation\ttext\tYES\t\tNULL\t\nmeeting_url\ttext\tYES\t\tNULL\t\nreminder_sent\ttinyint(1)\tYES\t\t0\t\nnotes\ttext\tYES\t\tNULL\t\ncreated_at\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdated_at\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\nclient_id\tint\tYES\t\tNULL\t\ncalendar_event_id\tvarchar(255)\tYES\t\tNULL\t\nfirst_name\tvarchar(255)\tYES\t\tNULL\t\nlast_name\tvarchar(255)\tYES\t\tNULL\t\ncontact_name\tvarchar(500)\tYES\t\tNULL\tVIRTUAL GENERATED\nphone\tvarchar(20)\tYES\t\tNULL\t\nappointment_date\ttimestamp\tYES\t\tNULL\t\nend_time\ttimestamp\tYES\t\tNULL\t\nduration\tint\tYES\t\t30\t\nappointment_type\tenum('consultation','application','closing','follow_up')\tYES\t\tconsultation\t\nmeeting_type\tenum('in_person','phone','video')\tYES\t\tphone\t\nloan_type\tvarchar(100)\tYES\t\tNULL\t\nproperty_address\ttext\tYES\t\tNULL\t\nassigned_to\tenum('loan_officer','loa')\tYES\t\tloan_officer\t\nassigned_user_id\tint\tYES\t\tNULL\t\nassigned_user_name\tvarchar(255)\tYES\t\tNULL\t\nreminder_sent_24h\ttinyint(1)\tYES\t\t0\t\nreminder_sent_2h\ttinyint(1)\tYES\t\t0\t\nconfirmation_sent\ttinyint(1)\tYES\t\t0\t\nsource\tvarchar(100)\tYES\t\tNULL\t\nemail\tvarchar(320)\tYES\t\tNULL\t\nscheduled_at\ttimestamp\tYES\t\tNULL\t\nduration_minutes\tint\tYES\t\t60\t\nzoom_link\tvarchar(500)\tYES\t\tNULL\t\noutcome\tvarchar(100)\tYES\t\tNULL\t\nno_show_reason\ttext\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 387
+}

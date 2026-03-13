@@ -1,0 +1,286 @@
+{
+  "query": "SELECT COLUMN_NAME, DATA_TYPE, COLUMN_DEFAULT, IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_NAME = 'appointments' ORDER BY ORDINAL_POSITION",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT COLUMN_NAME, DATA_TYPE, COLUMN_DEFAULT, IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_NAME = 'appointments' ORDER BY ORDINAL_POSITION",
+  "rows": [
+    {
+      "COLUMN_NAME": "id",
+      "DATA_TYPE": "int",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "NO"
+    },
+    {
+      "COLUMN_NAME": "agency_id",
+      "DATA_TYPE": "int",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "NO"
+    },
+    {
+      "COLUMN_NAME": "calendar_id",
+      "DATA_TYPE": "int",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "calendar_name",
+      "DATA_TYPE": "varchar",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "user_id",
+      "DATA_TYPE": "int",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "lead_id",
+      "DATA_TYPE": "int",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "borrower_id",
+      "DATA_TYPE": "int",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "title",
+      "DATA_TYPE": "varchar",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "description",
+      "DATA_TYPE": "text",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "type",
+      "DATA_TYPE": "enum",
+      "COLUMN_DEFAULT": "consultation",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "status",
+      "DATA_TYPE": "enum",
+      "COLUMN_DEFAULT": "unconfirmed",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "start_at",
+      "DATA_TYPE": "timestamp",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "end_at",
+      "DATA_TYPE": "timestamp",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "timezone",
+      "DATA_TYPE": "varchar",
+      "COLUMN_DEFAULT": "America/New_York",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "location",
+      "DATA_TYPE": "text",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "meeting_url",
+      "DATA_TYPE": "text",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "reminder_sent",
+      "DATA_TYPE": "tinyint",
+      "COLUMN_DEFAULT": "0",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "notes",
+      "DATA_TYPE": "text",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "created_at",
+      "DATA_TYPE": "timestamp",
+      "COLUMN_DEFAULT": "CURRENT_TIMESTAMP",
+      "IS_NULLABLE": "NO"
+    },
+    {
+      "COLUMN_NAME": "updated_at",
+      "DATA_TYPE": "timestamp",
+      "COLUMN_DEFAULT": "CURRENT_TIMESTAMP",
+      "IS_NULLABLE": "NO"
+    },
+    {
+      "COLUMN_NAME": "client_id",
+      "DATA_TYPE": "int",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "calendar_event_id",
+      "DATA_TYPE": "varchar",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "first_name",
+      "DATA_TYPE": "varchar",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "last_name",
+      "DATA_TYPE": "varchar",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "contact_name",
+      "DATA_TYPE": "varchar",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "phone",
+      "DATA_TYPE": "varchar",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "appointment_date",
+      "DATA_TYPE": "timestamp",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "end_time",
+      "DATA_TYPE": "timestamp",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "duration",
+      "DATA_TYPE": "int",
+      "COLUMN_DEFAULT": "30",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "appointment_type",
+      "DATA_TYPE": "enum",
+      "COLUMN_DEFAULT": "consultation",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "meeting_type",
+      "DATA_TYPE": "enum",
+      "COLUMN_DEFAULT": "phone",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "loan_type",
+      "DATA_TYPE": "varchar",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "property_address",
+      "DATA_TYPE": "text",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "assigned_to",
+      "DATA_TYPE": "enum",
+      "COLUMN_DEFAULT": "loan_officer",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "assigned_user_id",
+      "DATA_TYPE": "int",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "assigned_user_name",
+      "DATA_TYPE": "varchar",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "reminder_sent_24h",
+      "DATA_TYPE": "tinyint",
+      "COLUMN_DEFAULT": "0",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "reminder_sent_2h",
+      "DATA_TYPE": "tinyint",
+      "COLUMN_DEFAULT": "0",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "confirmation_sent",
+      "DATA_TYPE": "tinyint",
+      "COLUMN_DEFAULT": "0",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "source",
+      "DATA_TYPE": "varchar",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "email",
+      "DATA_TYPE": "varchar",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "scheduled_at",
+      "DATA_TYPE": "timestamp",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "duration_minutes",
+      "DATA_TYPE": "int",
+      "COLUMN_DEFAULT": "60",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "zoom_link",
+      "DATA_TYPE": "varchar",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "outcome",
+      "DATA_TYPE": "varchar",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    },
+    {
+      "COLUMN_NAME": "no_show_reason",
+      "DATA_TYPE": "text",
+      "COLUMN_DEFAULT": "NULL",
+      "IS_NULLABLE": "YES"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\tDATA_TYPE\tCOLUMN_DEFAULT\tIS_NULLABLE\nid\tint\tNULL\tNO\nagency_id\tint\tNULL\tNO\ncalendar_id\tint\tNULL\tYES\ncalendar_name\tvarchar\tNULL\tYES\nuser_id\tint\tNULL\tYES\nlead_id\tint\tNULL\tYES\nborrower_id\tint\tNULL\tYES\ntitle\tvarchar\tNULL\tYES\ndescription\ttext\tNULL\tYES\ntype\tenum\tconsultation\tYES\nstatus\tenum\tunconfirmed\tYES\nstart_at\ttimestamp\tNULL\tYES\nend_at\ttimestamp\tNULL\tYES\ntimezone\tvarchar\tAmerica/New_York\tYES\nlocation\ttext\tNULL\tYES\nmeeting_url\ttext\tNULL\tYES\nreminder_sent\ttinyint\t0\tYES\nnotes\ttext\tNULL\tYES\ncreated_at\ttimestamp\tCURRENT_TIMESTAMP\tNO\nupdated_at\ttimestamp\tCURRENT_TIMESTAMP\tNO\nclient_id\tint\tNULL\tYES\ncalendar_event_id\tvarchar\tNULL\tYES\nfirst_name\tvarchar\tNULL\tYES\nlast_name\tvarchar\tNULL\tYES\ncontact_name\tvarchar\tNULL\tYES\nphone\tvarchar\tNULL\tYES\nappointment_date\ttimestamp\tNULL\tYES\nend_time\ttimestamp\tNULL\tYES\nduration\tint\t30\tYES\nappointment_type\tenum\tconsultation\tYES\nmeeting_type\tenum\tphone\tYES\nloan_type\tvarchar\tNULL\tYES\nproperty_address\ttext\tNULL\tYES\nassigned_to\tenum\tloan_officer\tYES\nassigned_user_id\tint\tNULL\tYES\nassigned_user_name\tvarchar\tNULL\tYES\nreminder_sent_24h\ttinyint\t0\tYES\nreminder_sent_2h\ttinyint\t0\tYES\nconfirmation_sent\ttinyint\t0\tYES\nsource\tvarchar\tNULL\tYES\nemail\tvarchar\tNULL\tYES\nscheduled_at\ttimestamp\tNULL\tYES\nduration_minutes\tint\t60\tYES\nzoom_link\tvarchar\tNULL\tYES\noutcome\tvarchar\tNULL\tYES\nno_show_reason\ttext\tNULL\tYES\n",
+  "stderr": "",
+  "execution_time_ms": 448
+}
