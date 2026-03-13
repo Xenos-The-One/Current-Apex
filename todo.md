@@ -865,3 +865,8 @@
 - [x] Add bulk action toolbar — Mark Read, Mark Unread, Archive for selected conversations
 - [x] Add backend procedures: conversations.updateTags and conversations.bulkAction
 - [x] Add tags column to conversations table in database
+
+## Conversations Page Fixes (Round 2)
+- [x] Fix conversations list empty in client view (Tariq's account) — rewrote conversations.ts to use raw mysql2/promise instead of broken Drizzle getDb().execute() pattern
+- [x] Fix compose box not showing — fixed by fixing the conversations list (compose box was always there, just hidden when list was empty)
+- [x] Fix lead search showing all agency leads instead of only Tariq's client leads — added clientId filter to leads.list procedure; NewConversationDialog now passes impersonatingClientId from ImpersonationContext

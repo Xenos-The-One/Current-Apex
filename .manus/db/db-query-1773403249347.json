@@ -1,0 +1,29 @@
+{
+  "query": "SELECT id, agencyId, leadId, channel, contactName, lastMessagePreview FROM conversations;\nSELECT id, user_id, agency_id, name FROM clients WHERE name LIKE '%Tariq%' OR name LIKE '%tariq%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, agencyId, leadId, channel, contactName, lastMessagePreview FROM conversations;\nSELECT id, user_id, agency_id, name FROM clients WHERE name LIKE '%Tariq%' OR name LIKE '%tariq%';",
+  "rows": [
+    {
+      "id": "30001",
+      "agencyId": "1",
+      "leadId": "90008",
+      "channel": "email",
+      "contactName": "john moreno",
+      "lastMessagePreview": "Email sent: \"Test 1\""
+    },
+    {
+      "id": "30002",
+      "agencyId": "1",
+      "leadId": "90007",
+      "channel": "email",
+      "contactName": "Thailer Somerville",
+      "lastMessagePreview": "Email sent: \"test2\""
+    }
+  ],
+  "messages": [
+    "id\tuser_id\tagency_id\tname",
+    "90001\t540335\t1\tTariq Test Account"
+  ],
+  "stdout": "id\tagencyId\tleadId\tchannel\tcontactName\tlastMessagePreview\n30001\t1\t90008\temail\tjohn moreno\tEmail sent: \"Test 1\"\n30002\t1\t90007\temail\tThailer Somerville\tEmail sent: \"test2\"\nid\tuser_id\tagency_id\tname\n90001\t540335\t1\tTariq Test Account\n",
+  "stderr": "",
+  "execution_time_ms": 457
+}

@@ -3,6 +3,7 @@ import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { 
   createLead, 
   getLeadsByAgency,
+  getLeadsByClientId,
   getLeadById,
   updateLead,
   deleteLead,
@@ -167,10 +168,11 @@ export const leadsRouter = router({
       return { success: true, leadId: lead.id };
     }),
 
-  // Get all leads for an agency
+  // Get all leads for an agency (or specific client for data segregation)
   list: protectedProcedure
     .input(z.object({
       agencyId: z.number(),
+      clientId: z.number().optional(),
       status: z.enum(["new", "contacted", "qualified", "appointment_set", "appointment_completed", "closed_won", "closed_lost"]).optional(),
       leadSource: z.string().optional(),
       contactType: z.enum(["borrower", "real_estate_agent", "attorney", "insurance_agent", "title_company", "builder_developer", "lender", "other"]).optional(),
@@ -179,6 +181,14 @@ export const leadsRouter = router({
     }))
     .query(async ({ input, ctx }) => {
       const agencyId = await resolveAgencyId(ctx, input.agencyId);
+      // If clientId provided, scope leads to that client only (data segregation)
+      if (input.clientId && input.clientId > 0) {
+        let leads = await getLeadsByClientId(input.clientId);
+        if (input.contactType) {
+          leads = leads.filter(l => (l as any).contactType === input.contactType);
+        }
+        return leads;
+      }
       let leads = await getLeadsByAgency(
         agencyId,
         input.status,

@@ -3,6 +3,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import AISuccessCoachPanel from "@/components/AISuccessCoachPanel";
 import { useAgency } from "@/contexts/AgencyContext";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -206,9 +207,11 @@ function MessageBubble({ msg }: { msg: Message }) {
 // ─── New Conversation Composer Dialog ────────────────────────────────────────
 function NewConversationDialog({
   agencyId,
+  clientId,
   onCreated,
 }: {
   agencyId: number;
+  clientId?: number;
   onCreated: (convId: number) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -220,7 +223,7 @@ function NewConversationDialog({
   const [firstMessage, setFirstMessage] = useState("");
 
   const { data: leadsRaw } = trpc.leads.list.useQuery(
-    { agencyId, limit: 100 },
+    { agencyId, clientId: clientId && clientId > 0 ? clientId : undefined, limit: 100 },
     { enabled: open }
   );
   const leadsList: any[] = Array.isArray(leadsRaw) ? leadsRaw : [];
@@ -424,6 +427,8 @@ function NewConversationDialog({
 export default function Conversations() {
   const { agencyId } = useAgency();
   const AGENCY_ID = agencyId || 1;
+  const { impersonatingClientId } = useImpersonation();
+  const CLIENT_ID = impersonatingClientId ?? undefined;
 
   const [activeList, setActiveList] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -577,6 +582,7 @@ export default function Conversations() {
                 </Button>
                 <NewConversationDialog
                   agencyId={AGENCY_ID}
+                  clientId={CLIENT_ID}
                   onCreated={(convId) => setSelectedConvId(convId)}
                 />
               </div>
@@ -675,6 +681,7 @@ export default function Conversations() {
                 <p className="text-xs text-gray-400 mt-1 mb-3">Start a new conversation by clicking the + button above</p>
                 <NewConversationDialog
                   agencyId={AGENCY_ID}
+                  clientId={CLIENT_ID}
                   onCreated={(convId) => setSelectedConvId(convId)}
                 />
               </div>
@@ -939,6 +946,7 @@ export default function Conversations() {
               </p>
               <NewConversationDialog
                 agencyId={AGENCY_ID}
+                clientId={CLIENT_ID}
                 onCreated={(convId) => setSelectedConvId(convId)}
               />
               {stats && (
