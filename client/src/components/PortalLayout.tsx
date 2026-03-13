@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLocation, Link } from "wouter";
+import { useLocation } from "wouter";
 import {
   Sidebar,
   SidebarContent,
@@ -48,7 +48,7 @@ const NAV_ITEMS = [
 ];
 
 export default function PortalLayout({ children, activePath }: PortalLayoutProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { user, isLoading } = useAuth();
 
   const logoutMutation = trpc.auth.logout.useMutation({
@@ -97,12 +97,13 @@ export default function PortalLayout({ children, activePath }: PortalLayoutProps
 
         {/* Back to CRM */}
         <div className="px-3 py-2 border-b border-border/30">
-          <Link href="/dashboard">
-            <button className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full px-2 py-1.5 rounded-md hover:bg-muted">
-              <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
-              Back to CRM
-            </button>
-          </Link>
+          <button
+            onClick={() => setLocation("/dashboard")}
+            className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full px-2 py-1.5 rounded-md hover:bg-muted"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
+            Back to CRM
+          </button>
         </div>
 
         {/* Navigation */}
@@ -120,11 +121,13 @@ export default function PortalLayout({ children, activePath }: PortalLayoutProps
                     (path !== "/seo/portal/dashboard" && location.startsWith(path));
                   return (
                     <SidebarMenuItem key={path}>
-                      <SidebarMenuButton asChild isActive={isActive}>
-                        <Link href={path}>
-                          <Icon className="h-4 w-4 shrink-0" />
-                          <span>{label}</span>
-                        </Link>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        onClick={() => setLocation(path)}
+                        className="cursor-pointer"
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        <span>{label}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );

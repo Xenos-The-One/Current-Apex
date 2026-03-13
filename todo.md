@@ -966,3 +966,8 @@
 - [x] Fix Social Media nav item in PortalLayout pointing to /seo/portal/social
 - [x] Add PortalSocialMedia route to App.tsx
 - [x] Fix all nav links — PortalLayout sidebar routes correctly to all portal pages
+
+## Portal Social Media Nav Fix
+- [x] Fix PortalLayout sidebar to use setLocation() instead of Link/asChild (prevents full page reload)
+- [x] Fix PortalDashboard quick-action cards to use setLocation() instead of nested Link>a (invalid HTML)
+- [x] Social Media tab now navigates within the portal using client-side routing
