@@ -228,8 +228,8 @@ const clientMenuSections: MenuSection[] = [
   {
     id: "content", label: "Content & Ads", icon: Instagram,
     items: [
-      { icon: Share2, label: "Social Media", path: "/social" },
-      { icon: CheckSquare, label: "Apex Content", path: "/apex-content" },
+      { icon: Share2, label: "Social Media", path: "/seo/portal/social" },
+      { icon: CheckSquare, label: "Apex Content", path: "/seo/portal/apex-content" },
       { icon: Megaphone, label: "Ad Manager", path: "/ad-manager" },
     ],
   },
@@ -1045,7 +1045,7 @@ function DashboardLayoutContent({
                         isClient ? "bg-blue-100 text-blue-700" : ""
                       }`}
                     >
-                      {user?.name?.charAt(0).toUpperCase()}
+                      {(isClientViewMode && impersonatingClientName ? impersonatingClientName : user?.name)?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
@@ -1054,14 +1054,14 @@ function DashboardLayoutContent({
                         isClient ? "text-gray-900" : ""
                       }`}
                     >
-                      {user?.name || "-"}
+                      {isClientViewMode && impersonatingClientName ? impersonatingClientName : (user?.name || "-")}
                     </p>
                     <p
                       className={`text-[11px] truncate mt-0.5 ${
                         isClient ? "text-gray-500" : "text-muted-foreground"
                       }`}
                     >
-                      {user?.email || "-"}
+                      {isClientViewMode && impersonatingClientName ? "Client Account" : (user?.email || "-")}
                     </p>
                   </div>
                 </button>

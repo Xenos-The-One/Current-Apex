@@ -971,3 +971,13 @@
 - [x] Fix PortalLayout sidebar to use setLocation() instead of Link/asChild (prevents full page reload)
 - [x] Fix PortalDashboard quick-action cards to use setLocation() instead of nested Link>a (invalid HTML)
 - [x] Social Media tab now navigates within the portal using client-side routing
+
+## Client-View Social Media Context Fix
+- [x] Audit Social Media routing chain (Social Media → Scheduler → Content page is wrong)
+- [x] Fix Social Media nav item in client view to route to /seo/portal/social (not /social scheduler)
+- [x] Fix Apex Content nav item in client view to route to /seo/portal/apex-content
+- [x] Fix SocialMedia.tsx New Post button to use setLocation() (no new tab, no ExternalLink icon)
+- [x] Fix SocialMedia.tsx post row clicks to use setLocation() (no nested Link>div)
+- [x] Fix sidebar footer to show impersonated client name in client view mode (not admin name)
+- [x] Verified socialConnections router scoped to current user via getClientByUserId (no cross-account leakage)
+- [x] PortalSocialMedia auto-derives business name from crm.getMyInfo (no manual client selector)

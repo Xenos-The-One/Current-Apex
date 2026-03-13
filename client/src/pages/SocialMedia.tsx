@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import {
-  ArrowRight, Calendar, Plus, Facebook, Instagram, Linkedin, Clock,
-  CheckCircle2, AlertCircle, ExternalLink, ChevronLeft, ChevronRight, List, LayoutGrid,
+  Calendar, Plus, Facebook, Instagram, Linkedin, Clock,
+  CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, List, LayoutGrid,
 } from "lucide-react";
-import { Link } from "wouter";
+
 import { toast } from "sonner";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -208,6 +209,7 @@ function CalendarView({ posts, onReschedule, isRescheduling }: CalendarViewProps
 
 export default function SocialMedia() {
   const [view, setView] = useState<"list" | "calendar">("list");
+  const [, setLocation] = useLocation();
   const { data: clientInfo } = trpc.crm.getMyInfo.useQuery();
   const { data: posts, isLoading } = trpc.social.listPosts.useQuery();
   const utils = trpc.useUtils();
@@ -266,13 +268,10 @@ export default function SocialMedia() {
               </Button>
             </div>
             {!isReadOnly && isAdmin && (
-              <Link href="/seo/content">
-                <Button size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Post
-                  <ExternalLink className="w-3.5 h-3.5 ml-1.5 opacity-70" />
-                </Button>
-              </Link>
+              <Button size="sm" onClick={() => setLocation("/seo/content")}>
+                <Plus className="w-4 h-4 mr-2" />
+                New Post
+              </Button>
             )}
           </div>
         </div>
@@ -346,8 +345,7 @@ export default function SocialMedia() {
               ) : posts && posts.length > 0 ? (
                 <div className="space-y-4">
                   {posts.map((post: any) => (
-                    <Link key={post.id} href={`/social/${post.id}`}>
-                      <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                    <div key={post.id} onClick={() => setLocation(`/social/${post.id}`)} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
                         <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary shrink-0">
                           {getPlatformIcon(post.platform)}
                         </div>
@@ -369,8 +367,7 @@ export default function SocialMedia() {
                             </p>
                           )}
                         </div>
-                      </div>
-                    </Link>
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -379,13 +376,10 @@ export default function SocialMedia() {
                   <p className="font-medium">No posts yet</p>
                   <p className="text-sm mt-1">Create your first social media post to get started</p>
                   {!isReadOnly && isAdmin && (
-                    <Link href="/seo/content">
-                      <Button className="mt-4">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create Post in AI SEO Portal
-                        <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                      </Button>
-                    </Link>
+                    <Button className="mt-4" onClick={() => setLocation("/seo/content")}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Post in AI SEO Portal
+                    </Button>
                   )}
                 </div>
               )}
