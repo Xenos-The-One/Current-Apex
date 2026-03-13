@@ -898,3 +898,9 @@
 - [ ] Remove tag filter bar (Hot Lead, Follow Up, etc.) from left panel
 - [ ] Add Twilio inbound SMS webhook at /api/twilio/inbound-sms
 - [ ] Add contact info slide-out drawer when conversation is open
+## Conversations Improvements (Round 5)
+- [x] Inline notes editing in contact drawer (editable textarea with Save/Cancel, + Add when empty)
+- [x] Inline status editing in contact drawer (click badge to open status dropdown, saves via leads.update)
+- [x] Saved quick reply templates in composer (7 pre-built SMS + email templates with variable substitution)
+- [x] Keyboard shortcuts for power users (J/K navigate, E archive, R mark unread, I toggle drawer, C compose, ⌘K search, ⌘↵ send)
+- [x] Keyboard shortcuts dialog accessible from MoreVertical menu

@@ -89,6 +89,53 @@ const CHANNEL_CONFIG: Record<string, { label: string; icon: React.ElementType; b
   whatsapp:  { label: "WhatsApp",  icon: MessageCircle,  bg: "bg-teal-50",     text: "text-teal-700",    border: "border-teal-200" },
 };
 
+const QUICK_REPLIES = [
+  {
+    id: "qr1",
+    label: "Intro",
+    content: "Hi {name}! This is {agent} from {company}. I wanted to reach out and see if you're still interested in exploring your mortgage options. When would be a good time to connect?",
+    type: "sms" as const,
+  },
+  {
+    id: "qr2",
+    label: "Follow-up",
+    content: "Hey {name}, just following up on our conversation. Have you had a chance to review the information I sent? Happy to answer any questions!",
+    type: "sms" as const,
+  },
+  {
+    id: "qr3",
+    label: "Appt Confirm",
+    content: "Hi {name}, confirming your appointment tomorrow. Please reply YES to confirm or call us to reschedule. Looking forward to speaking with you!",
+    type: "sms" as const,
+  },
+  {
+    id: "qr4",
+    label: "Rate Update",
+    content: "Hi {name}, rates have shifted recently and I wanted to make sure you have the latest numbers. Can we hop on a quick 10-minute call this week?",
+    type: "sms" as const,
+  },
+  {
+    id: "qr5",
+    label: "Docs Request",
+    content: "Hi {name}, to move forward with your application I'll need a few documents: last 2 pay stubs, W-2s from the last 2 years, and 2 months of bank statements. Please send them at your earliest convenience.",
+    type: "sms" as const,
+  },
+  {
+    id: "qr6",
+    label: "Welcome Email",
+    subject: "Welcome — Let's Get Started on Your Home Loan",
+    content: "Hi {name},\n\nThank you for reaching out! I'm excited to help you navigate the home loan process.\n\nAs a first step, I'd love to schedule a quick 15-minute call to understand your goals and walk you through your options.\n\nFeel free to reply to this email or call me directly at your convenience.\n\nLooking forward to working with you!\n\nBest regards,\n{agent}",
+    type: "email" as const,
+  },
+  {
+    id: "qr7",
+    label: "Pre-Approval",
+    subject: "Your Pre-Approval Update",
+    content: "Hi {name},\n\nGreat news — based on our initial review, you appear to be in a strong position for pre-approval.\n\nTo finalize the process, I'll need a few documents from you. Please reply to this email and I'll send you a secure upload link.\n\nDon't hesitate to reach out with any questions!\n\nBest,\n{agent}",
+    type: "email" as const,
+  },
+];
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function getTagStyle(label: string) {
   return PRESET_TAGS.find(t => t.label === label) || { color: "bg-blue-50 text-blue-600 border-blue-200", dot: "bg-blue-500" };
@@ -527,6 +574,10 @@ export default function Conversations() {
   const [bulkMode, setBulkMode] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<number>>(new Set());
   const [showContactDrawer, setShowContactDrawer] = useState(false);
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [draftNotes, setDraftNotes] = useState("");
+  const [editingStatus, setEditingStatus] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // ── Queries ──
@@ -557,16 +608,9 @@ export default function Conversations() {
 
   const { data: messagesRaw, isLoading: msgsLoading } = trpc.conversations.getMessages.useQuery(
     { conversationId: selectedConvId!, page: 1, pageSize: 100 },
-    { enabled: !!selectedConvId, refetchInterval: 5000 }
+    { enabled: !!selectedConvId, refetchInterval: 2000 }
   );
   const messages: Message[] = Array.isArray(messagesRaw) ? messagesRaw : [];
-
-  const selectedLeadId = (selectedConv as any)?.leadId || null;
-  const { data: leadDetail } = trpc.conversations.getLeadDetail.useQuery(
-    { leadId: selectedLeadId! },
-    { enabled: !!selectedLeadId && showContactDrawer }
-  );
-
   const { data: teamMembersRaw } = trpc.conversations.getTeamMembers.useQuery(
     { agencyId: AGENCY_ID }, { enabled: assignOpen }
   );
@@ -618,6 +662,21 @@ export default function Conversations() {
   });
 
   const selectedConv = conversations.find(c => c.id === selectedConvId);
+  const selectedLeadId = (selectedConv as any)?.leadId || null;
+
+  const updateLead = trpc.leads.update.useMutation({
+    onSuccess: () => {
+      toast.success("Lead updated");
+      setEditingNotes(false);
+      setEditingStatus(false);
+      utils.conversations.getLeadDetail.invalidate({ leadId: selectedLeadId! });
+    },
+    onError: () => toast.error("Failed to update lead"),
+  });
+  const { data: leadDetail } = trpc.conversations.getLeadDetail.useQuery(
+    { leadId: selectedLeadId! },
+    { enabled: !!selectedLeadId && showContactDrawer }
+  );
 
   useEffect(() => {
     if (selectedConvId && selectedConv && !selectedConv.isRead) {
@@ -635,6 +694,61 @@ export default function Conversations() {
       else if (selectedConv.channel === "email") setComposeTab("email");
     }
   }, [selectedConvId]);
+
+  // ── Global keyboard shortcuts ──
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Skip if focus is in an input/textarea
+      const tag = (e.target as HTMLElement)?.tagName;
+      const isInputFocused = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
+      // Cmd/Ctrl+K → focus search
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        const searchEl = document.querySelector<HTMLInputElement>('[placeholder="Search conversations"]');
+        searchEl?.focus();
+        return;
+      }
+      if (isInputFocused) return;
+      // E → archive selected conversation
+      if (e.key === "e" && selectedConvId) {
+        archiveConv.mutate({ id: selectedConvId, isArchived: true });
+        return;
+      }
+      // R → mark unread
+      if (e.key === "r" && selectedConvId) {
+        markUnread.mutate({ id: selectedConvId, isRead: false });
+        toast("Marked as unread");
+        return;
+      }
+      // I → toggle contact drawer
+      if (e.key === "i" && selectedConvId) {
+        setShowContactDrawer(prev => !prev);
+        return;
+      }
+      // J → next conversation
+      if (e.key === "j") {
+        const idx = filteredConversations.findIndex(c => c.id === selectedConvId);
+        const next = filteredConversations[idx + 1];
+        if (next) setSelectedConvId(next.id);
+        return;
+      }
+      // K → previous conversation
+      if (e.key === "k") {
+        const idx = filteredConversations.findIndex(c => c.id === selectedConvId);
+        const prev = filteredConversations[idx - 1];
+        if (prev) setSelectedConvId(prev.id);
+        return;
+      }
+      // C → compose / focus reply box
+      if (e.key === "c" && selectedConvId) {
+        const textarea = document.querySelector<HTMLTextAreaElement>('textarea[placeholder]');
+        textarea?.focus();
+        return;
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [selectedConvId, filteredConversations]);
 
   const handleSend = () => {
     if (!replyText.trim() || !selectedConvId) return;
@@ -958,14 +1072,21 @@ export default function Conversations() {
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuContent align="end" className="w-48">
                       <DropdownMenuItem className="text-[13px]" onClick={() => markUnread.mutate({ id: selectedConv.id, isRead: false })}>
-                        Mark as Unread
+                        Mark as Unread <span className="ml-auto text-[11px] text-gray-400 font-mono">R</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-[13px]" onClick={() => setShowContactDrawer(v => !v)}>
+                        Toggle Contact Info <span className="ml-auto text-[11px] text-gray-400 font-mono">I</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-[13px]" onClick={() => setShowShortcuts(true)}>
+                        Keyboard Shortcuts
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem className="text-[13px] text-red-600 focus:text-red-600"
                         onClick={() => archiveConv.mutate({ id: selectedConv.id, isArchived: true })}>
-                        Archive Conversation
+                        Archive <span className="ml-auto text-[11px] text-gray-400 font-mono">E</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -1078,28 +1199,59 @@ export default function Conversations() {
                             <LayoutTemplate className="h-4 w-4" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-72 p-1" align="end" side="top">
-                          <p className="text-[10px] text-gray-400 px-2 py-1 font-semibold uppercase tracking-wider">
-                            {composeTab === "sms" ? "SMS Templates" : "Email Templates"}
-                          </p>
-                          {(composeTab === "sms" ? smsTemplates : emailTemplates).length === 0 ? (
-                            <p className="text-[12px] text-gray-400 px-2 py-3 text-center">No templates yet</p>
-                          ) : (
-                            (composeTab === "sms" ? smsTemplates : emailTemplates).map((t: any) => (
-                              <button
-                                key={t.id}
-                                className="w-full text-left px-2 py-2 rounded-md hover:bg-gray-50 transition-colors"
-                                onClick={() => {
-                                  if (composeTab === "email" && t.subject) setEmailSubject(t.subject);
-                                  setReplyText(prev => prev ? prev + "\n" + t.content : t.content);
-                                  setShowTemplates(false);
-                                }}
-                              >
-                                <div className="text-[12px] font-medium text-gray-800 truncate">{t.name}</div>
-                                <div className="text-[11px] text-gray-400 truncate mt-0.5">{t.content.slice(0, 60)}…</div>
-                              </button>
-                            ))
-                          )}
+                        <PopoverContent className="w-80 p-0" align="end" side="top">
+                          <div className="max-h-96 overflow-y-auto">
+                            {/* Quick Replies Section */}
+                            <div className="px-3 pt-2.5 pb-1">
+                              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Quick Replies</p>
+                            </div>
+                            {QUICK_REPLIES.filter(qr => qr.type === composeTab).map(qr => {
+                              const filled = qr.content
+                                .replace(/{name}/g, displayName || "there")
+                                .replace(/{agent}/g, "your agent")
+                                .replace(/{company}/g, "our team");
+                              return (
+                                <button
+                                  key={qr.id}
+                                  className="w-full text-left px-3 py-2 hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0"
+                                  onClick={() => {
+                                    if (composeTab === "email" && qr.subject) setEmailSubject(qr.subject);
+                                    setReplyText(filled);
+                                    setShowTemplates(false);
+                                  }}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-semibold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded shrink-0">{qr.label}</span>
+                                    <span className="text-[11px] text-gray-500 truncate">{filled.slice(0, 45)}…</span>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                            {/* Saved Templates Section */}
+                            <div className="px-3 pt-2.5 pb-1 border-t border-gray-100 mt-1">
+                              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                                {composeTab === "sms" ? "Saved SMS Templates" : "Saved Email Templates"}
+                              </p>
+                            </div>
+                            {(composeTab === "sms" ? smsTemplates : emailTemplates).length === 0 ? (
+                              <p className="text-[12px] text-gray-400 px-3 py-2 text-center italic">No saved templates yet</p>
+                            ) : (
+                              (composeTab === "sms" ? smsTemplates : emailTemplates).map((t: any) => (
+                                <button
+                                  key={t.id}
+                                  className="w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
+                                  onClick={() => {
+                                    if (composeTab === "email" && t.subject) setEmailSubject(t.subject);
+                                    setReplyText(prev => prev ? prev + "\n" + t.content : t.content);
+                                    setShowTemplates(false);
+                                  }}
+                                >
+                                  <div className="text-[12px] font-medium text-gray-800 truncate">{t.name}</div>
+                                  <div className="text-[11px] text-gray-400 truncate mt-0.5">{t.content.slice(0, 60)}…</div>
+                                </button>
+                              ))
+                            )}
+                          </div>
                         </PopoverContent>
                       </Popover>
                     </div>
@@ -1180,12 +1332,38 @@ export default function Conversations() {
                 <>
                   <div className="border-t border-gray-100 pt-3 space-y-2.5">
                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Pipeline</p>
-                    {(leadDetail as any).status && (
-                      <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between">
                         <span className="text-[12px] text-gray-500">Status</span>
-                        <Badge variant="outline" className="text-[11px] capitalize">{(leadDetail as any).status}</Badge>
+                        {editingStatus ? (
+                          <Select
+                            value={(leadDetail as any).status || "new"}
+                            onValueChange={(val) => {
+                              if (selectedLeadId) {
+                                updateLead.mutate({ leadId: selectedLeadId, status: val as any });
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="h-6 w-32 text-[11px] border-blue-300 focus:ring-blue-500">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {["new","contacted","qualified","appointment_set","appointment_completed","closed_won","closed_lost"].map(s => (
+                                <SelectItem key={s} value={s} className="text-[11px] capitalize">{s.replace(/_/g, " ")}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <button
+                            className="flex items-center gap-1 group"
+                            onClick={() => setEditingStatus(true)}
+                            title="Click to edit status"
+                          >
+                            <Badge variant="outline" className="text-[11px] capitalize group-hover:border-blue-400 group-hover:text-blue-600 transition-colors">
+                              {((leadDetail as any).status || "new").replace(/_/g, " ")}
+                            </Badge>
+                          </button>
+                        )}
                       </div>
-                    )}
                     {(leadDetail as any).loanType && (
                       <div className="flex items-center justify-between">
                         <span className="text-[12px] text-gray-500">Loan Type</span>
@@ -1211,12 +1389,56 @@ export default function Conversations() {
                       </div>
                     )}
                   </div>
-                  {(leadDetail as any).notes && (
-                    <div className="border-t border-gray-100 pt-3">
-                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Notes</p>
-                      <p className="text-[12px] text-gray-600 leading-relaxed">{(leadDetail as any).notes}</p>
+                  <div className="border-t border-gray-100 pt-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Notes</p>
+                      {!editingNotes && (
+                        <button
+                          className="text-[10px] text-blue-500 hover:text-blue-700 font-medium"
+                          onClick={() => {
+                            setDraftNotes((leadDetail as any).notes || "");
+                            setEditingNotes(true);
+                          }}
+                        >
+                          {(leadDetail as any).notes ? "Edit" : "+ Add"}
+                        </button>
+                      )}
                     </div>
-                  )}
+                    {editingNotes ? (
+                      <div className="space-y-1.5">
+                        <Textarea
+                          value={draftNotes}
+                          onChange={e => setDraftNotes(e.target.value)}
+                          className="text-[12px] min-h-[80px] resize-none border-blue-300 focus:ring-blue-500"
+                          placeholder="Add notes about this lead…"
+                          autoFocus
+                        />
+                        <div className="flex gap-1.5">
+                          <Button
+                            size="sm"
+                            className="h-6 text-[11px] px-2 bg-blue-600 hover:bg-blue-700"
+                            onClick={() => {
+                              if (selectedLeadId) updateLead.mutate({ leadId: selectedLeadId, notes: draftNotes });
+                            }}
+                            disabled={updateLead.isPending}
+                          >
+                            {updateLead.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
+                          </Button>
+                          <Button
+                            size="sm" variant="ghost"
+                            className="h-6 text-[11px] px-2"
+                            onClick={() => setEditingNotes(false)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-[12px] text-gray-600 leading-relaxed">
+                        {(leadDetail as any).notes || <span className="text-gray-400 italic">No notes yet. Click + Add to write one.</span>}
+                      </p>
+                    )}
+                  </div>
                   <div className="border-t border-gray-100 pt-3">
                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Activity</p>
                     <div className="flex gap-4">
@@ -1259,6 +1481,30 @@ export default function Conversations() {
           </div>
         )}
       </div>
+      {/* ── Keyboard Shortcuts Dialog ────────────────────────────────── */}
+      <Dialog open={showShortcuts} onOpenChange={setShowShortcuts}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-[15px]">Keyboard Shortcuts</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-1 text-[13px]">
+            {[
+              { key: "J / K", desc: "Next / previous conversation" },
+              { key: "E", desc: "Archive conversation" },
+              { key: "R", desc: "Mark as unread" },
+              { key: "I", desc: "Toggle contact info drawer" },
+              { key: "C", desc: "Focus reply composer" },
+              { key: "⌘K", desc: "Focus search" },
+              { key: "⌘↵", desc: "Send message" },
+            ].map(({ key, desc }) => (
+              <div key={key} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
+                <span className="text-gray-600">{desc}</span>
+                <kbd className="text-[11px] font-mono bg-gray-100 text-gray-700 px-2 py-0.5 rounded border border-gray-200">{key}</kbd>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
