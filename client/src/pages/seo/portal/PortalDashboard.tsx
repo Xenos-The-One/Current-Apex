@@ -57,38 +57,38 @@ export default function PortalDashboard() {
     <PortalLayout activePath="/seo/portal/dashboard">
       {/* Welcome */}
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white">Welcome back, {user?.name}</h2>
-        <p className="text-sm mt-1" style={{ color: "rgba(0,255,255,0.5)" }}>
+        <h2 className="text-2xl font-bold">Welcome back, {user?.name}</h2>
+        <p className="text-sm mt-1 text-muted-foreground">
           Here's an overview of your content and activity.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card className="p-6" style={{ backgroundColor: "rgba(2,18,20,0.8)", borderColor: "rgba(0,255,255,0.12)" }}>
+        <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Total Content</p>
-              <p className="text-3xl font-bold mt-2 text-white">{totalContent}</p>
+              <p className="text-3xl font-bold mt-2">{totalContent}</p>
             </div>
-            <FileText className="h-12 w-12" style={{ color: "#00FFFF" }} />
+            <FileText className="h-12 w-12 text-primary" />
           </div>
         </Card>
 
-        <Card className="p-6" style={{ backgroundColor: "rgba(2,18,20,0.8)", borderColor: "rgba(0,255,255,0.12)" }}>
+        <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Pending Approval</p>
-              <p className="text-3xl font-bold mt-2 text-white">{pendingCount}</p>
+              <p className="text-3xl font-bold mt-2">{pendingCount}</p>
             </div>
             <Calendar className="h-12 w-12 text-orange-400" />
           </div>
         </Card>
 
-        <Card className="p-6" style={{ backgroundColor: "rgba(2,18,20,0.8)", borderColor: "rgba(0,255,255,0.12)" }}>
+        <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Total Views</p>
-              <p className="text-3xl font-bold mt-2 text-white">0</p>
+              <p className="text-3xl font-bold mt-2">0</p>
             </div>
             <TrendingUp className="h-12 w-12 text-green-400" />
           </div>
@@ -106,23 +106,9 @@ export default function PortalDashboard() {
         ].map(({ href, icon: Icon, label, desc }) => (
           <Link key={href} href={href}>
             <a className="block group">
-              <Card
-                className="p-6 transition-all cursor-pointer"
-                style={{
-                  backgroundColor: "rgba(2,18,20,0.8)",
-                  borderColor: "rgba(0,255,255,0.12)",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = "rgba(0,255,255,0.35)";
-                  (e.currentTarget as HTMLElement).style.boxShadow = "0 0 20px rgba(0,255,255,0.06)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = "rgba(0,255,255,0.12)";
-                  (e.currentTarget as HTMLElement).style.boxShadow = "none";
-                }}
-              >
-                <Icon className="h-10 w-10 mb-4" style={{ color: "#00FFFF" }} />
-                <h3 className="text-lg font-semibold mb-1 text-white">{label}</h3>
+              <Card className="p-6 transition-all cursor-pointer hover:shadow-md hover:border-primary/30">
+                <Icon className="h-10 w-10 mb-4 text-primary" />
+                <h3 className="text-lg font-semibold mb-1">{label}</h3>
                 <p className="text-sm text-muted-foreground">{desc}</p>
               </Card>
             </a>
@@ -131,18 +117,18 @@ export default function PortalDashboard() {
       </div>
 
       {/* Recent Activity */}
-      <Card className="p-6 mt-8" style={{ backgroundColor: "rgba(2,18,20,0.8)", borderColor: "rgba(0,255,255,0.12)" }}>
+      <Card className="p-6 mt-8">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">Recent Activity</h3>
+          <h3 className="text-lg font-semibold">Recent Activity</h3>
           <Link href="/seo/portal/apex-content">
-            <a className="text-xs font-medium" style={{ color: "rgba(0,255,255,0.7)" }}>View all →</a>
+            <a className="text-xs font-medium text-muted-foreground hover:text-foreground">View all →</a>
           </Link>
         </div>
 
         {activityLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-12 rounded-lg animate-pulse" style={{ backgroundColor: "rgba(0,255,255,0.05)" }} />
+              <div key={i} className="h-12 rounded-lg animate-pulse"  />
             ))}
           </div>
         ) : !recentActivity || recentActivity.length === 0 ? (
@@ -154,14 +140,10 @@ export default function PortalDashboard() {
           <div className="space-y-2">
             {recentActivity.map((item) => (
               <Link key={item.id} href="/seo/portal/apex-content">
-                <a className="flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer"
-                  style={{ backgroundColor: "rgba(0,255,255,0.03)" }}
-                  onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(0,255,255,0.07)"}
-                  onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(0,255,255,0.03)"}
-                >
+                <a className="flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer hover:bg-muted">
                   {statusIcon(item.status)}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">{item.title}</p>
+                    <p className="text-sm font-medium truncate">{item.title}</p>
                     <p className="text-xs text-muted-foreground capitalize">
                       {item.contentType.replace("_", " ")}
                       {item.brand ? ` · ${item.brand}` : ""}

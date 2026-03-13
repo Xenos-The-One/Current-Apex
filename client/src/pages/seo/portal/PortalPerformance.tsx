@@ -76,8 +76,8 @@ export default function PortalPerformance() {
     <PortalLayout activePath="/seo/portal/performance">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-white">Performance Dashboard</h2>
-          <p className="text-sm mt-1" style={{ color: "rgba(0,255,255,0.5)" }}>Track your content performance</p>
+          <h2 className="text-2xl font-bold text-foreground">Performance Dashboard</h2>
+          <p className="text-sm mt-1" className="text-muted-foreground">Track your content performance</p>
         </div>
         <Select value={dataSource} onValueChange={(v) => setDataSource(v as "internal" | "ga")}>
           <SelectTrigger className="w-[200px]">

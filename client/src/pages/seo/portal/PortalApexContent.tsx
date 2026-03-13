@@ -530,7 +530,7 @@ function ApprovalsTab() {
   return (
     <div>
       {showContentReadyBanner && (
-        <div className="mb-6 rounded-xl bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-400/30 p-4 flex items-start gap-3">
+        <div className="mb-6 rounded-xl bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-primary/30 p-4 flex items-start gap-3">
           <Sparkles className="h-5 w-5 text-cyan-500 mt-0.5 shrink-0" />
           <div>
             <p className="font-semibold text-cyan-700 dark:text-cyan-300">Your first content batch is ready!</p>
@@ -920,15 +920,15 @@ function GenerateContentTab() {
       {/* Credit indicator */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-white">Generate New Content</h3>
-          <p className="text-sm text-white/45 mt-0.5">AI-powered content creation for your business</p>
+          <h3 className="text-lg font-semibold">Generate New Content</h3>
+          <p className="text-sm text-muted-foreground mt-0.5">AI-powered content creation for your business</p>
         </div>
         <CreditUsageIndicator contentType={contentType} variant="badge" />
       </div>
 
       {/* Content type grid */}
       <div>
-        <Label className="text-sm text-white/60 mb-3 block">Content Type</Label>
+        <Label className="text-sm text-muted-foreground mb-3 block">Content Type</Label>
         <div className="grid grid-cols-2 gap-2">
           {CONTENT_TYPES.map((ct) => {
             const isActive = contentType === ct.value;
@@ -936,39 +936,19 @@ function GenerateContentTab() {
               <button
                 key={ct.value}
                 onClick={() => setContentType(ct.value)}
-                className="flex items-start gap-3 p-3 rounded-xl text-left transition-all border"
-                style={
-                  isActive
-                    ? {
-                        background: "rgba(0,255,255,0.08)",
-                        borderColor: "rgba(0,255,255,0.3)",
-                      }
-                    : {
-                        background: "rgba(255,255,255,0.02)",
-                        borderColor: "rgba(255,255,255,0.07)",
-                      }
-                }
+                className={`flex items-start gap-3 p-3 rounded-xl text-left transition-all border ${isActive ? "border-primary bg-primary/5" : "border-border/50 bg-muted/30"}`}
               >
                 <div
-                  className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                  style={{
-                    background: isActive ? "rgba(0,255,255,0.15)" : "rgba(255,255,255,0.06)",
-                  }}
+                  className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${isActive ? "bg-primary/15" : "bg-muted"}`}
                 >
-                  <FileText
-                    className="h-3.5 w-3.5"
-                    style={{ color: isActive ? "#00FFFF" : "rgba(255,255,255,0.4)" }}
-                  />
+                  <FileText className={`h-3.5 w-3.5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
                 </div>
                 <div>
-                  <p
-                    className="text-sm font-medium"
-                    style={{ color: isActive ? "#00FFFF" : "rgba(255,255,255,0.8)" }}
-                  >
+                  <p className={`text-sm font-medium ${isActive ? "text-primary" : "text-foreground"}`}>
                     {ct.label}
                   </p>
-                  <p className="text-xs text-white/40 mt-0.5">{ct.description}</p>
-                  <p className="text-[10px] mt-1" style={{ color: isActive ? "rgba(0,255,255,0.6)" : "rgba(255,255,255,0.25)" }}>
+                  <p className="text-xs text-muted-foreground mt-0.5">{ct.description}</p>
+                  <p className={`text-[10px] mt-1 ${isActive ? "text-primary" : "text-muted-foreground/60"}`}>
                     {ct.credits} credits
                   </p>
                 </div>
@@ -993,7 +973,7 @@ function GenerateContentTab() {
 
       {/* Target keywords */}
       <div className="space-y-1.5">
-        <Label htmlFor="keywords">Target Keywords <span className="text-white/30">(optional)</span></Label>
+        <Label htmlFor="keywords">Target Keywords <span className="text-muted-foreground/60">(optional)</span></Label>
         <Input
           id="keywords"
           placeholder="e.g. first-time homebuyer, Dallas mortgage, FHA loan"
@@ -1021,7 +1001,7 @@ function GenerateContentTab() {
 
       {/* Custom instructions */}
       <div className="space-y-1.5">
-        <Label htmlFor="instructions">Custom Instructions <span className="text-white/30">(optional)</span></Label>
+        <Label htmlFor="instructions">Custom Instructions <span className="text-muted-foreground/60">(optional)</span></Label>
         <Textarea
           id="instructions"
           placeholder="e.g. Include a section about down payment assistance programs. Mention our 5-star Google rating."
@@ -1041,7 +1021,7 @@ function GenerateContentTab() {
             onChange={(e) => setEnableWebResearch(e.target.checked)}
             className="rounded"
           />
-          <span className="text-sm text-white/70">Enable web research</span>
+          <span className="text-sm text-muted-foreground">Enable web research</span>
         </label>
         <label className="flex items-center gap-2 cursor-pointer">
           <input
@@ -1050,7 +1030,7 @@ function GenerateContentTab() {
             onChange={(e) => setShouldGenerateImage(e.target.checked)}
             className="rounded"
           />
-          <span className="text-sm text-white/70">Generate featured image</span>
+          <span className="text-sm text-muted-foreground">Generate featured image</span>
         </label>
       </div>
 
@@ -1063,9 +1043,9 @@ function GenerateContentTab() {
         onClick={handleGenerate}
         disabled={!topic.trim() || generateMutation.isPending || !seoClient?.id}
         style={{
-          background: "linear-gradient(135deg, rgba(0,255,255,0.2), rgba(0,102,255,0.2))",
-          border: "1px solid rgba(0,255,255,0.3)",
-          color: "#00FFFF",
+          background: "linear-gradient(135deg, hsl(var(--primary)/0.08), hsl(var(--primary)/0.15))",
+          border: "1px solid hsl(var(--border))",
+          color: "hsl(var(--primary))",
         }}
       >
         {generateMutation.isPending ? (
@@ -1106,19 +1086,15 @@ export default function PortalApexContent() {
       <div className="mb-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-white">Apex Content</h2>
-            <p className="text-sm mt-1" style={{ color: "rgba(0,255,255,0.5)" }}>
+            <h2 className="text-2xl font-bold">Apex Content</h2>
+            <p className="text-sm mt-1 text-muted-foreground">
               Review approvals, manage published content, and generate new AI content
             </p>
           </div>
           <Button
             onClick={() => setActiveTab("generate")}
-            className="shrink-0 hidden sm:flex"
-            style={{
-              background: "linear-gradient(135deg, rgba(0,255,255,0.12), rgba(0,102,255,0.12))",
-              border: "1px solid rgba(0,255,255,0.25)",
-              color: "#00FFFF",
-            }}
+            variant="outline"
+            className="shrink-0 hidden sm:flex border-primary/30 text-primary hover:bg-primary/5"
           >
             <Sparkles className="h-4 w-4 mr-2" />
             Generate Content
@@ -1127,20 +1103,16 @@ export default function PortalApexContent() {
       </div>
 
       {/* Tab switcher */}
-      <div
-        className="flex gap-1 p-1 rounded-lg mb-6 w-fit"
-        style={{ backgroundColor: "rgba(0,255,255,0.06)", border: "1px solid rgba(0,255,255,0.12)" }}
-      >
+      <div className="flex gap-1 p-1 rounded-lg mb-6 w-fit bg-muted border border-border">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all"
-            style={
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
               activeTab === tab.id
-                ? { backgroundColor: "rgba(0,255,255,0.15)", color: "#00FFFF" }
-                : { color: "rgba(255,255,255,0.55)" }
-            }
+                ? "bg-background text-primary shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
             {tab.icon}
             {tab.label}

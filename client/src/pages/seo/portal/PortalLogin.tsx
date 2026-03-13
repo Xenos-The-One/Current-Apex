@@ -4,6 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 export default function PortalLogin() {
   const [, setLocation] = useLocation();
@@ -33,99 +34,64 @@ export default function PortalLogin() {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{
-        backgroundColor: "#000F12",
-        backgroundImage: "radial-gradient(circle, rgba(0,255,255,0.07) 1px, transparent 1px)",
-        backgroundSize: "28px 28px",
-      }}
-    >
-      {/* Glow effect behind the card */}
-      <div className="relative w-full max-w-md">
-        <div
-          className="absolute -inset-1 rounded-2xl blur-xl opacity-20"
-          style={{ background: "radial-gradient(ellipse, #00FFFF 0%, transparent 70%)" }}
-        />
-
-        <div
-          className="relative rounded-2xl p-8 border"
-          style={{
-            backgroundColor: "rgba(2, 18, 20, 0.92)",
-            borderColor: "rgba(0,255,255,0.18)",
-            boxShadow: "0 0 40px rgba(0,255,255,0.06), inset 0 1px 0 rgba(0,255,255,0.08)",
-          }}
-        >
-          {/* Logo + heading */}
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center mb-5">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      <div className="w-full max-w-md">
+        <Card className="shadow-lg">
+          <CardHeader className="text-center pb-4">
+            <div className="flex items-center justify-center mb-4">
               <img
-                src="/apex-logo.svg"
-                alt="Apex AI SEO Portal"
-                className="h-10 w-auto object-contain"
+                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663346016577/LMov9oD5hWD87TsDa4kZ8o/GradientLogoBlue2Green_5403585a.png"
+                alt="Logo"
+                className="h-10 w-10 object-contain"
               />
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">Client Portal</h1>
-            <p className="mt-1.5 text-sm" style={{ color: "rgba(0,255,255,0.55)" }}>
-              Sign in to view your content and reports
-            </p>
-          </div>
+            <CardTitle className="text-2xl font-bold tracking-tight">Client Portal</CardTitle>
+            <CardDescription>Sign in to view your content and reports</CardDescription>
+          </CardHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-sm font-medium text-white/80">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-                className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:border-cyan-400 focus-visible:ring-cyan-400/20"
-              />
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-1.5">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              {errorMsg && (
+                <p className="text-sm text-destructive text-center">{errorMsg}</p>
+              )}
+
+              <Button type="submit" className="w-full font-semibold" disabled={isLoading}>
+                {isLoading ? "Signing in…" : "Sign In"}
+              </Button>
+            </form>
+
+            <div className="mt-6 text-center text-xs text-muted-foreground">
+              <p>Don't have an account?</p>
+              <p className="mt-0.5">Contact your account manager for an invitation.</p>
             </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-sm font-medium text-white/80">
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
-                className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:border-cyan-400 focus-visible:ring-cyan-400/20"
-              />
-            </div>
-
-            {errorMsg && (
-              <p className="text-sm text-red-400 text-center">{errorMsg}</p>
-            )}
-
-            <Button
-              type="submit"
-              className="w-full font-semibold tracking-wide"
-              disabled={isLoading}
-              style={{
-                backgroundColor: "#00FFFF",
-                color: "#001417",
-              }}
-            >
-              {isLoading ? "Signing in…" : "Sign In"}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-            <p>Don't have an account?</p>
-            <p className="mt-0.5">Contact your account manager for an invitation.</p>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

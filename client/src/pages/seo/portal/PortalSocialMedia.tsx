@@ -86,7 +86,7 @@ function ConnectPlatformDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div
-              className="h-7 w-7 rounded-lg flex items-center justify-center text-white text-xs font-bold"
+              className="h-7 w-7 rounded-lg flex items-center justify-center text-foreground text-xs font-bold"
               style={{ background: PLATFORM_COLORS[platform] ?? "#555" }}
             >
               {platform[0].toUpperCase()}
@@ -122,12 +122,11 @@ function ConnectPlatformDialog({
           <div
             className="rounded-lg p-3 text-xs"
             style={{
-              background: "rgba(0,255,255,0.05)",
-              border: "1px solid rgba(0,255,255,0.12)",
+              border: "1px solid hsl(var(--border))",
               color: "rgba(255,255,255,0.55)",
             }}
           >
-            <p className="font-medium text-white/70 mb-1">Note</p>
+            <p className="font-medium text-muted-foreground mb-1">Note</p>
             <p>
               Your account credentials are managed by your agency. This connects the platform
               for scheduling and content management purposes.
@@ -220,7 +219,7 @@ function GeneratePostDialog({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-cyan-400" />
+            <Sparkles className="h-5 w-5 text-primary" />
             AI Social Post Generator
           </DialogTitle>
           <DialogDescription>
@@ -257,7 +256,7 @@ function GeneratePostDialog({
                       }
                     >
                       <div
-                        className="h-4 w-4 rounded-sm flex items-center justify-center text-white text-[9px] font-bold shrink-0"
+                        className="h-4 w-4 rounded-sm flex items-center justify-center text-foreground text-[9px] font-bold shrink-0"
                         style={{ background: PLATFORM_COLORS[p] }}
                       >
                         {p[0].toUpperCase()}
@@ -352,11 +351,11 @@ function GeneratePostDialog({
 
             {/* Result */}
             {result && (
-              <div className="space-y-3 rounded-xl p-4 border" style={{ background: "rgba(0,255,255,0.04)", borderColor: "rgba(0,255,255,0.15)" }}>
+              <div className="space-y-3 rounded-xl p-4 border" style={{ background: undefined, borderColor: "hsl(var(--border))" }}>
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-cyan-400">Generated Post</p>
+                  <p className="text-xs font-semibold text-primary">Generated Post</p>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-white/40">{result.charCount} chars</span>
+                    <span className="text-[10px] text-muted-foreground/70">{result.charCount} chars</span>
                     <Button variant="outline" size="sm" className="h-6 px-2 text-xs" onClick={handleCopy}>
                       {copied ? <CheckCircle2 className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
                     </Button>
@@ -364,19 +363,19 @@ function GeneratePostDialog({
                 </div>
                 <div className="space-y-2">
                   <div>
-                    <p className="text-[10px] text-white/40 mb-1 uppercase tracking-wide">Caption</p>
-                    <p className="text-sm text-white/85 leading-relaxed whitespace-pre-wrap">{result.caption}</p>
+                    <p className="text-[10px] text-muted-foreground/70 mb-1 uppercase tracking-wide">Caption</p>
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{result.caption}</p>
                   </div>
                   {result.hashtags && (
                     <div>
-                      <p className="text-[10px] text-white/40 mb-1 uppercase tracking-wide">Hashtags</p>
-                      <p className="text-sm text-cyan-400/80">{result.hashtags}</p>
+                      <p className="text-[10px] text-muted-foreground/70 mb-1 uppercase tracking-wide">Hashtags</p>
+                      <p className="text-sm text-primary/80">{result.hashtags}</p>
                     </div>
                   )}
                   {result.cta && (
                     <div>
-                      <p className="text-[10px] text-white/40 mb-1 uppercase tracking-wide">CTA</p>
-                      <p className="text-sm text-white/70 italic">{result.cta}</p>
+                      <p className="text-[10px] text-muted-foreground/70 mb-1 uppercase tracking-wide">CTA</p>
+                      <p className="text-sm text-muted-foreground italic">{result.cta}</p>
                     </div>
                   )}
                 </div>
@@ -411,7 +410,7 @@ function GeneratePostDialog({
               border: "1px solid rgba(255,255,255,0.07)",
             }}
           >
-            <p className="text-xs font-semibold text-white/50 mb-3 flex items-center gap-1.5">
+            <p className="text-xs font-semibold text-muted-foreground mb-3 flex items-center gap-1.5">
               <Eye className="h-3.5 w-3.5" />
               Live Preview
             </p>
@@ -479,15 +478,15 @@ export default function PortalSocialMedia() {
       <div className="mb-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-white">Social Media</h2>
-            <p className="text-sm mt-1" style={{ color: "rgba(0,255,255,0.5)" }}>
+            <h2 className="text-2xl font-bold text-foreground">Social Media</h2>
+            <p className="text-sm mt-1" className="text-muted-foreground">
               Manage your social platforms and generate AI-powered posts
             </p>
           </div>
           <Button
             onClick={() => setShowGenerateDialog(true)}
             className="shrink-0"
-            style={{ background: "linear-gradient(135deg, #00FFFF20, #0066FF20)", border: "1px solid rgba(0,255,255,0.3)", color: "#00FFFF" }}
+            style={{ background: "linear-gradient(135deg, hsl(var(--primary)/0.1), hsl(var(--primary)/0.2))", border: "1px solid hsl(var(--border))", color: "hsl(var(--primary))" }}
           >
             <Sparkles className="h-4 w-4 mr-2" />
             Generate Post
@@ -506,7 +505,7 @@ export default function PortalSocialMedia() {
               className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all"
               style={
                 isActive
-                  ? { background: "rgba(0,255,255,0.12)", color: "#00FFFF" }
+                  ? { background: undefined, color: "hsl(var(--primary))" }
                   : { color: "rgba(255,255,255,0.5)" }
               }
             >
@@ -523,7 +522,7 @@ export default function PortalSocialMedia() {
           {/* Stats row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "Connected Platforms", value: connectedCount, icon: Link2, color: "#00FFFF" },
+              { label: "Connected Platforms", value: connectedCount, icon: Link2, color: "hsl(var(--primary))" },
               { label: "Total Platforms", value: totalPlatforms, icon: Globe, color: "#60a5fa" },
               { label: "Posts This Month", value: "—", icon: Share2, color: "#a78bfa" },
               { label: "AI Credits Used", value: "—", icon: Zap, color: "#f59e0b" },
@@ -537,8 +536,8 @@ export default function PortalSocialMedia() {
                     <Icon className="h-4 w-4" style={{ color }} />
                   </div>
                   <div>
-                    <p className="text-xl font-bold text-white">{value}</p>
-                    <p className="text-xs text-white/45">{label}</p>
+                    <p className="text-xl font-bold text-foreground">{value}</p>
+                    <p className="text-xs text-muted-foreground/70">{label}</p>
                   </div>
                 </div>
               </Card>
@@ -563,18 +562,18 @@ export default function PortalSocialMedia() {
             </CardHeader>
             <CardContent>
               {connectionsLoading ? (
-                <div className="flex items-center gap-2 text-white/40 text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground/70 text-sm">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Loading platforms…
                 </div>
               ) : connectedCount === 0 ? (
                 <div className="text-center py-8">
-                  <Link2 className="h-10 w-10 mx-auto mb-3 text-white/20" />
-                  <p className="text-sm text-white/50 mb-3">No platforms connected yet</p>
+                  <Link2 className="h-10 w-10 mx-auto mb-3 text-muted-foreground/40" />
+                  <p className="text-sm text-muted-foreground mb-3">No platforms connected yet</p>
                   <Button
                     size="sm"
                     onClick={() => setActiveTab("connections")}
-                    style={{ background: "rgba(0,255,255,0.1)", color: "#00FFFF", border: "1px solid rgba(0,255,255,0.2)" }}
+                    style={{ background: undefined, color: "hsl(var(--primary))", border: "1px solid hsl(var(--border))" }}
                   >
                     <PlusCircle className="h-4 w-4 mr-2" />
                     Connect a Platform
@@ -607,16 +606,16 @@ export default function PortalSocialMedia() {
                   onClick={() => setShowGenerateDialog(true)}
                   className="flex items-center gap-3 p-4 rounded-xl text-left transition-all"
                   style={{
-                    background: "linear-gradient(135deg, rgba(0,255,255,0.08), rgba(0,102,255,0.08))",
-                    border: "1px solid rgba(0,255,255,0.15)",
+                    background: "linear-gradient(135deg, hsl(var(--primary)/0.08), hsl(var(--primary)/0.15))",
+                    border: "1px solid hsl(var(--border))",
                   }}
                 >
-                  <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(0,255,255,0.12)" }}>
-                    <Sparkles className="h-5 w-5 text-cyan-400" />
+                  <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: undefined }}>
+                    <Sparkles className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-white">Generate AI Post</p>
-                    <p className="text-xs text-white/45">Create platform-optimized content</p>
+                    <p className="text-sm font-semibold text-foreground">Generate AI Post</p>
+                    <p className="text-xs text-muted-foreground/70">Create platform-optimized content</p>
                   </div>
                 </button>
                 <button
@@ -628,11 +627,11 @@ export default function PortalSocialMedia() {
                   }}
                 >
                   <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}>
-                    <Settings className="h-5 w-5 text-white/50" />
+                    <Settings className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-white/80">Manage Connections</p>
-                    <p className="text-xs text-white/40">Connect or update platforms</p>
+                    <p className="text-sm font-semibold text-foreground">Manage Connections</p>
+                    <p className="text-xs text-muted-foreground/70">Connect or update platforms</p>
                   </div>
                 </button>
               </div>
@@ -653,7 +652,7 @@ export default function PortalSocialMedia() {
             </CardHeader>
             <CardContent>
               {connectionsLoading ? (
-                <div className="flex items-center gap-2 text-white/40 text-sm py-4">
+                <div className="flex items-center gap-2 text-muted-foreground/70 text-sm py-4">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Loading…
                 </div>
@@ -691,17 +690,17 @@ export default function PortalSocialMedia() {
             </CardHeader>
             <CardContent>
               <div className="text-center py-12">
-                <Sparkles className="h-12 w-12 mx-auto mb-4 text-cyan-400/40" />
-                <p className="text-white/60 mb-2">Ready to generate</p>
-                <p className="text-sm text-white/35 mb-6">
+                <Sparkles className="h-12 w-12 mx-auto mb-4 text-primary/40" />
+                <p className="text-muted-foreground mb-2">Ready to generate</p>
+                <p className="text-sm text-muted-foreground/60 mb-6">
                   Click the button below to open the full AI post generator with live platform preview.
                 </p>
                 <Button
                   onClick={() => setShowGenerateDialog(true)}
                   style={{
-                    background: "linear-gradient(135deg, rgba(0,255,255,0.15), rgba(0,102,255,0.15))",
-                    border: "1px solid rgba(0,255,255,0.3)",
-                    color: "#00FFFF",
+                    background: "linear-gradient(135deg, hsl(var(--primary)/0.08), hsl(var(--primary)/0.15))",
+                    border: "1px solid hsl(var(--border))",
+                    color: "hsl(var(--primary))",
                   }}
                 >
                   <Sparkles className="h-4 w-4 mr-2" />
@@ -724,7 +723,7 @@ export default function PortalSocialMedia() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {connectedPlatforms.slice(0, 4).map((p) => (
                     <div key={p}>
-                      <p className="text-xs font-medium text-white/50 mb-2 uppercase tracking-wide">
+                      <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
                         {p.charAt(0).toUpperCase() + p.slice(1).replace("_", " ")}
                       </p>
                       <SocialPostPreview

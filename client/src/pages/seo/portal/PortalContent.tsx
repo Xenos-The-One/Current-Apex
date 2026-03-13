@@ -53,8 +53,8 @@ export default function PortalContent() {
   return (
     <PortalLayout activePath="/seo/portal/content">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-white">My Content</h2>
-        <p className="text-sm mt-1" style={{ color: "rgba(0,255,255,0.5)" }}>View and manage your content</p>
+        <h2 className="text-2xl font-bold text-foreground">My Content</h2>
+        <p className="text-sm mt-1" className="text-muted-foreground">View and manage your content</p>
       </div>
 
       {/* Filters */}

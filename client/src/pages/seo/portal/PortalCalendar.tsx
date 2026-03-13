@@ -60,8 +60,8 @@ export default function PortalCalendar() {
   return (
     <PortalLayout activePath="/seo/portal/calendar">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-white">Content Calendar</h2>
-        <p className="text-sm mt-1" style={{ color: "rgba(0,255,255,0.5)" }}>View your scheduled content</p>
+        <h2 className="text-2xl font-bold text-foreground">Content Calendar</h2>
+        <p className="text-sm mt-1" className="text-muted-foreground">View your scheduled content</p>
       </div>
 
       {/* Calendar Controls */}

@@ -956,3 +956,13 @@
 - [x] App.tsx — registered /seo/portal/social route
 - [x] Backend: social_platform_connections table + socialConnectionsRouter (connect/disconnect/generatePost procedures)
 - [x] 20 new vitest tests for credit costs, platform support, prompt builder, state machine, content type groupings, and generation validation
+
+## AI SEO Portal Consolidation
+- [x] Audit SEO portal routing — understand what's at /seo/* vs /seo/portal/*
+- [x] Restyle PortalLayout to use CRM Sidebar components (same as DashboardLayout, white sidebar)
+- [x] Remove all dark teal/cyan inline styles from all 10 portal pages (PortalDashboard, PortalApexContent, PortalSocialMedia, PortalLogin, PortalCalendar, PortalContent, PortalContentDetail, PortalPerformance, PortalPublishing, PortalFollowUps)
+- [x] Replace text-white/* classes with CRM-compatible Tailwind tokens (text-foreground, text-muted-foreground)
+- [x] Rewrite PortalLogin with CRM-compatible Card design
+- [x] Fix Social Media nav item in PortalLayout pointing to /seo/portal/social
+- [x] Add PortalSocialMedia route to App.tsx
+- [x] Fix all nav links — PortalLayout sidebar routes correctly to all portal pages

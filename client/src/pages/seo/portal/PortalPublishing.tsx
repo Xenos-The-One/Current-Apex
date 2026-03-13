@@ -356,8 +356,8 @@ export default function PortalPublishing() {
   return (
     <PortalLayout activePath="/seo/portal/publishing">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-white">Publishing Center</h2>
-        <p className="mt-1" style={{ color: "rgba(0,255,255,0.5)" }}>
+        <h2 className="text-2xl font-bold text-foreground">Publishing Center</h2>
+        <p className="mt-1" className="text-muted-foreground">
           Publish approved content to your connected platforms
         </p>
       </div>
