@@ -889,3 +889,7 @@
 - [ ] Filters: unread/read/starred/channel/tag/date range/assigned user
 - [ ] Search: by contact name, phone, email, message content, tags
 - [ ] Conversation actions: star, mark read/unread, archive, delete, assign, add tags, add to workflow
+
+## Conversations UI Polish (Round N)
+- [ ] Remove fake seed conversations (Marcus Williams, Sandra Kim, Derek Patel, Lisa Chen)
+- [ ] Premium UI refinement: tighter inbox list density, unread/starred states, thread spacing, SMS vs email differentiation, workflow event styling, composer UX

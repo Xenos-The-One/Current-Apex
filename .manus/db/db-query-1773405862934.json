@@ -1,0 +1,9 @@
+{
+  "query": "\nDELETE cm FROM conversation_messages cm\nJOIN conversations c ON cm.conversationId = c.id\nWHERE c.contactName IN ('Marcus Williams', 'Sandra Kim', 'Derek Patel', 'Lisa Chen');\n\nDELETE FROM conversations \nWHERE contactName IN ('Marcus Williams', 'Sandra Kim', 'Derek Patel', 'Lisa Chen');\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \nDELETE cm FROM conversation_messages cm\nJOIN conversations c ON cm.conversationId = c.id\nWHERE c.contactName IN ('Marcus Williams', 'Sandra Kim', 'Derek Patel', 'Lisa Chen');\n\nDELETE FROM conversations \nWHERE contactName IN ('Marcus Williams', 'Sandra Kim', 'Derek Patel', 'Lisa Chen');\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 488
+}
