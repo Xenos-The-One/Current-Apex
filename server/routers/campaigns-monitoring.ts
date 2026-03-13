@@ -2,6 +2,9 @@ import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import mysql from "mysql2/promise";
 import { ENV } from "../_core/env";
+import { getDb } from "../db";
+import { campaignTemplates } from "../../drizzle/schema";
+import { eq, or, isNull } from "drizzle-orm";
 
 export const campaignsMonitoringRouter = router({
   /**
@@ -140,6 +143,30 @@ export const campaignsMonitoringRouter = router({
         };
       } finally {
         await conn.end();
+      }
+    }),
+
+  /**
+   * List campaign templates (email + SMS) for the given agency
+   */
+  listTemplates: protectedProcedure
+    .input(z.object({ agencyId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      try {
+        const templates = await db
+          .select()
+          .from(campaignTemplates)
+          .where(
+            or(
+              eq(campaignTemplates.agencyId, input.agencyId),
+              isNull(campaignTemplates.agencyId)
+            )
+          );
+        return templates;
+      } catch {
+        return [];
       }
     }),
 });

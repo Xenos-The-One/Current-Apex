@@ -224,9 +224,14 @@ export const campaignsRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
-
-      return await db.select().from(emailCampaigns).where(eq(emailCampaigns.clientId, input.clientId));
+      try {
+        return await db.select().from(emailCampaigns).where(eq(emailCampaigns.clientId, input.clientId));
+      } catch (err) {
+        console.warn("[listEmailCampaigns] DB error (returning empty):", (err as Error).message);
+        return [];
+      }
     }),
+
 
   // SMS campaigns
   createSMSCampaign: protectedProcedure
@@ -315,7 +320,11 @@ export const campaignsRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
-
-      return await db.select().from(smsCampaigns).where(eq(smsCampaigns.clientId, input.clientId));
+      try {
+        return await db.select().from(smsCampaigns).where(eq(smsCampaigns.clientId, input.clientId));
+      } catch (err) {
+        console.warn("[listSMSCampaigns] DB error (returning empty):", (err as Error).message);
+        return [];
+      }
     }),
 });
