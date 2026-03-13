@@ -1484,6 +1484,7 @@ export const calendarResources = mysqlTable("calendar_resources", {
   id: int("id").primaryKey().autoincrement(),
   agencyId: int("agency_id").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 100 }),
   color: varchar("color", { length: 20 }).default("#3B82F6"),
   description: text("description"),
   isActive: boolean("is_active").default(true),

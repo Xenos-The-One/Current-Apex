@@ -819,3 +819,9 @@
 - [x] Calendar nav item already exists in DashboardLayout Engage section
 - [x] Vitest tests for calendars router (20 new tests, 199 total passing)
 - [x] /calendar route wired to new Calendar page in App.tsx
+
+## Calendar Features Round 2 (COMPLETED)
+- [x] Appointment reminder scheduling: appointment coordination agent updated to pick up confirmed/unconfirmed statuses (was only 'scheduled') for 24h and 1h reminders
+- [x] Public booking page: slug column added to calendar_resources, setCalendarSlug procedure added, Booking Link button in Calendar top bar opens dialog with slug editor and copy button
+- [x] Google Calendar sync: getGoogleSyncStatus, initiateGoogleSync, disconnectGoogleSync procedures added; Google Sync button in Calendar top bar opens OAuth dialog (requires GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET in Secrets)
+- [x] All 199 tests passing

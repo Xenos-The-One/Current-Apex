@@ -37,7 +37,8 @@ export class AppointmentCoordinationAgent {
         and(
           gte(appointments.appointmentDate, windowStart),
           lte(appointments.appointmentDate, windowEnd),
-          eq(appointments.status, 'scheduled')
+          sql`${appointments.status} IN ('scheduled', 'confirmed', 'unconfirmed')`,
+          eq(appointments.reminderSent24h, false)
         )
       );
     
@@ -110,7 +111,8 @@ export class AppointmentCoordinationAgent {
         and(
           gte(appointments.appointmentDate, windowStart),
           lte(appointments.appointmentDate, windowEnd),
-          eq(appointments.status, 'scheduled')
+          sql`${appointments.status} IN ('scheduled', 'confirmed', 'unconfirmed')`,
+          eq(appointments.reminderSent2h, false)
         )
       );
     
@@ -165,7 +167,7 @@ export class AppointmentCoordinationAgent {
       .where(
         and(
           lte(appointments.appointmentDate, fifteenMinutesAgo),
-          eq(appointments.status, 'scheduled') // Still marked as scheduled, not shown
+          sql`${appointments.status} IN ('scheduled', 'confirmed', 'unconfirmed')` // Still open, not shown
         )
       );
     

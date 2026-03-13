@@ -15,6 +15,7 @@ import {
   MapPin, Phone, Video, User, Edit2, Trash2, Check, X, RotateCcw,
   Sparkles, List, Grid3X3, AlignLeft, Filter, Search, RefreshCw,
   CheckCircle, XCircle, AlertCircle, Eye, MoreHorizontal, Loader2,
+  Link2, Settings2, Unlink,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 
@@ -807,6 +808,10 @@ export default function Calendar() {
   const [filterCalendar, setFilterCalendar] = useState("all");
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [showGoogleSync, setShowGoogleSync] = useState(false);
+  const [showBookingLink, setShowBookingLink] = useState(false);
+  const [bookingLinkCalId, setBookingLinkCalId] = useState<number | null>(null);
+  const [bookingSlug, setBookingSlug] = useState("");
 
   // Date range for query
   const { startDate, endDate } = useMemo(() => {
@@ -840,6 +845,27 @@ export default function Calendar() {
   });
 
   const utils = trpc.useUtils();
+
+  // Google sync
+  const { data: googleSyncStatus } = trpc.calendars.getGoogleSyncStatus.useQuery();
+  const initiateGoogleMut = trpc.calendars.initiateGoogleSync.useMutation({
+    onSuccess: (r) => { window.open(r.authUrl, "_blank"); },
+    onError: (e) => toast.error(e.message),
+  });
+  const disconnectGoogleMut = trpc.calendars.disconnectGoogleSync.useMutation({
+    onSuccess: () => { toast.success("Google Calendar disconnected"); utils.calendars.getGoogleSyncStatus.invalidate(); },
+    onError: (e) => toast.error(e.message),
+  });
+  // Booking link
+  const setSlugMut = trpc.calendars.setCalendarSlug.useMutation({
+    onSuccess: () => {
+      toast.success("Booking link saved!");
+      utils.calendars.listCalendars.invalidate();
+      setShowBookingLink(false);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   const seedMut = trpc.calendars.seedCalendarData.useMutation({
     onSuccess: (r) => {
       if (r.skipped) toast.info("Calendar data already exists.");
@@ -957,6 +983,23 @@ export default function Calendar() {
             </Button>
           )}
 
+          {/* Booking Link */}
+          <Button variant="outline" size="sm" onClick={() => {
+            const cals = calendarsData as any[];
+            if (cals.length > 0) {
+              setBookingLinkCalId(cals[0].id);
+              setBookingSlug(cals[0].slug || "");
+              setShowBookingLink(true);
+            } else {
+              toast.info("Create a calendar first to get a booking link.");
+            }
+          }}>
+            <Link2 className="w-3.5 h-3.5 mr-1.5" /> Booking Link
+          </Button>
+          {/* Google Sync */}
+          <Button variant="outline" size="sm" onClick={() => setShowGoogleSync(true)}>
+            <Settings2 className="w-3.5 h-3.5 mr-1.5" /> Google Sync
+          </Button>
           <Button size="sm" onClick={() => { setNewApptDate(new Date()); setShowAddModal(true); }}>
             <Plus className="w-4 h-4 mr-1.5" /> New Appointment
           </Button>
@@ -1115,6 +1158,119 @@ export default function Calendar() {
           onSaved={() => refetchAppts()}
         />
       )}
+
+      {/* Google Calendar Sync Dialog */}
+      <Dialog open={showGoogleSync} onOpenChange={setShowGoogleSync}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+              </svg>
+              Google Calendar Sync
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {googleSyncStatus?.hasTokens ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 border border-green-200">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <div>
+                    <p className="text-sm font-medium text-green-800">Connected</p>
+                    <p className="text-xs text-green-600">{(googleSyncStatus as any).connectedEmail}</p>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground">New confirmed appointments will automatically sync to your Google Calendar.</p>
+                <Button variant="outline" size="sm" className="w-full text-red-600 border-red-200 hover:bg-red-50" onClick={() => disconnectGoogleMut.mutate()} disabled={disconnectGoogleMut.isPending}>
+                  <Unlink className="w-3.5 h-3.5 mr-1.5" /> Disconnect Google Calendar
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {!(googleSyncStatus as any)?.isConfigured && (
+                  <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
+                    <p className="text-sm font-medium text-amber-800">API credentials required</p>
+                    <p className="text-xs text-amber-600 mt-1">Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Settings → Secrets to enable Google Calendar sync.</p>
+                  </div>
+                )}
+                <p className="text-sm text-muted-foreground">Connect your Google Calendar to automatically sync confirmed appointments. A one-time OAuth authorization is required.</p>
+                <Button className="w-full" onClick={() => initiateGoogleMut.mutate({ origin: window.location.origin })} disabled={initiateGoogleMut.isPending || !(googleSyncStatus as any)?.isConfigured}>
+                  {initiateGoogleMut.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  Connect Google Calendar
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Booking Link Dialog */}
+      <Dialog open={showBookingLink} onOpenChange={setShowBookingLink}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Link2 className="w-4 h-4" /> Public Booking Link
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Calendar</Label>
+              <Select value={bookingLinkCalId?.toString() ?? ""} onValueChange={v => {
+                const cal = (calendarsData as any[]).find(c => c.id === Number(v));
+                setBookingLinkCalId(Number(v));
+                setBookingSlug(cal?.slug || "");
+              }}>
+                <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select calendar" /></SelectTrigger>
+                <SelectContent>
+                  {(calendarsData as any[]).map(c => (
+                    <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Booking Link Slug</Label>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">{window.location.origin}/book/</span>
+                <Input
+                  value={bookingSlug}
+                  onChange={e => setBookingSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))}
+                  placeholder="my-calendar"
+                  className="h-8 text-sm"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Lowercase letters, numbers, and hyphens only.</p>
+            </div>
+            {bookingSlug && (
+              <div className="p-3 rounded-lg bg-muted">
+                <p className="text-xs text-muted-foreground mb-1">Your booking link:</p>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs flex-1 truncate">{window.location.origin}/book/{bookingSlug}</code>
+                  <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/book/${bookingSlug}`);
+                    toast.success("Copied to clipboard!");
+                  }}>
+                    Copy
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setShowBookingLink(false)}>Cancel</Button>
+            <Button size="sm" onClick={() => {
+              if (!bookingLinkCalId || !bookingSlug) return;
+              setSlugMut.mutate({ calendarId: bookingLinkCalId, slug: bookingSlug });
+            }} disabled={setSlugMut.isPending || !bookingSlug}>
+              {setSlugMut.isPending ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : null}
+              Save Booking Link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

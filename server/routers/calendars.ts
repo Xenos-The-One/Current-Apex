@@ -455,4 +455,108 @@ export const calendarsRouter = router({
       appointments: appointmentsToInsert.length,
     };
   }),
+
+  // ─── Booking Link / Slug ────────────────────────────────────────────────────
+
+  setCalendarSlug: protectedProcedure
+    .input(z.object({
+      calendarId: z.number(),
+      slug: z.string().min(2).max(100).regex(/^[a-z0-9-]+$/, "Slug must be lowercase letters, numbers, and hyphens only"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const agencyId = await getAgencyId(ctx.user.id);
+      // Check slug uniqueness within agency
+      const existing = await db.select({ id: calendarResources.id })
+        .from(calendarResources)
+        .where(and(
+          sql`slug = ${input.slug}`,
+          eq(calendarResources.agencyId, agencyId)
+        ))
+        .limit(1);
+      if (existing.length > 0 && existing[0].id !== input.calendarId) {
+        throw new TRPCError({ code: "CONFLICT", message: "This booking link slug is already in use" });
+      }
+      await db.execute(sql`UPDATE calendar_resources SET slug = ${input.slug} WHERE id = ${input.calendarId} AND agency_id = ${agencyId}`);
+      return { slug: input.slug };
+    }),
+
+  // ─── Google Calendar Sync ───────────────────────────────────────────────────
+
+  getGoogleSyncStatus: protectedProcedure
+    .query(async ({ ctx }) => {
+      const isConfigured = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+      const agencyId = await getAgencyId(ctx.user.id);
+      // Check if tokens table exists and has a row for this agency
+      let hasTokens = false;
+      let connectedEmail: string | null = null;
+      try {
+        const db = await getDb();
+        if (db) {
+          const rows = await db.execute(sql`
+            SELECT connected_email FROM google_calendar_tokens WHERE agency_id = ${agencyId} LIMIT 1
+          `) as any[];
+          if (rows.length > 0 && rows[0]?.connected_email) {
+            hasTokens = true;
+            connectedEmail = rows[0].connected_email;
+          }
+        }
+      } catch (e) {
+        // Table doesn't exist yet — that's fine
+      }
+      return { isConfigured, hasTokens, connectedEmail };
+    }),
+
+  initiateGoogleSync: protectedProcedure
+    .input(z.object({ origin: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const clientId = process.env.GOOGLE_CLIENT_ID;
+      const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+      if (!clientId || !clientSecret) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Google Calendar API credentials are not configured. Please add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Settings → Secrets.",
+        });
+      }
+      const agencyId = await getAgencyId(ctx.user.id);
+      const redirectUri = `${input.origin}/api/google-calendar/callback`;
+      const scope = "https://www.googleapis.com/auth/calendar";
+      const state = Buffer.from(JSON.stringify({ agencyId, userId: ctx.user.id })).toString("base64");
+      const authUrl = [
+        "https://accounts.google.com/o/oauth2/v2/auth",
+        `?client_id=${encodeURIComponent(clientId)}`,
+        `&redirect_uri=${encodeURIComponent(redirectUri)}`,
+        `&response_type=code`,
+        `&scope=${encodeURIComponent(scope)}`,
+        `&access_type=offline`,
+        `&prompt=consent`,
+        `&state=${encodeURIComponent(state)}`,
+      ].join("");
+      return { authUrl };
+    }),
+
+  disconnectGoogleSync: protectedProcedure
+    .mutation(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const agencyId = await getAgencyId(ctx.user.id);
+      try {
+        await db.execute(sql`DELETE FROM google_calendar_tokens WHERE agency_id = ${agencyId}`);
+      } catch (e) {
+        // Table may not exist yet
+      }
+      return { success: true };
+    }),
+
+  syncAppointmentToGoogle: protectedProcedure
+    .input(z.object({ appointmentId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const { createCalendarEvent } = await import("../google-calendar-service");
+      const result = await createCalendarEvent(input.appointmentId);
+      if (!result?.success) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to sync with Google Calendar" });
+      }
+      return { success: true, message: "Appointment synced to Google Calendar" };
+    }),
 });
