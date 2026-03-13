@@ -1005,7 +1005,7 @@ export const pipelinesRouter = router({
       return { assignedTo: assignee.name, assignedId: assignee.id };
     }),
 
-  // ── Update opportunity status with closed reason ───────────────────────────
+  // ── Update opportunity status (won/lost/open) ──────────────────────────────────
   updateStatus: protectedProcedure
     .input(z.object({
       opportunityId: z.number(),
@@ -1016,6 +1016,10 @@ export const pipelinesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+
+      // Fetch opportunity details before update for the email
+      const oppRows = await db.select().from(opportunities).where(eq(opportunities.id, input.opportunityId)).limit(1);
+      const opp = oppRows[0];
 
       await db.update(opportunities)
         .set({
@@ -1035,10 +1039,54 @@ export const pipelinesRouter = router({
         createdByName: ctx.user.name,
       });
 
+      // Send email to owner when deal is marked Lost
+      if (input.status === "lost" && opp) {
+        try {
+          const { users } = await import("../../drizzle/schema");
+          const ownerRows = await db.select({ email: users.email, name: users.name })
+            .from(users)
+            .where(eq(users.id, ctx.user.id))
+            .limit(1);
+          const ownerEmail = ownerRows[0]?.email;
+          const ownerName = ownerRows[0]?.name ?? ctx.user.name;
+          if (ownerEmail) {
+            const { sendEmail } = await import("../sendgrid");
+            const dealValue = opp.value ? `$${parseFloat(opp.value).toLocaleString()}` : "N/A";
+            const reason = input.closedReason ?? "Unspecified";
+            const notes = input.closedReasonNotes ? `<p><strong>Notes:</strong> ${input.closedReasonNotes}</p>` : "";
+            await sendEmail({
+              to: [ownerEmail],
+              from: process.env.FROM_EMAIL || "noreply@lockinloans.com",
+              subject: `❌ Lost Deal Alert: ${opp.name}`,
+              html: `
+                <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
+                  <h2 style="color:#ef4444;">Deal Marked as Lost</h2>
+                  <p>Hi ${ownerName},</p>
+                  <p>A deal has been marked as <strong>Lost</strong> in your pipeline.</p>
+                  <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+                    <tr><td style="padding:8px;background:#f9fafb;font-weight:600;">Deal Name</td><td style="padding:8px;">${opp.name}</td></tr>
+                    <tr><td style="padding:8px;background:#f9fafb;font-weight:600;">Deal Value</td><td style="padding:8px;">${dealValue}</td></tr>
+                    <tr><td style="padding:8px;background:#f9fafb;font-weight:600;">Contact</td><td style="padding:8px;">${opp.contactName ?? "N/A"}</td></tr>
+                    <tr><td style="padding:8px;background:#f9fafb;font-weight:600;">Loss Reason</td><td style="padding:8px;color:#ef4444;">${reason}</td></tr>
+                    <tr><td style="padding:8px;background:#f9fafb;font-weight:600;">Marked By</td><td style="padding:8px;">${ctx.user.name}</td></tr>
+                    <tr><td style="padding:8px;background:#f9fafb;font-weight:600;">Date</td><td style="padding:8px;">${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</td></tr>
+                  </table>
+                  ${notes}
+                  <p style="color:#6b7280;font-size:14px;">Review this deal in your CRM pipeline to follow up or reassign.</p>
+                </div>
+              `,
+            });
+            console.log(`[Pipeline] Lost deal email sent to ${ownerEmail} for deal: ${opp.name}`);
+          }
+        } catch (emailErr: any) {
+          console.error("[Pipeline] Failed to send lost deal email:", emailErr?.message);
+          // Don't throw — email failure should not block the status update
+        }
+      }
       return { success: true };
     }),
 
-  // ── Get loss reasons breakdown for analytics ─────────────────────────────────
+  // ── Get loss reasons breakdown for analytics ───────────────────────────────────────────
   getLossReasons: protectedProcedure
     .input(z.object({ pipelineId: z.number() }))
     .query(async ({ ctx, input }) => {
@@ -1061,8 +1109,94 @@ export const pipelinesRouter = router({
         reasonMap[reason].value += parseFloat(opp.value ?? "0");
       }
 
+      const total = Object.values(reasonMap).reduce((s, r) => s + r.count, 0);
       return Object.entries(reasonMap)
         .sort(([, a], [, b]) => b.count - a.count)
-        .map(([reason, data]) => ({ reason, ...data }));
+        .map(([reason, data]) => ({ reason, ...data, pct: total > 0 ? Math.round((data.count / total) * 100) : 0 }));
+    }),
+
+  // ── Set/get deal age thresholds per pipeline ──────────────────────────────────
+  setThresholds: protectedProcedure
+    .input(z.object({
+      pipelineId: z.number(),
+      staleWarningDays: z.number().min(1).max(365),
+      staleCriticalDays: z.number().min(1).max(365),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      await db.update(pipelines)
+        .set({ staleWarningDays: input.staleWarningDays, staleCriticalDays: input.staleCriticalDays })
+        .where(eq(pipelines.id, input.pipelineId));
+      return { success: true };
+    }),
+
+  getThresholds: protectedProcedure
+    .input(z.object({ pipelineId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const rows = await db
+        .select({ staleWarningDays: pipelines.staleWarningDays, staleCriticalDays: pipelines.staleCriticalDays })
+        .from(pipelines)
+        .where(eq(pipelines.id, input.pipelineId))
+        .limit(1);
+      return rows[0] ?? { staleWarningDays: 14, staleCriticalDays: 30 };
+    }),
+
+  // ── Team leaderboard for analytics ───────────────────────────────────────────
+  getTeamLeaderboard: protectedProcedure
+    .input(z.object({ pipelineId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+
+      // Get all opportunities for this pipeline
+      const opps = await db
+        .select({
+          ownerId: opportunities.ownerId,
+          ownerName: opportunities.ownerName,
+          status: opportunities.status,
+          value: opportunities.value,
+          updatedAt: opportunities.updatedAt,
+        })
+        .from(opportunities)
+        .where(eq(opportunities.pipelineId, input.pipelineId));
+
+      // Group by owner
+      const ownerMap: Record<string, { name: string; won: number; lost: number; open: number; wonValue: number; totalValue: number }> = {};
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      for (const opp of opps) {
+        const key = String(opp.ownerId ?? "unassigned");
+        const name = opp.ownerName ?? "Unassigned";
+        if (!ownerMap[key]) ownerMap[key] = { name, won: 0, lost: 0, open: 0, wonValue: 0, totalValue: 0 };
+        const val = parseFloat(opp.value ?? "0");
+        ownerMap[key].totalValue += val;
+        if (opp.status === "won") {
+          ownerMap[key].won++;
+          ownerMap[key].wonValue += val;
+        } else if (opp.status === "lost") {
+          ownerMap[key].lost++;
+        } else {
+          ownerMap[key].open++;
+        }
+      }
+
+      return Object.entries(ownerMap)
+        .map(([ownerId, data]) => ({
+          ownerId,
+          ownerName: data.name,
+          won: data.won,
+          lost: data.lost,
+          open: data.open,
+          wonValue: data.wonValue,
+          totalValue: data.totalValue,
+          winRate: (data.won + data.lost) > 0
+            ? Math.round((data.won / (data.won + data.lost)) * 100)
+            : 0,
+        }))
+        .sort((a, b) => b.won - a.won);
     }),
 });

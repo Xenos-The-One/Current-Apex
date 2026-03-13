@@ -793,3 +793,10 @@
 - [x] Loss Reasons Breakdown chart in analytics tab with horizontal bars and % breakdown
 - [x] Won/Lost buttons added in OpportunityDetail panel header for open deals
 - [x] All 179 tests passing
+
+## Pipeline Features Round 6 (COMPLETED)
+- [x] Deal age threshold settings: stale_warning_days/stale_critical_days columns added via SQL, setThresholds/getThresholds procedures, UI in Stages dialog with edit form
+- [x] Won/Lost reason email to owner: updateStatus procedure now sends HTML email via SendGrid when deal marked Lost (deal name, value, contact, reason, notes, date)
+- [x] Pipeline team leaderboard: getTeamLeaderboard procedure, Team Leaderboard tab in analytics with ranked rows (won count, win rate, won value)
+- [x] Analytics now has Overview / Team Leaderboard sub-tabs toggle
+- [x] All 179 tests passing

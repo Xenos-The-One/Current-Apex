@@ -12,6 +12,8 @@ export const pipelines = mysqlTable("pipelines", {
   createdBy: int("created_by").notNull(),
   monthlyGoal: decimal("monthly_goal", { precision: 12, scale: 2 }),
   roundRobinIndex: int("round_robin_index").default(0),
+  staleWarningDays: int("stale_warning_days").default(14),
+  staleCriticalDays: int("stale_critical_days").default(30),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
 });
