@@ -20,6 +20,25 @@ import { sendSMS } from "../twilio";
 import { sendEmail } from "../sendgrid";
 import { isTestLead } from "../test-lead-utils";
 import { autoEnrollLead } from "./drip-sequences";
+import { getDb } from "../db";
+import { sql } from "drizzle-orm";
+/** Resolve the effective agencyId — falls back to client's own agency when frontend passes 0 */
+async function resolveAgencyId(ctx: any, inputAgencyId: number): Promise<number> {
+  if (inputAgencyId > 0) return inputAgencyId;
+  try {
+    const db = await getDb();
+    if (!db) return 1;
+    const result = await db.execute(
+      sql`SELECT agency_id FROM clients WHERE user_id = ${ctx.user.id} LIMIT 1`
+    );
+    const rows = Array.isArray(result) ? result[0] : (result as any).rows || result;
+    const firstRow = Array.isArray(rows) ? rows[0] : rows;
+    const agencyId = (firstRow as any)?.agency_id;
+    return agencyId && agencyId > 0 ? Number(agencyId) : 1;
+  } catch {
+    return 1;
+  }
+}
 
 export const leadsRouter = router({
   // PUBLIC lead capture - for landing pages, Facebook ads, webinars (NO LOGIN REQUIRED)
@@ -158,9 +177,10 @@ export const leadsRouter = router({
       limit: z.number().min(1).max(100).default(50),
       offset: z.number().min(0).default(0),
     }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      const agencyId = await resolveAgencyId(ctx, input.agencyId);
       let leads = await getLeadsByAgency(
-        input.agencyId,
+        agencyId,
         input.status,
         input.leadSource,
         input.limit,

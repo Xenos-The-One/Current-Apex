@@ -843,3 +843,7 @@
 - [x] Public booking page: /book/:slug already existed; enhanced with calendar slug support via getCalendarBookingPage public procedure
 - [x] Appointment analytics dashboard: dedicated Analytics tab on Calendar page with KPI cards, daily bar chart, meeting type pie chart, show/no-show rate breakdown over 30/60/90-day window
 - [x] All 225 tests passing
+
+## Conversations Page Fixes
+- [x] Add SMS/Email/Note compose bar at the bottom of the conversation thread (matching contacts page)
+- [x] Fix lead isolation: New Conversation lead search now scoped to current client's agency via resolveAgencyId (Drizzle sql template tag)

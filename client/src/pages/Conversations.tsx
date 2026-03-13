@@ -26,6 +26,8 @@ import {
   RefreshCw,
   MessageCircle,
   Loader2,
+  StickyNote,
+  Paperclip,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -378,6 +380,8 @@ export default function Conversations() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedConvId, setSelectedConvId] = useState<number | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [composeTab, setComposeTab] = useState<"sms" | "email" | "note">("sms");
+  const [emailSubject, setEmailSubject] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const utils = trpc.useUtils();
 
@@ -424,12 +428,24 @@ export default function Conversations() {
 
   const handleSend = () => {
     if (!replyText.trim() || !selectedConvId) return;
-    sendMessage.mutate({ conversationId: selectedConvId, agencyId: AGENCY_ID, content: replyText.trim() });
+    const content = composeTab === "email" && emailSubject.trim()
+      ? `Subject: ${emailSubject.trim()}\n\n${replyText.trim()}`
+      : replyText.trim();
+    sendMessage.mutate({ conversationId: selectedConvId, agencyId: AGENCY_ID, content });
+    setEmailSubject("");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); handleSend(); }
   };
+
+  // Sync compose tab to conversation channel when switching conversations
+  useEffect(() => {
+    if (selectedConv) {
+      if (selectedConv.channel === "sms") setComposeTab("sms");
+      else if (selectedConv.channel === "email") setComposeTab("email");
+    }
+  }, [selectedConvId]);
 
   const displayName = selectedConv
     ? selectedConv.contactName || [selectedConv.first_name, selectedConv.last_name].filter(Boolean).join(" ") || "Unknown"
@@ -580,42 +596,75 @@ export default function Conversations() {
               </ScrollArea>
 
               <div className="px-4 py-3 bg-white border-t border-gray-200 shrink-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${CHANNEL_COLORS[selectedConv.channel]}`}>
-                    Replying via {selectedConv.channel.toUpperCase()}
-                  </span>
-                  {selectedConv.channel === "sms" && selectedConv.contactPhone && (
-                    <span className="text-[10px] text-gray-400">to {selectedConv.contactPhone}</span>
-                  )}
-                  {selectedConv.channel === "email" && selectedConv.contactEmail && (
-                    <span className="text-[10px] text-gray-400">to {selectedConv.contactEmail}</span>
-                  )}
+                {/* Channel tabs */}
+                <div className="flex items-center gap-1 mb-2">
+                  {(["sms", "email", "note"] as const).map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setComposeTab(tab)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                        composeTab === tab
+                          ? "bg-blue-600 text-white"
+                          : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                      }`}
+                    >
+                      {tab === "sms" && <Phone className="w-3.5 h-3.5" />}
+                      {tab === "email" && <Mail className="w-3.5 h-3.5" />}
+                      {tab === "note" && <StickyNote className="w-3.5 h-3.5" />}
+                      {tab === "sms" ? "Sms" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </button>
+                  ))}
+                  <div className="ml-auto flex items-center gap-2">
+                    {composeTab === "sms" && selectedConv.contactPhone && (
+                      <span className="text-[10px] text-gray-400">to {selectedConv.contactPhone}</span>
+                    )}
+                    {composeTab === "email" && selectedConv.contactEmail && (
+                      <span className="text-[10px] text-gray-400">to {selectedConv.contactEmail}</span>
+                    )}
+                  </div>
                 </div>
+                {composeTab === "email" && (
+                  <input
+                    value={emailSubject}
+                    onChange={e => setEmailSubject(e.target.value)}
+                    placeholder="Subject"
+                    className="w-full mb-2 h-8 text-sm px-3 rounded-md border border-gray-200 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                )}
                 <div className="flex gap-2 items-end">
                   <Textarea
-                    placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
-                    className="flex-1 min-h-[60px] max-h-[120px] text-sm resize-none bg-gray-50 border-gray-200"
+                    placeholder={
+                      composeTab === "sms" ? "Type an SMS message..."
+                      : composeTab === "email" ? "Type your email..."
+                      : "Add a note..."
+                    }
+                    className="flex-1 min-h-[72px] max-h-[140px] text-sm resize-none bg-gray-50 border-gray-200"
                     value={replyText}
                     onChange={e => setReplyText(e.target.value)}
                     onKeyDown={handleKeyDown}
                   />
-                  <Button
-                    size="sm"
-                    className="h-9 px-4 bg-blue-600 hover:bg-blue-700 shrink-0"
-                    onClick={handleSend}
-                    disabled={!replyText.trim() || sendMessage.isPending}
-                  >
-                    {sendMessage.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  </Button>
+                  <div className="flex flex-col gap-1.5">
+                    <Button
+                      size="icon"
+                      className="w-9 h-9 bg-blue-600 hover:bg-blue-700"
+                      onClick={handleSend}
+                      disabled={!replyText.trim() || sendMessage.isPending}
+                      title="Send (Cmd+Enter)"
+                    >
+                      {sendMessage.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-9 h-9 text-gray-400"
+                      title="Templates (coming soon)"
+                      onClick={() => toast.info("Templates — coming soon")}
+                    >
+                      <Paperclip className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                {(selectedConv.channel === "sms" || selectedConv.channel === "email") && (
-                  <p className="text-[10px] text-amber-600 mt-1.5 flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {selectedConv.channel === "sms"
-                      ? "Twilio SMS integration required to deliver live messages"
-                      : "SendGrid email integration required to deliver live messages"}
-                  </p>
-                )}
+                <p className="text-[10px] text-gray-400 mt-1">Cmd+Enter to send</p>
               </div>
             </>
           ) : (
