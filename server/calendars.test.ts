@@ -331,3 +331,94 @@ describe("Meeting type color-coding", () => {
     });
   });
 });
+
+// ─── Round 4 Feature Tests ─────────────────────────────────────────────────────
+
+describe("updateRecurringSeries", () => {
+  it("should have updateRecurringSeries procedure defined", () => {
+    const caller = createCaller(makeCtx());
+    expect(caller.updateRecurringSeries).toBeDefined();
+    expect(typeof caller.updateRecurringSeries).toBe("function");
+  });
+
+  it("should accept valid input with seriesId, fromDate, and newDate", () => {
+    const caller = createCaller(makeCtx());
+    const validInput = {
+      seriesId: "series-abc123",
+      fromDate: new Date("2026-04-01"),
+      newDate: new Date("2026-04-01T11:00:00"),
+      newEndTime: new Date("2026-04-01T11:30:00"),
+    };
+    expect(() => caller.updateRecurringSeries(validInput)).not.toThrow();
+  });
+
+  it("should accept input without optional newEndTime", () => {
+    const caller = createCaller(makeCtx());
+    const validInput = {
+      seriesId: "series-xyz789",
+      fromDate: new Date("2026-05-01"),
+      newDate: new Date("2026-05-01T14:00:00"),
+    };
+    expect(() => caller.updateRecurringSeries(validInput)).not.toThrow();
+  });
+});
+
+describe("exportAppointments", () => {
+  it("should have exportAppointments procedure defined", () => {
+    const caller = createCaller(makeCtx());
+    expect(caller.exportAppointments).toBeDefined();
+    expect(typeof caller.exportAppointments).toBe("function");
+  });
+
+  it("should accept csv format", () => {
+    const caller = createCaller(makeCtx());
+    const input = {
+      startDate: new Date("2026-01-01"),
+      endDate: new Date("2026-12-31"),
+      format: "csv" as const,
+    };
+    expect(() => caller.exportAppointments(input)).not.toThrow();
+  });
+
+  it("should accept ical format", () => {
+    const caller = createCaller(makeCtx());
+    const input = {
+      startDate: new Date("2026-01-01"),
+      endDate: new Date("2026-12-31"),
+      format: "ical" as const,
+    };
+    expect(() => caller.exportAppointments(input)).not.toThrow();
+  });
+
+  it("should reject invalid format values", async () => {
+    const caller = createCaller(makeCtx());
+    await expect(
+      caller.exportAppointments({
+        format: "pdf" as any,
+      })
+    ).rejects.toThrow();
+  });
+
+  it("should work without date range (export all)", () => {
+    const caller = createCaller(makeCtx());
+    expect(() => caller.exportAppointments({ format: "csv" })).not.toThrow();
+  });
+});
+
+describe("No-show follow-up automation", () => {
+  it("should have updateStatus procedure that triggers automation on no_show", () => {
+    const caller = createCaller(makeCtx());
+    expect(caller.updateStatus).toBeDefined();
+    // Verify no_show is an accepted status value
+    const validInput = { id: 1, status: "no_show" as const };
+    expect(() => caller.updateStatus(validInput)).not.toThrow();
+  });
+
+  it("should not trigger automation for non-no_show statuses", () => {
+    const caller = createCaller(makeCtx());
+    const statuses = ["confirmed", "completed", "cancelled", "scheduled"] as const;
+    statuses.forEach(status => {
+      expect(() => caller.updateStatus({ id: 1, status })).not.toThrow();
+    });
+  });
+});

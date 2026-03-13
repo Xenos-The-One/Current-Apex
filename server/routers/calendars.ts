@@ -271,6 +271,54 @@ export const calendarsRouter = router({
       await db.update(appointments)
         .set({ status: input.status as any })
         .where(and(eq(appointments.id, input.id), eq(appointments.agencyId, agencyId)));
+
+      // ── No-Show Follow-Up Automation ────────────────────────────────────────
+      if (input.status === "no_show") {
+        try {
+          const apptRows = await db.select()
+            .from(appointments)
+            .where(and(eq(appointments.id, input.id), eq(appointments.agencyId, agencyId)))
+            .limit(1);
+          const appt = apptRows[0];
+          if (appt) {
+            const contactName = `${appt.firstName} ${appt.lastName}`.trim();
+            const { isTestLead } = await import("../test-lead-utils");
+            const isTest = isTestLead({ email: appt.email ?? "", phone: appt.phone ?? "", name: contactName });
+
+            // Build booking link if slug is available
+            let bookingLink = "";
+            if ((appt as any).calendarId) {
+              const calRows = await db.execute(sql`SELECT slug FROM calendar_resources WHERE id = ${(appt as any).calendarId} AND agency_id = ${agencyId} LIMIT 1`) as any[];
+              if (calRows[0]?.slug) {
+                bookingLink = `\n\nReschedule here: ${process.env.VITE_OAUTH_PORTAL_URL ?? ""}/book/${calRows[0].slug}`;
+              }
+            }
+
+            const apptDateStr = new Date(appt.appointmentDate).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+            const smsBody = `Hi ${appt.firstName}, we missed you at your ${apptDateStr} appointment. We'd love to reschedule at a time that works for you.${bookingLink}`;
+            const emailSubject = `We missed you — let's reschedule, ${appt.firstName}`;
+            const emailHtml = `<p>Hi ${appt.firstName},</p><p>We noticed you weren't able to make your appointment on <strong>${apptDateStr}</strong>. We completely understand that things come up!</p><p>We'd love to find a new time that works better for you.${bookingLink ? `</p><p><a href="${bookingLink.replace("\n\nReschedule here: ", "")}">Click here to reschedule</a>` : ""}</p><p>Looking forward to connecting soon.</p>`;
+
+            if (!isTest) {
+              if (appt.phone) {
+                const { sendSMS } = await import("../twilio");
+                await sendSMS({ to: appt.phone, body: smsBody }).catch(e => console.error("[NoShow] SMS failed:", e.message));
+              }
+              if (appt.email) {
+                const { sendEmail } = await import("../email-service");
+                await sendEmail({ to: appt.email, subject: emailSubject, html: emailHtml }).catch(e => console.error("[NoShow] Email failed:", e.message));
+              }
+              console.log(`[NoShow] Follow-up sent to ${contactName} (${appt.email ?? appt.phone})`);
+            } else {
+              console.log(`[NoShow] Test lead — suppressed follow-up for ${contactName}`);
+            }
+          }
+        } catch (e: any) {
+          console.error("[NoShow] Follow-up automation error:", e.message);
+          // Non-blocking — don't throw, status update already succeeded
+        }
+      }
+
       return { success: true };
     }),
 
@@ -673,5 +721,148 @@ export const calendarsRouter = router({
 
       const count = result[0]?.cnt ?? 0;
       return { count: Number(count), seriesId: input.seriesId };
+    }),
+
+  updateRecurringSeries: protectedProcedure
+    .input(z.object({
+      seriesId: z.string(),
+      fromDate: z.date(),
+      newDate: z.date(),
+      newEndTime: z.date().optional(),
+      duration: z.number().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const agencyId = await getAgencyId(ctx.user.id);
+
+      // Get all future appointments in the series
+      const futureAppts = await db.execute(sql`
+        SELECT id, appointment_date, end_time FROM appointments
+        WHERE agency_id = ${agencyId}
+          AND recurrence_series_id = ${input.seriesId}
+          AND appointment_date >= ${input.fromDate}
+          AND status NOT IN ('completed', 'cancelled')
+        ORDER BY appointment_date ASC
+      `) as any[];
+
+      if (!futureAppts.length) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "No future appointments found in this series" });
+      }
+
+      // Calculate the time-of-day shift from the original first occurrence
+      const firstOrig = new Date(futureAppts[0].appointment_date);
+      const newStart = new Date(input.newDate);
+      const timeShiftMs = newStart.getTime() - firstOrig.getTime();
+
+      // Calculate duration from new start/end or use provided duration
+      const durationMs = input.newEndTime
+        ? input.newEndTime.getTime() - input.newDate.getTime()
+        : (input.duration ?? 30) * 60 * 1000;
+
+      // Update each future appointment, shifting its time by the same delta
+      for (const appt of futureAppts) {
+        const origStart = new Date(appt.appointment_date);
+        const shiftedStart = new Date(origStart.getTime() + timeShiftMs);
+        const shiftedEnd = new Date(shiftedStart.getTime() + durationMs);
+        await db.execute(sql`
+          UPDATE appointments
+          SET appointment_date = ${shiftedStart},
+              end_time = ${shiftedEnd},
+              duration = ${Math.round(durationMs / 60000)}
+          WHERE id = ${appt.id} AND agency_id = ${agencyId}
+        `);
+      }
+
+      return { count: futureAppts.length, seriesId: input.seriesId };
+    }),
+
+  exportAppointments: protectedProcedure
+    .input(z.object({
+      startDate: z.date().optional(),
+      endDate: z.date().optional(),
+      format: z.enum(["ical", "csv"]).default("csv"),
+      calendarId: z.number().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const agencyId = await getAgencyId(ctx.user.id);
+
+      const conditions = [eq(appointments.agencyId, agencyId)];
+      if (input.startDate) conditions.push(gte(appointments.appointmentDate, input.startDate));
+      if (input.endDate) conditions.push(lte(appointments.appointmentDate, input.endDate));
+      if (input.calendarId) conditions.push(eq(appointments.calendarId as any, input.calendarId));
+
+      const rows = await db.select()
+        .from(appointments)
+        .where(and(...conditions))
+        .orderBy(asc(appointments.appointmentDate))
+        .limit(1000);
+
+      if (input.format === "csv") {
+        const headers = ["Title","First Name","Last Name","Email","Phone","Date","Start Time","End Time","Duration (min)","Meeting Type","Location","Status","Calendar","Notes","Source"];
+        const csvRows = rows.map(r => {
+          const apptDate = new Date(r.appointmentDate);
+          const endTime = r.endTime ? new Date(r.endTime) : null;
+          return [
+            (r as any).title ?? "",
+            r.firstName,
+            r.lastName,
+            r.email ?? "",
+            r.phone ?? "",
+            apptDate.toLocaleDateString("en-US"),
+            apptDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+            endTime ? endTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "",
+            r.duration ?? 30,
+            (r as any).meetingType ?? "",
+            (r as any).location ?? "",
+            r.status,
+            (r as any).calendarName ?? "",
+            (r.notes ?? "").replace(/,/g, ";"),
+            r.source ?? "",
+          ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(",");
+        });
+        return { format: "csv" as const, data: [headers.join(","), ...csvRows].join("\n"), count: rows.length };
+      }
+
+      // iCal format
+      const icalLines: string[] = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Agency CRM Platform//Calendar Export//EN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+      ];
+
+      for (const r of rows) {
+        const apptDate = new Date(r.appointmentDate);
+        const endTime = r.endTime ? new Date(r.endTime) : new Date(apptDate.getTime() + (r.duration ?? 30) * 60000);
+        const dtStart = apptDate.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+        const dtEnd = endTime.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+        const uid = `appt-${r.id}@agency-crm-platform`;
+        const summary = (r as any).title ?? `${r.firstName} ${r.lastName} - ${r.appointmentType}`;
+        const description = [
+          r.notes ? `Notes: ${r.notes}` : "",
+          `Status: ${r.status}`,
+          (r as any).meetingType ? `Meeting Type: ${(r as any).meetingType}` : "",
+          r.source ? `Source: ${r.source}` : "",
+        ].filter(Boolean).join("\n");
+
+        icalLines.push(
+          "BEGIN:VEVENT",
+          `UID:${uid}`,
+          `DTSTART:${dtStart}`,
+          `DTEND:${dtEnd}`,
+          `SUMMARY:${summary}`,
+          description ? `DESCRIPTION:${description.replace(/\n/g, "\\n")}` : "",
+          (r as any).location ? `LOCATION:${(r as any).location}` : "",
+          `STATUS:${r.status === "confirmed" ? "CONFIRMED" : r.status === "cancelled" ? "CANCELLED" : "TENTATIVE"}`,
+          "END:VEVENT",
+        ).filter(l => l !== "");
+      }
+
+      icalLines.push("END:VCALENDAR");
+      return { format: "ical" as const, data: icalLines.join("\r\n"), count: rows.length };
     }),
 });

@@ -457,6 +457,11 @@ function AppointmentDetail({
     onSuccess: (r: any) => { toast.success(`Cancelled ${r.count} appointments in series`); invalidate(); onClose(); },
     onError: (e) => toast.error(e.message),
   });
+  const updateSeriesMut = trpc.calendars.updateRecurringSeries.useMutation({
+    onSuccess: (r: any) => { toast.success(`Updated ${r.count} future appointments`); setRescheduleOpen(false); invalidate(); onRefresh(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const [editAllFuture, setEditAllFuture] = useState(false);
 
   const color = getCalendarColor(appt.calendarId, calendars);
 
@@ -604,16 +609,45 @@ function AppointmentDetail({
                 <Input type="datetime-local" value={newEnd} onChange={e => setNewEnd(e.target.value)} className="text-xs" />
               </div>
             </div>
+            {/* Edit All Future toggle — only shown for recurring appointments */}
+            {appt.recurrenceSeriesId && (
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={editAllFuture}
+                  onChange={e => setEditAllFuture(e.target.checked)}
+                  className="w-4 h-4 rounded accent-indigo-600"
+                />
+                <span className="text-xs text-muted-foreground">
+                  Edit all future appointments in this series
+                </span>
+              </label>
+            )}
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => rescheduleMut.mutate({
-                id: appt.id,
-                newDate: new Date(newDate),
-                newEndTime: newEnd ? new Date(newEnd) : undefined,
-              })} disabled={rescheduleMut.isPending}>
-                {rescheduleMut.isPending && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
-                Save
+              <Button
+                size="sm"
+                onClick={() => {
+                  if (editAllFuture && appt.recurrenceSeriesId) {
+                    updateSeriesMut.mutate({
+                      seriesId: appt.recurrenceSeriesId,
+                      fromDate: new Date(appt.appointmentDate),
+                      newDate: new Date(newDate),
+                      newEndTime: newEnd ? new Date(newEnd) : undefined,
+                    });
+                  } else {
+                    rescheduleMut.mutate({
+                      id: appt.id,
+                      newDate: new Date(newDate),
+                      newEndTime: newEnd ? new Date(newEnd) : undefined,
+                    });
+                  }
+                }}
+                disabled={rescheduleMut.isPending || updateSeriesMut.isPending}
+              >
+                {(rescheduleMut.isPending || updateSeriesMut.isPending) && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+                {editAllFuture ? "Update All Future" : "Save"}
               </Button>
-              <Button size="sm" variant="outline" onClick={() => setRescheduleOpen(false)}>Cancel</Button>
+              <Button size="sm" variant="outline" onClick={() => { setRescheduleOpen(false); setEditAllFuture(false); }}>Cancel</Button>
             </div>
           </div>
         )}
@@ -916,6 +950,7 @@ export default function Calendar() {
   const [showBookingLink, setShowBookingLink] = useState(false);
   const [bookingLinkCalId, setBookingLinkCalId] = useState<number | null>(null);
   const [bookingSlug, setBookingSlug] = useState("");
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   // Date range for query
   const { startDate, endDate } = useMemo(() => {
@@ -969,6 +1004,37 @@ export default function Calendar() {
     },
     onError: (e) => toast.error(e.message),
   });
+
+  // Export appointments
+  const exportQuery = trpc.calendars.exportAppointments.useQuery(
+    { startDate, endDate, format: "csv" },
+    { enabled: false }
+  );
+  const exportIcalQuery = trpc.calendars.exportAppointments.useQuery(
+    { startDate, endDate, format: "ical" },
+    { enabled: false }
+  );
+
+  const handleExport = async (format: "csv" | "ical") => {
+    setShowExportMenu(false);
+    try {
+      const result = format === "csv"
+        ? await exportQuery.refetch()
+        : await exportIcalQuery.refetch();
+      if (!result.data) { toast.error("Export failed"); return; }
+      const { data: content, count } = result.data;
+      const blob = new Blob([content], { type: format === "csv" ? "text/csv" : "text/calendar" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `appointments-${new Date().toISOString().slice(0, 10)}.${format === "csv" ? "csv" : "ics"}`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`Exported ${count} appointment${count !== 1 ? "s" : ""}`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Export failed");
+    }
+  };
 
   const seedMut = trpc.calendars.seedCalendarData.useMutation({
     onSuccess: (r) => {
@@ -1100,6 +1166,28 @@ export default function Calendar() {
           }}>
             <Link2 className="w-3.5 h-3.5 mr-1.5" /> Booking Link
           </Button>
+          {/* Export */}
+          <div className="relative">
+            <Button variant="outline" size="sm" onClick={() => setShowExportMenu(v => !v)}>
+              <AlignLeft className="w-3.5 h-3.5 mr-1.5" /> Export
+            </Button>
+            {showExportMenu && (
+              <div className="absolute right-0 top-full mt-1 z-50 bg-popover border rounded-lg shadow-lg py-1 min-w-[140px]">
+                <button
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2"
+                  onClick={() => handleExport("csv")}
+                >
+                  <List className="w-3.5 h-3.5" /> Export CSV
+                </button>
+                <button
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2"
+                  onClick={() => handleExport("ical")}
+                >
+                  <CalendarIcon className="w-3.5 h-3.5" /> Export iCal (.ics)
+                </button>
+              </div>
+            )}
+          </div>
           {/* Google Sync */}
           <Button variant="outline" size="sm" onClick={() => setShowGoogleSync(true)}>
             <Settings2 className="w-3.5 h-3.5 mr-1.5" /> Google Sync

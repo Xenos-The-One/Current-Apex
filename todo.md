@@ -831,3 +831,9 @@
 - [x] No-show tracking: "No Show" status action in detail panel, no-show rate KPI in calendar analytics
 - [x] Recurring appointments: Repeat option in Add modal (weekly/bi-weekly/monthly), series creation, cancel-series option on detail panel
 - [x] All 209 tests passing
+
+## Calendar Features Round 4
+- [x] Edit entire recurring series: "Edit All Future" option when rescheduling a recurring appointment, propagates changes to all future occurrences
+- [x] No-show follow-up automation: auto-trigger re-booking SMS/email when appointment marked No Show, links to calendar booking slug
+- [x] Calendar export: iCal and CSV download from calendar toolbar for a given date range
+- [x] All 219 tests passing
