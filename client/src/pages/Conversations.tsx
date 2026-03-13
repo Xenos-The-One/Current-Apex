@@ -260,18 +260,14 @@ function NewConversationDialog({
       });
 
       if (firstMessage.trim()) {
-        await sendMessage.mutateAsync({
-          conversationId: conv.id,
-          agencyId,
-          content: firstMessage.trim(),
-        });
+        // First message is already sent by create procedure
       }
 
       utils.conversations.list.invalidate();
       utils.conversations.getStats.invalidate();
       toast.success(`${channel.toUpperCase()} conversation started with ${manualName || (channel === "sms" ? manualPhone : manualEmail)}`);
       setOpen(false);
-      onCreated(conv.id);
+      onCreated(conv.conversationId || conv.id);
       // Reset
       setLeadId("");
       setManualName("");
@@ -449,20 +445,26 @@ export default function Conversations() {
   const { user } = useAuth();
 
   const queryParams = useMemo(() => {
-    const base: Record<string, any> = { agencyId: AGENCY_ID };
-    if (searchQuery) base.search = searchQuery;
-    if (activeList === "unread") base.isRead = false;
-    else if (activeList === "archived") base.isArchived = true;
-    else if (activeList === "sms") base.channel = "sms";
-    else if (activeList === "email") base.channel = "email";
-    // "mine" filter: client-side filter by assignedToUserId after fetch
-    return base;
+    const tabMap: Record<string, string> = {
+      all: "all", unread: "unread", mine: "mine",
+      sms: "all", email: "all", archived: "archived",
+    };
+    const channelMap: Record<string, string> = { sms: "sms", email: "email" };
+    return {
+      agencyId: AGENCY_ID,
+      tab: (tabMap[activeList] || "all") as any,
+      channel: (channelMap[activeList] || "all") as any,
+      search: searchQuery || undefined,
+      page: 1,
+      pageSize: 50,
+    };
   }, [activeList, searchQuery, AGENCY_ID]);
 
-   const { data: conversations = [], isLoading, refetch } = trpc.conversations.list.useQuery(queryParams, { refetchInterval: 30000 });
+  const { data: convData, isLoading, refetch } = trpc.conversations.list.useQuery(queryParams, { refetchInterval: 30000 });
+  const conversations: Conversation[] = useMemo(() => (convData as any)?.conversations || [], [convData]);
   // Client-side filter for "mine" tab and tag filter
   const filteredConversations = useMemo(() => {
-    let all = conversations as Conversation[];
+    let all = conversations;
     if (activeList === "mine" && user) {
       all = all.filter((c: any) => c.assignedToUserId === user.id);
     }
@@ -473,7 +475,7 @@ export default function Conversations() {
   }, [conversations, activeList, user, activeTagFilter]);
   const { data: stats } = trpc.conversations.getStats.useQuery({ agencyId: AGENCY_ID });
   const { data: messages = [], isLoading: msgsLoading } = trpc.conversations.getMessages.useQuery(
-    { conversationId: selectedConvId!, agencyId: AGENCY_ID },
+    { conversationId: selectedConvId!, page: 1, pageSize: 100 },
     { enabled: !!selectedConvId, refetchInterval: 10000 }
   );
   const { data: teamMembers = [] } = trpc.conversations.getTeamMembers.useQuery({ agencyId: AGENCY_ID });
@@ -487,12 +489,12 @@ export default function Conversations() {
   );
 
   const markRead = trpc.conversations.markRead.useMutation({ onSuccess: () => utils.conversations.list.invalidate() });
-  const markUnread = trpc.conversations.markUnread.useMutation({ onSuccess: () => { utils.conversations.list.invalidate(); toast.success("Marked as unread"); } });
+  const markUnread = trpc.conversations.markRead.useMutation({ onSuccess: () => { utils.conversations.list.invalidate(); toast.success("Marked as unread"); } });
   const archiveConv = trpc.conversations.archive.useMutation({ onSuccess: () => { utils.conversations.list.invalidate(); setSelectedConvId(null); toast.success("Archived"); } });
-  const markAllRead = trpc.conversations.markAllRead.useMutation({ onSuccess: () => { utils.conversations.list.invalidate(); utils.conversations.getStats.invalidate(); toast.success("All conversations marked as read"); } });
-  const assignConv = trpc.conversations.assignConversation.useMutation({ onSuccess: () => { utils.conversations.list.invalidate(); setAssignOpen(false); toast.success("Conversation assigned"); } });
+  const markAllRead = trpc.conversations.bulkAction.useMutation({ onSuccess: () => { utils.conversations.list.invalidate(); utils.conversations.getStats.invalidate(); toast.success("All conversations marked as read"); } });
+  const assignConv = trpc.conversations.assign.useMutation({ onSuccess: () => { utils.conversations.list.invalidate(); setAssignOpen(false); toast.success("Conversation assigned"); } });
   const updateTags = trpc.conversations.updateTags.useMutation({
-    onSuccess: () => { utils.conversations.list.invalidate(); toast.success("Tags updated"); setTagEditorOpen(false); },
+    onSuccess: () => { utils.conversations.list.invalidate(); utils.conversations.getStats.invalidate(); toast.success("Tags updated"); setTagEditorOpen(false); },
     onError: () => toast.error("Failed to update tags"),
   });
   const bulkAction = trpc.conversations.bulkAction.useMutation({
@@ -510,7 +512,7 @@ export default function Conversations() {
   const sendMessage = trpc.conversations.sendMessage.useMutation({
     onSuccess: () => {
       setReplyText("");
-      utils.conversations.getMessages.invalidate({ conversationId: selectedConvId!, agencyId: AGENCY_ID });
+      utils.conversations.getMessages.invalidate({ conversationId: selectedConvId!, page: 1, pageSize: 100 });
       utils.conversations.list.invalidate();
     },
     onError: () => toast.error("Failed to send message"),
@@ -530,10 +532,9 @@ export default function Conversations() {
 
   const handleSend = () => {
     if (!replyText.trim() || !selectedConvId) return;
-    const content = composeTab === "email" && emailSubject.trim()
-      ? `Subject: ${emailSubject.trim()}\n\n${replyText.trim()}`
-      : replyText.trim();
-    sendMessage.mutate({ conversationId: selectedConvId, agencyId: AGENCY_ID, content });
+    const content = replyText.trim();
+    const msgType = composeTab === "email" ? "email_out" : composeTab === "note" ? "note" : "sms_out";
+    sendMessage.mutate({ conversationId: selectedConvId, agencyId: AGENCY_ID, type: msgType as any, content, subject: composeTab === "email" && emailSubject.trim() ? emailSubject.trim() : undefined });
     setEmailSubject("");
   };
 
@@ -568,7 +569,7 @@ export default function Conversations() {
                 <Button
                   variant="ghost" size="icon" className="h-7 w-7"
                   title="Mark all as read"
-                  onClick={() => markAllRead.mutate({ agencyId: AGENCY_ID })}
+                  onClick={() => markAllRead.mutate({ ids: (conversations as Conversation[]).filter(c => !c.isRead).map(c => c.id), action: 'markRead' })}
                   disabled={markAllRead.isPending}
                 >
                   {markAllRead.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-500" /> : <CheckCheck className="h-3.5 w-3.5 text-gray-500" />}
@@ -650,15 +651,15 @@ export default function Conversations() {
             <div className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 border-b border-blue-100">
               <span className="text-xs text-blue-700 font-medium mr-1">{checkedIds.size} selected</span>
               <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2 text-blue-700 hover:bg-blue-100"
-                onClick={() => bulkAction.mutate({ ids: Array.from(checkedIds), agencyId: AGENCY_ID, action: "markRead" })}>
+                onClick={() => bulkAction.mutate({ ids: Array.from(checkedIds), action: "markRead" })}>
                 Mark Read
               </Button>
               <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2 text-blue-700 hover:bg-blue-100"
-                onClick={() => bulkAction.mutate({ ids: Array.from(checkedIds), agencyId: AGENCY_ID, action: "markUnread" })}>
+                onClick={() => bulkAction.mutate({ ids: Array.from(checkedIds), action: "markUnread" })}>
                 Mark Unread
               </Button>
               <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2 text-red-600 hover:bg-red-50"
-                onClick={() => bulkAction.mutate({ ids: Array.from(checkedIds), agencyId: AGENCY_ID, action: "archive" })}>
+                onClick={() => bulkAction.mutate({ ids: Array.from(checkedIds), action: "archive" })}>
                 <Archive className="h-3 w-3 mr-0.5" /> Archive
               </Button>
               <button className="ml-auto text-gray-400 hover:text-gray-600" onClick={() => { setCheckedIds(new Set()); setBulkMode(false); }}>
@@ -757,7 +758,7 @@ export default function Conversations() {
                               const next = isActive
                                 ? currentTags.filter(x => x !== t.label)
                                 : [...currentTags, t.label];
-                              updateTags.mutate({ id: selectedConv.id, agencyId: AGENCY_ID, tags: next });
+                              updateTags.mutate({ id: selectedConv.id, tags: next });
                             }}
                           >
                             <span className={`px-1.5 py-0.5 rounded-full border text-[10px] ${t.color}`}>{t.label}</span>
@@ -781,7 +782,7 @@ export default function Conversations() {
                       <div className="text-[10px] text-gray-400 px-2 py-1 font-medium uppercase tracking-wide">Assign to</div>
                       <button
                         className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-gray-100 text-gray-500"
-                        onClick={() => assignConv.mutate({ id: selectedConv.id, agencyId: AGENCY_ID, assignedToUserId: null, assignedToName: null })}
+                        onClick={() => assignConv.mutate({ id: selectedConv.id, userId: null, userName: null })}
                       >
                         Unassigned
                       </button>
@@ -789,7 +790,7 @@ export default function Conversations() {
                         <button
                           key={m.id}
                           className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-gray-100 text-gray-800"
-                          onClick={() => assignConv.mutate({ id: selectedConv.id, agencyId: AGENCY_ID, assignedToUserId: m.user_id || m.id, assignedToName: m.name })}
+                          onClick={() => assignConv.mutate({ id: selectedConv.id, userId: m.user_id || m.id, userName: m.name })}
                         >
                           {m.name}
                           {m.role && <span className="ml-1 text-gray-400">· {m.role}</span>}
@@ -807,10 +808,10 @@ export default function Conversations() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => markUnread.mutate({ id: selectedConv.id, agencyId: AGENCY_ID })}>
+                      <DropdownMenuItem onClick={() => markUnread.mutate({ id: selectedConv.id, isRead: false })}>
                         Mark as Unread
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600" onClick={() => archiveConv.mutate({ id: selectedConv.id, agencyId: AGENCY_ID })}>
+                      <DropdownMenuItem className="text-red-600" onClick={() => archiveConv.mutate({ id: selectedConv.id, isArchived: true })}>
                         Archive Conversation
                       </DropdownMenuItem>
                     </DropdownMenuContent>

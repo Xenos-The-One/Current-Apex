@@ -870,3 +870,22 @@
 - [x] Fix conversations list empty in client view (Tariq's account) — rewrote conversations.ts to use raw mysql2/promise instead of broken Drizzle getDb().execute() pattern
 - [x] Fix compose box not showing — fixed by fixing the conversations list (compose box was always there, just hidden when list was empty)
 - [x] Fix lead search showing all agency leads instead of only Tariq's client leads — added clientId filter to leads.list procedure; NewConversationDialog now passes impersonatingClientId from ImpersonationContext
+
+## Conversations Full Rebuild (GoHighLevel-style CRM Inbox)
+- [ ] Extend conversations table: add isStarred, workflowStatus, channelSummary columns
+- [ ] Extend conversation_messages table: add type (sms_in/out/email_in/out/call/note/system/workflow), subject, actor, metadata columns
+- [ ] Seed realistic sample conversations: SMS threads, email threads, call events, workflow events
+- [ ] Rebuild conversations router: starred, recents, workflow actions, contact context, process events
+- [ ] Rebuild Conversations page: 3-panel layout (left nav rail, conversation list, thread panel)
+- [ ] Left nav rail: compose, search, contacts, templates, media icons
+- [ ] Conversation list: Unread/All/Recents/Starred/Mine/Unassigned/Archived tabs
+- [ ] Conversation list items: avatar, name, channel badge, preview, time, unread badge, star
+- [ ] Thread header: contact name, channel controls, star/archive/assign/more actions
+- [ ] Thread timeline: SMS bubbles, email cards, call events, workflow events, date separators
+- [ ] Bottom composer: SMS/Email/Note tabs, textarea, send, templates, attachment placeholder
+- [ ] Contact context drawer: contact details, activity, tasks, appointments, workflow status
+- [ ] Workflow/process events in thread: added/removed/paused/completed events
+- [ ] New conversation flow: search contact, choose channel, type message, assign, add tags
+- [ ] Filters: unread/read/starred/channel/tag/date range/assigned user
+- [ ] Search: by contact name, phone, email, message content, tags
+- [ ] Conversation actions: star, mark read/unread, archive, delete, assign, add tags, add to workflow
