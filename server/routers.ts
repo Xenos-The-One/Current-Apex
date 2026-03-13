@@ -57,6 +57,7 @@ import { accountSetupRouter } from "./routers/account-setup";
 import { dripSequencesRouter } from "./routers/drip-sequences";
 import { seedCampaignsRouter } from "./routers/seed-campaigns";
 import { pipelinesRouter } from "./routers/pipelines";
+import { calendarsRouter } from "./routers/calendars";
 
 export const appRouter = router({
   system: systemRouter,
@@ -115,6 +116,7 @@ export const appRouter = router({
   dripSequences: dripSequencesRouter,
   seedCampaigns: seedCampaignsRouter,
   pipelines: pipelinesRouter,
+  calendars: calendarsRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

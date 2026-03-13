@@ -800,3 +800,22 @@
 - [x] Pipeline team leaderboard: getTeamLeaderboard procedure, Team Leaderboard tab in analytics with ranked rows (won count, win rate, won value)
 - [x] Analytics now has Overview / Team Leaderboard sub-tabs toggle
 - [x] All 179 tests passing
+
+## Calendar / Appointments Module (COMPLETED)
+- [x] Audited existing appointments schema and router
+- [x] Added calendar_resources table via SQL migration
+- [x] Extended appointments table: calendarId, calendarName, meetingType, location, timezone, endTime, assignedUserId, assignedUserName via SQL migration
+- [x] Built calendarsRouter: list, create, update, delete calendars + all appointment CRUD + status, notes, reschedule, seed data
+- [x] Registered calendarsRouter in routers.ts
+- [x] Built Calendar.tsx page with Month/Week/Day/Agenda views
+- [x] Month view: grid with appointment color blocks, overflow indicator
+- [x] Week view: time grid (7 columns) with appointment blocks
+- [x] Day view: time grid (single column) with appointment blocks
+- [x] Agenda/List view: sortable table with all fields, status badges
+- [x] Add/Edit Appointment modal: all fields (title, contact, calendar, date, start/end time, duration, location, meeting type, status, notes)
+- [x] Appointment Details sheet: full info, status badges, actions (confirm/cancel/reschedule/complete/delete), notes section
+- [x] Filter bar: status, calendar, meeting type, search
+- [x] Seed sample data: 5 calendars, 50+ appointments with mixed statuses
+- [x] Calendar nav item already exists in DashboardLayout Engage section
+- [x] Vitest tests for calendars router (20 new tests, 199 total passing)
+- [x] /calendar route wired to new Calendar page in App.tsx

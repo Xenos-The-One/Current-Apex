@@ -1478,3 +1478,17 @@ export const passwordResetTokens = mysqlTable("password_reset_tokens", {
 });
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type InsertPasswordResetToken = typeof passwordResetTokens.$inferInsert;
+
+// ─── Calendar Resources ───────────────────────────────────────────────────────
+export const calendarResources = mysqlTable("calendar_resources", {
+  id: int("id").primaryKey().autoincrement(),
+  agencyId: int("agency_id").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  color: varchar("color", { length: 20 }).default("#3B82F6"),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type CalendarResource = typeof calendarResources.$inferSelect;
+export type InsertCalendarResource = typeof calendarResources.$inferInsert;

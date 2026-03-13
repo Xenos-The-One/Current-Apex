@@ -77,7 +77,7 @@ import PartnerPortal from "./pages/PartnerPortal";
 import AdvancedReports from "./pages/AdvancedReports";
 import ActivateAccount from "./pages/ActivateAccount";
 import Launchpad from "./pages/Launchpad";
-import ClientCalendar from "./pages/ClientCalendar";
+import ClientCalendar from "./pages/Calendar";
 import ClientWebsite from "./pages/ClientWebsite";
 import PaymentsPage from "./pages/PaymentsPage";
 // OnboardingSnapshot removed — /onboarding-snapshot now redirects to /admin
