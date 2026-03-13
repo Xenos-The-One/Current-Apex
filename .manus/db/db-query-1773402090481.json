@@ -1,0 +1,19 @@
+{
+  "query": "SELECT c.id, c.agencyId, c.channel, c.contactName, c.contactPhone, c.contactEmail, c.lastMessageAt, c.isRead, c.isArchived FROM conversations c ORDER BY c.lastMessageAt DESC LIMIT 20; SELECT COUNT(*) as total_messages FROM conversation_messages; SELECT COUNT(*) as total_conversations FROM conversations;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT c.id, c.agencyId, c.channel, c.contactName, c.contactPhone, c.contactEmail, c.lastMessageAt, c.isRead, c.isArchived FROM conversations c ORDER BY c.lastMessageAt DESC LIMIT 20; SELECT COUNT(*) as total_messages FROM conversation_messages; SELECT COUNT(*) as total_conversations FROM conversations;",
+  "rows": [
+    {
+      "total_messages": "0"
+    },
+    {
+      "total_messages": "total_conversations"
+    },
+    {
+      "total_messages": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_messages\n0\ntotal_conversations\n0\n",
+  "stderr": "",
+  "execution_time_ms": 502
+}

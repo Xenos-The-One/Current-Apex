@@ -1,0 +1,19 @@
+{
+  "query": "SELECT COUNT(*) as inbound_emails FROM inbound_emails; SELECT id, name FROM agencies LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT COUNT(*) as inbound_emails FROM inbound_emails; SELECT id, name FROM agencies LIMIT 10;",
+  "rows": [
+    {
+      "inbound_emails": "0"
+    },
+    {
+      "inbound_emails": "id\tname"
+    },
+    {
+      "inbound_emails": "1\tRaindrop Marketing"
+    }
+  ],
+  "messages": [],
+  "stdout": "inbound_emails\n0\nid\tname\n1\tRaindrop Marketing\n",
+  "stderr": "",
+  "execution_time_ms": 413
+}

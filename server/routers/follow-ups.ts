@@ -602,27 +602,22 @@ ${activitySummary || "No recent activity"}`,
     .mutation(async ({ ctx, input }) => {
       const client = await resolveClientForFollowUps(ctx);
       if (!client) throw new TRPCError({ code: "FORBIDDEN", message: "No client profile linked." });
-
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-
       const [lead] = await db.select().from(leads).where(eq(leads.id, input.leadId)).limit(1);
       if (!lead) throw new TRPCError({ code: "NOT_FOUND", message: "Lead not found" });
       if (!lead.email) throw new TRPCError({ code: "BAD_REQUEST", message: "Lead has no email address" });
-
       const result = await sendEmailService({
         to: lead.email,
         subject: input.subject,
         html: input.body.replace(/\n/g, "<br>"),
       });
-
       if (!result.success) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: result.error || "Email failed to send",
         });
       }
-
       // Update lastContactDate and log activity
       await updateLead(input.leadId, { lastContactDate: new Date() });
       await createLeadActivity({
@@ -631,7 +626,37 @@ ${activitySummary || "No recent activity"}`,
         description: `Email sent: "${input.subject}"`,
         performedBy: ctx.user.id,
       });
-
+      // ── Upsert conversation record so message appears in Conversations page ──
+      try {
+        const agencyId = client.agencyId || client.agency_id;
+        const contactName = [lead.firstName, lead.lastName].filter(Boolean).join(" ") || lead.email;
+        const messageContent = `Subject: ${input.subject}\n\n${input.body}`;
+        // Find existing email conversation for this lead
+        const [existingRows] = await (db as any).execute(
+          `SELECT id FROM conversations WHERE agencyId = ? AND leadId = ? AND channel = 'email' AND isArchived = 0 LIMIT 1`,
+          [agencyId, lead.id]
+        );
+        let convId: number;
+        if ((existingRows as any[]).length > 0) {
+          convId = (existingRows as any[])[0].id;
+          await (db as any).execute(
+            `UPDATE conversations SET lastMessageAt = NOW(), lastMessagePreview = ?, isRead = 0, updatedAt = NOW() WHERE id = ?`,
+            [messageContent.slice(0, 200), convId]
+          );
+        } else {
+          const [ins] = await (db as any).execute(
+            `INSERT INTO conversations (agencyId, leadId, channel, contactName, contactEmail, lastMessageAt, lastMessagePreview, isRead, isArchived, createdAt, updatedAt) VALUES (?, ?, 'email', ?, ?, NOW(), ?, 0, 0, NOW(), NOW())`,
+            [agencyId, lead.id, contactName, lead.email, messageContent.slice(0, 200)]
+          );
+          convId = (ins as any).insertId;
+        }
+        await (db as any).execute(
+          `INSERT INTO conversation_messages (conversationId, agencyId, direction, content, status, sentByUserId, createdAt) VALUES (?, ?, 'outbound', ?, 'sent', ?, NOW())`,
+          [convId, agencyId, messageContent, ctx.user.id]
+        );
+      } catch (e) {
+        console.error("[followUp] Failed to log email to conversations:", e);
+      }
       return { success: true, demo: result.demo };
     }),
 
@@ -680,6 +705,37 @@ ${activitySummary || "No recent activity"}`,
         description: `SMS sent: "${input.message.substring(0, 80)}${input.message.length > 80 ? "..." : ""}"`,
         performedBy: ctx.user.id,
       });
+
+      // ── Upsert conversation record so message appears in Conversations page ──
+      try {
+        const agencyId = client.agencyId || client.agency_id;
+        const contactName = [lead.firstName, lead.lastName].filter(Boolean).join(" ") || lead.phone;
+        // Find existing SMS conversation for this lead
+        const [existingRows] = await (db as any).execute(
+          `SELECT id FROM conversations WHERE agencyId = ? AND leadId = ? AND channel = 'sms' AND isArchived = 0 LIMIT 1`,
+          [agencyId, lead.id]
+        );
+        let convId: number;
+        if ((existingRows as any[]).length > 0) {
+          convId = (existingRows as any[])[0].id;
+          await (db as any).execute(
+            `UPDATE conversations SET lastMessageAt = NOW(), lastMessagePreview = ?, isRead = 0, updatedAt = NOW() WHERE id = ?`,
+            [input.message.slice(0, 200), convId]
+          );
+        } else {
+          const [ins] = await (db as any).execute(
+            `INSERT INTO conversations (agencyId, leadId, channel, contactName, contactPhone, lastMessageAt, lastMessagePreview, isRead, isArchived, createdAt, updatedAt) VALUES (?, ?, 'sms', ?, ?, NOW(), ?, 0, 0, NOW(), NOW())`,
+            [agencyId, lead.id, contactName, lead.phone, input.message.slice(0, 200)]
+          );
+          convId = (ins as any).insertId;
+        }
+        await (db as any).execute(
+          `INSERT INTO conversation_messages (conversationId, agencyId, direction, content, status, sentByUserId, createdAt) VALUES (?, ?, 'outbound', ?, 'sent', ?, NOW())`,
+          [convId, agencyId, input.message, ctx.user.id]
+        );
+      } catch (e) {
+        console.error("[followUp] Failed to log SMS to conversations:", e);
+      }
 
       return { success: true, demo: result.demo };
     }),

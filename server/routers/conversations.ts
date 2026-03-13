@@ -249,4 +249,51 @@ export const conversationsRouter = router({
       );
       return rows as { id: number; user_id: number | null; name: string; email: string; role: string }[];
     }),
+
+  updateTags: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      agencyId: z.number(),
+      tags: z.array(z.string()).max(10),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const agencyId = await resolveAgencyId(ctx, input.agencyId);
+      await (db as any).execute(
+        `UPDATE conversations SET tags = ?, updatedAt = NOW() WHERE id = ? AND agencyId = ?`,
+        [JSON.stringify(input.tags), input.id, agencyId]
+      );
+      return { success: true };
+    }),
+
+  bulkAction: protectedProcedure
+    .input(z.object({
+      ids: z.array(z.number()).min(1).max(200),
+      agencyId: z.number(),
+      action: z.enum(["markRead", "markUnread", "archive"]),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const agencyId = await resolveAgencyId(ctx, input.agencyId);
+      const placeholders = input.ids.map(() => "?").join(",");
+      if (input.action === "markRead") {
+        await (db as any).execute(
+          `UPDATE conversations SET isRead = 1, updatedAt = NOW() WHERE id IN (${placeholders}) AND agencyId = ?`,
+          [...input.ids, agencyId]
+        );
+      } else if (input.action === "markUnread") {
+        await (db as any).execute(
+          `UPDATE conversations SET isRead = 0, updatedAt = NOW() WHERE id IN (${placeholders}) AND agencyId = ?`,
+          [...input.ids, agencyId]
+        );
+      } else if (input.action === "archive") {
+        await (db as any).execute(
+          `UPDATE conversations SET isArchived = 1, updatedAt = NOW() WHERE id IN (${placeholders}) AND agencyId = ?`,
+          [...input.ids, agencyId]
+        );
+      }
+      return { success: true, count: input.ids.length };
+    }),
 });

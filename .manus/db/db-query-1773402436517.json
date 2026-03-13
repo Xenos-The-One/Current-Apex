@@ -1,0 +1,30 @@
+{
+  "query": "SELECT id, agencyId, leadId, channel, contactName, contactPhone, contactEmail, lastMessagePreview FROM conversations LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, agencyId, leadId, channel, contactName, contactPhone, contactEmail, lastMessagePreview FROM conversations LIMIT 10;",
+  "rows": [
+    {
+      "id": "30001",
+      "agencyId": "1",
+      "leadId": "90008",
+      "channel": "email",
+      "contactName": "john moreno",
+      "contactPhone": "NULL",
+      "contactEmail": "morenojohn095@gmail.com",
+      "lastMessagePreview": "Email sent: \"Test 1\""
+    },
+    {
+      "id": "30002",
+      "agencyId": "1",
+      "leadId": "90007",
+      "channel": "email",
+      "contactName": "Thailer Somerville",
+      "contactPhone": "NULL",
+      "contactEmail": "Thailersomerville9@gmail.com",
+      "lastMessagePreview": "Email sent: \"test2\""
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tagencyId\tleadId\tchannel\tcontactName\tcontactPhone\tcontactEmail\tlastMessagePreview\n30001\t1\t90008\temail\tjohn moreno\tNULL\tmorenojohn095@gmail.com\tEmail sent: \"Test 1\"\n30002\t1\t90007\temail\tThailer Somerville\tNULL\tThailersomerville9@gmail.com\tEmail sent: \"test2\"\n",
+  "stderr": "",
+  "execution_time_ms": 356
+}

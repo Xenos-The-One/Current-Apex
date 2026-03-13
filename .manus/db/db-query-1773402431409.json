@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO conversation_messages (conversationId, agencyId, direction, content, status, sentByUserId, createdAt)\nSELECT \n  c.id AS conversationId,\n  c.agencyId,\n  'outbound' AS direction,\n  la.content AS content,\n  'sent' AS status,\n  la.userId AS sentByUserId,\n  la.createdAt\nFROM lead_activities la\nJOIN conversations c ON c.leadId = la.leadId AND c.channel = la.type\nWHERE la.type IN ('sms', 'email') AND la.userId IS NOT NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute INSERT INTO conversation_messages (conversationId, agencyId, direction, content, status, sentByUserId, createdAt)\nSELECT \n  c.id AS conversationId,\n  c.agencyId,\n  'outbound' AS direction,\n  la.content AS content,\n  'sent' AS status,\n  la.userId AS sentByUserId,\n  la.createdAt\nFROM lead_activities la\nJOIN conversations c ON c.leadId = la.leadId AND c.channel = la.type\nWHERE la.type IN ('sms', 'email') AND la.userId IS NOT NULL;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 400
+}

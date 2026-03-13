@@ -852,3 +852,16 @@
 - [x] Auto read/unread marking: mark conversation as read when opened, mark-all-read button (CheckCheck icon) in filter bar header
 - [x] Message templates in compose bar: LayoutTemplate button opens popover with agency SMS/email templates for one-click insert; pre-fills subject for email templates
 - [x] Conversation assignment: Assign dropdown in conversation header, Mine filter tab in left panel, getTeamMembers + assignConversation procedures added
+
+## Conversations Page Fixes (Current Session)
+- [x] Fix ReferenceError crash on Conversations page (filteredConversations hoisting bug)
+- [x] Add compose box at bottom of conversation thread (already existed, was hidden because no conversations were showing)
+- [x] Fix missing messages — backfill 2 conversations from lead_activities for manually sent SMS/email
+- [x] Auto-create conversation record when SMS/email sent from Contacts/Follow-ups page (follow-ups.ts updated)
+- [x] Add conversation tagging — 6 preset color-coded tags (Hot Lead, Follow Up, Urgent, Qualified, Nurture, Closed)
+- [x] Add tag filter row in left panel to filter conversations by tag
+- [x] Add tag editor popover in right panel header (click Tag button to add/remove tags)
+- [x] Add bulk selection mode — checkbox icon in header toggles bulk mode
+- [x] Add bulk action toolbar — Mark Read, Mark Unread, Archive for selected conversations
+- [x] Add backend procedures: conversations.updateTags and conversations.bulkAction
+- [x] Add tags column to conversations table in database

@@ -1,0 +1,36 @@
+{
+  "query": "SELECT la.id, la.leadId, la.agencyId, la.userId, la.type, la.content, la.createdAt, l.first_name, l.last_name, l.phone, l.email FROM lead_activities la LEFT JOIN leads l ON la.leadId = l.id WHERE la.type IN ('sms', 'email') AND la.userId IS NOT NULL ORDER BY la.createdAt DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT la.id, la.leadId, la.agencyId, la.userId, la.type, la.content, la.createdAt, l.first_name, l.last_name, l.phone, l.email FROM lead_activities la LEFT JOIN leads l ON la.leadId = l.id WHERE la.type IN ('sms', 'email') AND la.userId IS NOT NULL ORDER BY la.createdAt DESC;",
+  "rows": [
+    {
+      "id": "151305",
+      "leadId": "90007",
+      "agencyId": "1",
+      "userId": "1",
+      "type": "email",
+      "content": "Email sent: \"test2\"",
+      "createdAt": "2026-03-12 23:32:05",
+      "first_name": "Thailer",
+      "last_name": "Somerville",
+      "phone": "+19056190000",
+      "email": "Thailersomerville9@gmail.com"
+    },
+    {
+      "id": "151304",
+      "leadId": "90008",
+      "agencyId": "1",
+      "userId": "1",
+      "type": "email",
+      "content": "Email sent: \"Test 1\"",
+      "createdAt": "2026-03-12 23:31:23",
+      "first_name": "john",
+      "last_name": "moreno",
+      "phone": "+16478331985",
+      "email": "morenojohn095@gmail.com"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tleadId\tagencyId\tuserId\ttype\tcontent\tcreatedAt\tfirst_name\tlast_name\tphone\temail\n151305\t90007\t1\t1\temail\tEmail sent: \"test2\"\t2026-03-12 23:32:05\tThailer\tSomerville\t+19056190000\tThailersomerville9@gmail.com\n151304\t90008\t1\t1\temail\tEmail sent: \"Test 1\"\t2026-03-12 23:31:23\tjohn\tmoreno\t+16478331985\tmorenojohn095@gmail.com\n",
+  "stderr": "",
+  "execution_time_ms": 397
+}

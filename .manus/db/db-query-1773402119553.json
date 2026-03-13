@@ -1,0 +1,21 @@
+{
+  "query": "SELECT id, name FROM agencies LIMIT 10; SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() AND (table_name LIKE '%message%' OR table_name LIKE '%sms%' OR table_name LIKE '%email%' OR table_name LIKE '%outreach%');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, name FROM agencies LIMIT 10; SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() AND (table_name LIKE '%message%' OR table_name LIKE '%sms%' OR table_name LIKE '%email%' OR table_name LIKE '%outreach%');",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Raindrop Marketing"
+    }
+  ],
+  "messages": [
+    "table_name",
+    "sms_campaigns",
+    "inbound_emails",
+    "email_templates",
+    "email_campaigns",
+    "conversation_messages"
+  ],
+  "stdout": "id\tname\n1\tRaindrop Marketing\ntable_name\nsms_campaigns\ninbound_emails\nemail_templates\nemail_campaigns\nconversation_messages\n",
+  "stderr": "",
+  "execution_time_ms": 410
+}

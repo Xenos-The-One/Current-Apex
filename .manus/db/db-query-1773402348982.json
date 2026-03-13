@@ -1,0 +1,89 @@
+{
+  "query": "DESCRIBE lead_activities; SELECT * FROM lead_activities ORDER BY id DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute DESCRIBE lead_activities; SELECT * FROM lead_activities ORDER BY id DESC LIMIT 5;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "leadId",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "agencyId",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "userId",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "type",
+      "Type": "enum('call','email','sms','note','task','appointment','status_change','score_change','import','ai_call')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "subject",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "content",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "metadata",
+      "Type": "json",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "createdAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    }
+  ],
+  "messages": [
+    "id\tleadId\tagencyId\tuserId\ttype\tsubject\tcontent\tmetadata\tcreatedAt",
+    "211884\t124995\t1\tNULL\tsms\tNULL\tFollow-up step 5 via sms\tNULL\t2026-03-13 06:39:35",
+    "211883\t124994\t1\tNULL\tsms\tNULL\tFollow-up step 5 via sms\tNULL\t2026-03-13 06:39:34",
+    "211882\t124993\t1\tNULL\tsms\tNULL\tFollow-up step 5 via sms\tNULL\t2026-03-13 06:39:33",
+    "211881\t124992\t1\tNULL\tsms\tNULL\tFollow-up step 5 via sms\tNULL\t2026-03-13 06:39:32",
+    "211880\t124991\t1\tNULL\tsms\tNULL\tFollow-up step 5 via sms\tNULL\t2026-03-13 06:39:31"
+  ],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nleadId\tint\tNO\t\tNULL\t\nagencyId\tint\tNO\t\tNULL\t\nuserId\tint\tYES\t\tNULL\t\ntype\tenum('call','email','sms','note','task','appointment','status_change','score_change','import','ai_call')\tNO\t\tNULL\t\nsubject\tvarchar(255)\tYES\t\tNULL\t\ncontent\ttext\tYES\t\tNULL\t\nmetadata\tjson\tYES\t\tNULL\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nid\tleadId\tagencyId\tuserId\ttype\tsubject\tcontent\tmetadata\tcreatedAt\n211884\t124995\t1\tNULL\tsms\tNULL\tFollow-up step 5 via sms\tNULL\t2026-03-13 06:39:35\n211883\t124994\t1\tNULL\tsms\tNULL\tFollow-up step 5 via sms\tNULL\t2026-03-13 06:39:34\n211882\t124993\t1\tNULL\tsms\tNULL\tFollow-up step 5 via sms\tNULL\t2026-03-13 06:39:33\n211881\t124992\t1\tNULL\tsms\tNULL\tFollow-up step 5 via sms\tNULL\t2026-03-13 06:39:32\n211880\t124991\t1\tNULL\tsms\tNULL\tFollow-up step 5 via sms\tNULL\t2026-03-13 06:39:31\n",
+  "stderr": "",
+  "execution_time_ms": 426
+}

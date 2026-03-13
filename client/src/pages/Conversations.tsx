@@ -33,6 +33,11 @@ import {
   ChevronDown,
   LayoutTemplate,
   CheckCheck as DoubleCheck,
+  Tag,
+  X,
+  CheckSquare,
+  Square,
+  Trash2,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -58,7 +63,27 @@ type Conversation = {
   last_name?: string;
   lead_status?: string;
   message_count?: number;
+  tags?: string | string[] | null;
 };
+
+const PRESET_TAGS = [
+  { label: "Hot Lead", color: "bg-red-100 text-red-700 border-red-200" },
+  { label: "Follow Up", color: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+  { label: "Urgent", color: "bg-orange-100 text-orange-700 border-orange-200" },
+  { label: "Qualified", color: "bg-green-100 text-green-700 border-green-200" },
+  { label: "Nurture", color: "bg-purple-100 text-purple-700 border-purple-200" },
+  { label: "Closed", color: "bg-gray-100 text-gray-600 border-gray-200" },
+];
+
+function getTagColor(label: string) {
+  return PRESET_TAGS.find(t => t.label === label)?.color || "bg-blue-100 text-blue-700 border-blue-200";
+}
+
+function parseTags(raw?: string | string[] | null): string[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  try { return JSON.parse(raw); } catch { return []; }
+}
 
 type Message = {
   id: number;
@@ -103,7 +128,7 @@ function getInitials(name?: string) {
   return name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
 }
 
-function ConversationItem({ conv, isSelected, onClick }: { conv: Conversation; isSelected: boolean; onClick: () => void }) {
+function ConversationItem({ conv, isSelected, onClick, isChecked, onCheck, bulkMode }: { conv: Conversation; isSelected: boolean; onClick: () => void; isChecked?: boolean; onCheck?: (checked: boolean) => void; bulkMode?: boolean }) {
   const displayName = conv.contactName || [conv.first_name, conv.last_name].filter(Boolean).join(" ") || "Unknown";
   const isUnread = !conv.isRead;
   const channelIcon = conv.channel === "sms"
@@ -111,36 +136,53 @@ function ConversationItem({ conv, isSelected, onClick }: { conv: Conversation; i
     : conv.channel === "email"
     ? <Mail className="h-2.5 w-2.5" />
     : <MessageCircle className="h-2.5 w-2.5" />;
+  const tags = parseTags(conv.tags);
 
   return (
-    <button
-      onClick={onClick}
-      className={`w-full text-left px-3 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${isSelected ? "bg-blue-50 border-l-2 border-l-blue-500" : ""}`}
+    <div
+      className={`w-full text-left px-3 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors flex items-start gap-2 ${
+        isSelected ? "bg-blue-50 border-l-2 border-l-blue-500" : ""
+      }`}
     >
-      <div className="flex items-start gap-2.5">
-        <div className="relative shrink-0">
-          <Avatar className="h-9 w-9">
-            <AvatarFallback className="text-xs font-semibold bg-gradient-to-br from-blue-400 to-indigo-500 text-white">
-              {getInitials(displayName)}
-            </AvatarFallback>
-          </Avatar>
-          <div className={`absolute -bottom-0.5 -right-0.5 rounded-full p-0.5 ${CHANNEL_COLORS[conv.channel] || "bg-gray-100"}`}>
-            {channelIcon}
+      {bulkMode && (
+        <button
+          className="shrink-0 mt-1 text-gray-400 hover:text-blue-600"
+          onClick={e => { e.stopPropagation(); onCheck?.(!isChecked); }}
+        >
+          {isChecked ? <CheckSquare className="h-4 w-4 text-blue-600" /> : <Square className="h-4 w-4" />}
+        </button>
+      )}
+      <button onClick={onClick} className="flex-1 min-w-0 text-left">
+        <div className="flex items-start gap-2.5">
+          <div className="relative shrink-0">
+            <Avatar className="h-9 w-9">
+              <AvatarFallback className="text-xs font-semibold bg-gradient-to-br from-blue-400 to-indigo-500 text-white">
+                {getInitials(displayName)}
+              </AvatarFallback>
+            </Avatar>
+            <div className={`absolute -bottom-0.5 -right-0.5 rounded-full p-0.5 ${CHANNEL_COLORS[conv.channel] || "bg-gray-100"}`}>
+              {channelIcon}
+            </div>
           </div>
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-1">
-            <span className={`text-sm truncate ${isUnread ? "font-semibold text-gray-900" : "font-medium text-gray-700"}`}>{displayName}</span>
-            <span className="text-[10px] text-gray-400 shrink-0">{formatTime(conv.lastMessageAt)}</span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-1">
+              <span className={`text-sm truncate ${isUnread ? "font-semibold text-gray-900" : "font-medium text-gray-700"}`}>{displayName}</span>
+              <span className="text-[10px] text-gray-400 shrink-0">{formatTime(conv.lastMessageAt)}</span>
+            </div>
+            <p className={`text-xs truncate mt-0.5 ${isUnread ? "text-gray-700" : "text-gray-400"}`}>{conv.lastMessagePreview || "No messages yet"}</p>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {conv.lead_status && (
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{conv.lead_status.replace(/_/g, " ")}</span>
+              )}
+              {tags.map(tag => (
+                <span key={tag} className={`text-[9px] px-1.5 py-0.5 rounded-full border font-medium ${getTagColor(tag)}`}>{tag}</span>
+              ))}
+            </div>
           </div>
-          <p className={`text-xs truncate mt-0.5 ${isUnread ? "text-gray-700" : "text-gray-400"}`}>{conv.lastMessagePreview || "No messages yet"}</p>
-          {conv.lead_status && (
-            <span className="inline-block text-[9px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 mt-1">{conv.lead_status.replace(/_/g, " ")}</span>
-          )}
+          {isUnread && <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-1" />}
         </div>
-        {isUnread && <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-1" />}
-      </div>
-    </button>
+      </button>
+    </div>
   );
 }
 
@@ -391,6 +433,11 @@ export default function Conversations() {
   const [emailSubject, setEmailSubject] = useState("");
   const [showTemplates, setShowTemplates] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
+  const [bulkMode, setBulkMode] = useState(false);
+  const [checkedIds, setCheckedIds] = useState<Set<number>>(new Set());
+  const [tagFilterOpen, setTagFilterOpen] = useState(false);
+  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
+  const [tagEditorOpen, setTagEditorOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const utils = trpc.useUtils();
 
@@ -408,14 +455,17 @@ export default function Conversations() {
   }, [activeList, searchQuery, AGENCY_ID]);
 
    const { data: conversations = [], isLoading, refetch } = trpc.conversations.list.useQuery(queryParams, { refetchInterval: 30000 });
-  // Client-side filter for "mine" tab
+  // Client-side filter for "mine" tab and tag filter
   const filteredConversations = useMemo(() => {
-    const all = conversations as Conversation[];
+    let all = conversations as Conversation[];
     if (activeList === "mine" && user) {
-      return all.filter((c: any) => c.assignedToUserId === user.id);
+      all = all.filter((c: any) => c.assignedToUserId === user.id);
+    }
+    if (activeTagFilter) {
+      all = all.filter(c => parseTags(c.tags).includes(activeTagFilter!));
     }
     return all;
-  }, [conversations, activeList, user]);
+  }, [conversations, activeList, user, activeTagFilter]);
   const { data: stats } = trpc.conversations.getStats.useQuery({ agencyId: AGENCY_ID });
   const { data: messages = [], isLoading: msgsLoading } = trpc.conversations.getMessages.useQuery(
     { conversationId: selectedConvId!, agencyId: AGENCY_ID },
@@ -436,6 +486,22 @@ export default function Conversations() {
   const archiveConv = trpc.conversations.archive.useMutation({ onSuccess: () => { utils.conversations.list.invalidate(); setSelectedConvId(null); toast.success("Archived"); } });
   const markAllRead = trpc.conversations.markAllRead.useMutation({ onSuccess: () => { utils.conversations.list.invalidate(); utils.conversations.getStats.invalidate(); toast.success("All conversations marked as read"); } });
   const assignConv = trpc.conversations.assignConversation.useMutation({ onSuccess: () => { utils.conversations.list.invalidate(); setAssignOpen(false); toast.success("Conversation assigned"); } });
+  const updateTags = trpc.conversations.updateTags.useMutation({
+    onSuccess: () => { utils.conversations.list.invalidate(); toast.success("Tags updated"); setTagEditorOpen(false); },
+    onError: () => toast.error("Failed to update tags"),
+  });
+  const bulkAction = trpc.conversations.bulkAction.useMutation({
+    onSuccess: (data, vars) => {
+      utils.conversations.list.invalidate();
+      utils.conversations.getStats.invalidate();
+      setCheckedIds(new Set());
+      setBulkMode(false);
+      const label = vars.action === "markRead" ? "Marked as read" : vars.action === "markUnread" ? "Marked as unread" : "Archived";
+      toast.success(`${label}: ${data.count} conversation${data.count !== 1 ? "s" : ""}`);
+    },
+    onError: () => toast.error("Bulk action failed"),
+  });
+
   const sendMessage = trpc.conversations.sendMessage.useMutation({
     onSuccess: () => {
       setReplyText("");
@@ -502,6 +568,13 @@ export default function Conversations() {
                 >
                   {markAllRead.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-500" /> : <CheckCheck className="h-3.5 w-3.5 text-gray-500" />}
                 </Button>
+                <Button
+                  variant="ghost" size="icon" className={`h-7 w-7 ${bulkMode ? "bg-blue-100 text-blue-600" : ""}`}
+                  title="Bulk select"
+                  onClick={() => { setBulkMode(b => !b); setCheckedIds(new Set()); }}
+                >
+                  <CheckSquare className="h-3.5 w-3.5" />
+                </Button>
                 <NewConversationDialog
                   agencyId={AGENCY_ID}
                   onCreated={(convId) => setSelectedConvId(convId)}
@@ -543,6 +616,51 @@ export default function Conversations() {
             })}
           </div>
 
+          {/* Tag filter row */}
+          <div className="flex gap-1 px-3 py-1.5 border-b border-gray-100 overflow-x-auto">
+            <button
+              onClick={() => setActiveTagFilter(null)}
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap transition-colors ${
+                !activeTagFilter ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              }`}
+            >
+              <Tag className="h-2.5 w-2.5" /> All Tags
+            </button>
+            {PRESET_TAGS.map(t => (
+              <button
+                key={t.label}
+                onClick={() => setActiveTagFilter(activeTagFilter === t.label ? null : t.label)}
+                className={`px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap border transition-colors ${
+                  activeTagFilter === t.label ? t.color + " ring-1 ring-offset-0" : "bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Bulk action toolbar */}
+          {bulkMode && checkedIds.size > 0 && (
+            <div className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 border-b border-blue-100">
+              <span className="text-xs text-blue-700 font-medium mr-1">{checkedIds.size} selected</span>
+              <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2 text-blue-700 hover:bg-blue-100"
+                onClick={() => bulkAction.mutate({ ids: Array.from(checkedIds), agencyId: AGENCY_ID, action: "markRead" })}>
+                Mark Read
+              </Button>
+              <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2 text-blue-700 hover:bg-blue-100"
+                onClick={() => bulkAction.mutate({ ids: Array.from(checkedIds), agencyId: AGENCY_ID, action: "markUnread" })}>
+                Mark Unread
+              </Button>
+              <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2 text-red-600 hover:bg-red-50"
+                onClick={() => bulkAction.mutate({ ids: Array.from(checkedIds), agencyId: AGENCY_ID, action: "archive" })}>
+                <Archive className="h-3 w-3 mr-0.5" /> Archive
+              </Button>
+              <button className="ml-auto text-gray-400 hover:text-gray-600" onClick={() => { setCheckedIds(new Set()); setBulkMode(false); }}>
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+
           <ScrollArea className="flex-1">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
@@ -552,7 +670,7 @@ export default function Conversations() {
               <div className="flex flex-col items-center justify-center py-12 text-center px-4">
                 <MessageSquare className="h-8 w-8 text-gray-300 mb-2" />
                 <p className="text-sm font-medium text-gray-500">
-                  {activeList === "mine" ? "No conversations assigned to you" : "No conversations"}
+                  {activeList === "mine" ? "No conversations assigned to you" : activeTagFilter ? `No conversations tagged "${activeTagFilter}"` : "No conversations"}
                 </p>
                 <p className="text-xs text-gray-400 mt-1 mb-3">Start a new conversation by clicking the + button above</p>
                 <NewConversationDialog
@@ -567,6 +685,15 @@ export default function Conversations() {
                   conv={conv}
                   isSelected={selectedConvId === conv.id}
                   onClick={() => setSelectedConvId(conv.id)}
+                  bulkMode={bulkMode}
+                  isChecked={checkedIds.has(conv.id)}
+                  onCheck={(checked) => {
+                    setCheckedIds(prev => {
+                      const next = new Set(prev);
+                      if (checked) next.add(conv.id); else next.delete(conv.id);
+                      return next;
+                    });
+                  }}
                 />
               ))
             )}
@@ -600,6 +727,40 @@ export default function Conversations() {
                       View Lead
                     </Button>
                   )}
+                  {/* Tag editor */}
+                  <Popover open={tagEditorOpen} onOpenChange={setTagEditorOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                        <Tag className="h-3 w-3" />
+                        {parseTags(selectedConv.tags).length > 0 ? parseTags(selectedConv.tags).join(", ") : "Tag"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-52 p-2" align="end">
+                      <div className="text-[10px] text-gray-400 px-1 py-1 font-medium uppercase tracking-wide mb-1">Add / Remove Tags</div>
+                      {PRESET_TAGS.map(t => {
+                        const currentTags = parseTags(selectedConv.tags);
+                        const isActive = currentTags.includes(t.label);
+                        return (
+                          <button
+                            key={t.label}
+                            className={`w-full text-left px-2 py-1.5 text-xs rounded flex items-center justify-between hover:bg-gray-50 ${
+                              isActive ? "font-semibold" : ""
+                            }`}
+                            onClick={() => {
+                              const next = isActive
+                                ? currentTags.filter(x => x !== t.label)
+                                : [...currentTags, t.label];
+                              updateTags.mutate({ id: selectedConv.id, agencyId: AGENCY_ID, tags: next });
+                            }}
+                          >
+                            <span className={`px-1.5 py-0.5 rounded-full border text-[10px] ${t.color}`}>{t.label}</span>
+                            {isActive && <CheckCheck className="h-3 w-3 text-green-500" />}
+                          </button>
+                        );
+                      })}
+                    </PopoverContent>
+                  </Popover>
+
                   {/* Assignment dropdown */}
                   <Popover open={assignOpen} onOpenChange={setAssignOpen}>
                     <PopoverTrigger asChild>

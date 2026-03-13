@@ -1,0 +1,21 @@
+{
+  "query": "SELECT id, name FROM agencies LIMIT 5; SELECT COUNT(*) as leads FROM leads; SELECT COUNT(*) as conversations FROM conversations; SELECT COUNT(*) as conv_messages FROM conversation_messages;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, name FROM agencies LIMIT 5; SELECT COUNT(*) as leads FROM leads; SELECT COUNT(*) as conversations FROM conversations; SELECT COUNT(*) as conv_messages FROM conversation_messages;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Raindrop Marketing"
+    }
+  ],
+  "messages": [
+    "leads",
+    "14029",
+    "conversations",
+    "0",
+    "conv_messages",
+    "0"
+  ],
+  "stdout": "id\tname\n1\tRaindrop Marketing\nleads\n14029\nconversations\n0\nconv_messages\n0\n",
+  "stderr": "",
+  "execution_time_ms": 537
+}

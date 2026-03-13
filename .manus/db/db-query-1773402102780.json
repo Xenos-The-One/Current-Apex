@@ -1,0 +1,343 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "abTests"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "account_invitations"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "ads"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "agencies"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "agencySettings"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "agency_settings"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "ai_scripts"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "appNotifications"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "appointments"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "automation_executions"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "automation_workflow_steps"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "automation_workflows"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "borrowers"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "brandVoiceHistory"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "calendar_resources"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "call_logs"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "campaign_enrollments"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "campaign_sequence_steps"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "campaign_sequences"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "campaign_step_logs"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "campaign_templates"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "clientPortalUsers"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "clientPublishingPermissions"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "client_account_setup"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "clients"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "competitorKeywords"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "content"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "contentAnalytics"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "contentBriefs"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "contentComments"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "contentPackages"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "contentQualityScores"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "contentRepurposed"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "contentRevisions"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "contentTemplates"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "content_approvals"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "content_calendar"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "content_comments"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "conversation_messages"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "conversations"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "conversion_funnel"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "designStandards"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "documents"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "email_campaigns"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "email_templates"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "facebook_lead_ads"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "facebook_page_configs"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "gapAnalysisRuns"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "gapKeywordBriefs"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "gbpConnections"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "gbpLocations"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "gbpPosts"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "generated_websites"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "googleAnalyticsConnections"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "heygen_sessions"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "inbound_emails"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "invoices"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "keywordRankAlerts"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "keywordRankings"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "lead_activities"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "lead_source_assistant_mappings"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "lead_tasks"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "leads"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "loan_milestones"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "login_audit_log"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "manusPublishHistory"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "manusWebsites"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "market_analytics"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "metrics"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "notification_logs"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "onboarding_progress"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "opportunities"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "opportunity_activities"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "password_reset_tokens"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "pipelineCards"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "pipeline_stages"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "pipelines"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "portalBranding"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "publishLogs"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "publishingAnalytics"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "publishingSchedules"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "push_subscriptions"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "recurringPlans"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "referral_partners"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "savedKeywords"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "searchConsoleCredentials"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "searchConsoleMetrics"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "seoAuditHistory"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "seoUsers"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "seo_clients"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "seo_content_packages"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "seo_repurposed_content"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "seo_users"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "smart_lists"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "sms_campaigns"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "social_media_posts"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "social_posts"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "sub_account_credentials"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "subscription_plans"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "subscription_tiers"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "team_members"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "team_notifications"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "users"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "vapi_assistants"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "viral_topics"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "webhookConfigs"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "webinar_registrations"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "webinars"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "wordpressConnections"
+    },
+    {
+      "Tables_in_Rus3EtBPxB9CmZuwDUFVXj": "wordpressPublishHistory"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_Rus3EtBPxB9CmZuwDUFVXj\n__drizzle_migrations\nabTests\naccount_invitations\nads\nagencies\nagencySettings\nagency_settings\nai_scripts\nappNotifications\nappointments\nautomation_executions\nautomation_workflow_steps\nautomation_workflows\nborrowers\nbrandVoiceHistory\ncalendar_resources\ncall_logs\ncampaign_enrollments\ncampaign_sequence_steps\ncampaign_sequences\ncampaign_step_logs\ncampaign_templates\nclientPortalUsers\nclientPublishingPermissions\nclient_account_setup\nclients\ncompetitorKeywords\ncontent\ncontentAnalytics\ncontentBriefs\ncontentComments\ncontentPackages\ncontentQualityScores\ncontentRepurposed\ncontentRevisions\ncontentTemplates\ncontent_approvals\ncontent_calendar\ncontent_comments\nconversation_messages\nconversations\nconversion_funnel\ndesignStandards\ndocuments\nemail_campaigns\nemail_templates\nfacebook_lead_ads\nfacebook_page_configs\ngapAnalysisRuns\ngapKeywordBriefs\ngbpConnections\ngbpLocations\ngbpPosts\ngenerated_websites\ngoogleAnalyticsConnections\nheygen_sessions\ninbound_emails\ninvoices\nkeywordRankAlerts\nkeywordRankings\nlead_activities\nlead_source_assistant_mappings\nlead_tasks\nleads\nloan_milestones\nlogin_audit_log\nmanusPublishHistory\nmanusWebsites\nmarket_analytics\nmetrics\nnotification_logs\nonboarding_progress\nopportunities\nopportunity_activities\npassword_reset_tokens\npipelineCards\npipeline_stages\npipelines\nportalBranding\npublishLogs\npublishingAnalytics\npublishingSchedules\npush_subscriptions\nrecurringPlans\nreferral_partners\nsavedKeywords\nsearchConsoleCredentials\nsearchConsoleMetrics\nseoAuditHistory\nseoUsers\nseo_clients\nseo_content_packages\nseo_repurposed_content\nseo_users\nsmart_lists\nsms_campaigns\nsocial_media_posts\nsocial_posts\nsub_account_credentials\nsubscription_plans\nsubscription_tiers\nteam_members\nteam_notifications\nusers\nvapi_assistants\nviral_topics\nwebhookConfigs\nwebinar_registrations\nwebinars\nwordpressConnections\nwordpressPublishHistory\n",
+  "stderr": "",
+  "execution_time_ms": 354
+}

@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO conversations (agencyId, leadId, channel, contactName, contactPhone, contactEmail, lastMessageAt, lastMessagePreview, isRead, isArchived, createdAt, updatedAt)\nSELECT \n  la.agencyId,\n  la.leadId,\n  la.type AS channel,\n  CONCAT(COALESCE(l.first_name, ''), ' ', COALESCE(l.last_name, '')) AS contactName,\n  CASE WHEN la.type = 'sms' THEN l.phone ELSE NULL END AS contactPhone,\n  CASE WHEN la.type = 'email' THEN l.email ELSE NULL END AS contactEmail,\n  la.createdAt AS lastMessageAt,\n  LEFT(la.content, 200) AS lastMessagePreview,\n  1 AS isRead,\n  0 AS isArchived,\n  la.createdAt AS createdAt,\n  la.createdAt AS updatedAt\nFROM lead_activities la\nLEFT JOIN leads l ON la.leadId = l.id\nWHERE la.type IN ('sms', 'email') AND la.userId IS NOT NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute INSERT INTO conversations (agencyId, leadId, channel, contactName, contactPhone, contactEmail, lastMessageAt, lastMessagePreview, isRead, isArchived, createdAt, updatedAt)\nSELECT \n  la.agencyId,\n  la.leadId,\n  la.type AS channel,\n  CONCAT(COALESCE(l.first_name, ''), ' ', COALESCE(l.last_name, '')) AS contactName,\n  CASE WHEN la.type = 'sms' THEN l.phone ELSE NULL END AS contactPhone,\n  CASE WHEN la.type = 'email' THEN l.email ELSE NULL END AS contactEmail,\n  la.createdAt AS lastMessageAt,\n  LEFT(la.content, 200) AS lastMessagePreview,\n  1 AS isRead,\n  0 AS isArchived,\n  la.createdAt AS createdAt,\n  la.createdAt AS updatedAt\nFROM lead_activities la\nLEFT JOIN leads l ON la.leadId = l.id\nWHERE la.type IN ('sms', 'email') AND la.userId IS NOT NULL;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 410
+}

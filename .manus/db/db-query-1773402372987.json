@@ -1,0 +1,682 @@
+{
+  "query": "DESCRIBE leads;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute DESCRIBE leads;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "agency_id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "assigned_user_id",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "first_name",
+      "Type": "varchar(100)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "last_name",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "email",
+      "Type": "varchar(320)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "phone",
+      "Type": "varchar(32)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "company",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "contact_type",
+      "Type": "enum('borrower','re_agent','attorney','insurance','title_co','builder','lender','other')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "borrower",
+      "Extra": ""
+    },
+    {
+      "Field": "status",
+      "Type": "enum('new','contacted','qualified','appointment_set','converted','lost','nurturing')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "new",
+      "Extra": ""
+    },
+    {
+      "Field": "pipeline_stage",
+      "Type": "enum('new','contacted','qualified','proposal','negotiation','closed_won','closed_lost')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "new",
+      "Extra": ""
+    },
+    {
+      "Field": "source",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "manual",
+      "Extra": ""
+    },
+    {
+      "Field": "score",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "loan_amount",
+      "Type": "decimal(12,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "property_address",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "notes",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "tags",
+      "Type": "json",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "last_contacted_at",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "next_follow_up_at",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "createdAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "updatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    },
+    {
+      "Field": "client_id",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "vapi_assistant_id",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "vapi_call_initiated",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "last_contact_date",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "appointment_date",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "custom_fields",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "score_tier",
+      "Type": "enum('hot','warm','cold')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "cold",
+      "Extra": ""
+    },
+    {
+      "Field": "birthday",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "birthday_notification_sent",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "birthday_video_approved",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "birthday_video_url",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "appointment_booked_at",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "vapi_call_scheduled_at",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "after_hours_sms_sent",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "closing_date",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "six_month_anniversary_notification_sent",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "one_year_anniversary_notification_sent",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "anniversary_video_url",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "is_test",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "loan_type",
+      "Type": "enum('purchase','refinance','heloc','reverse_mortgage','construction','other')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "probability",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "partner_stage",
+      "Type": "enum('prospect','contacted','meeting_scheduled','active_partner','top_partner')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "partner_tier",
+      "Type": "enum('bronze','silver','gold','platinum')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "assigned_to_user_id",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "pipeline_type",
+      "Type": "enum('loan','sales')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "loan",
+      "Extra": ""
+    },
+    {
+      "Field": "refi_prospect",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "refi_drip_started_at",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "refi_drip_step",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "refi_drip_completed_at",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "snoozed_until",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "stripe_customer_id",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "stripe_subscription_id",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "property_type",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "credit_score",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "annual_income",
+      "Type": "decimal(12,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "down_payment",
+      "Type": "decimal(12,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "property_city",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "property_state",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "property_zip",
+      "Type": "varchar(20)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "referral_partner_id",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "assigned_to",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "next_follow_up",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "utm_source",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "utm_medium",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "utm_campaign",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "ip_address",
+      "Type": "varchar(45)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "device_type",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "facebook_lead_id",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "ad_id",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "ad_name",
+      "Type": "varchar(500)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "adset_id",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "adset_name",
+      "Type": "varchar(500)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "campaign_id",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "campaign_name",
+      "Type": "varchar(500)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "form_id",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "form_name",
+      "Type": "varchar(500)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "vapi_call_id",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "call_duration",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "call_recording_url",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "call_transcript",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "call_outcome",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "call_sentiment",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "call_notes",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nagency_id\tint\tNO\t\tNULL\t\nassigned_user_id\tint\tYES\t\tNULL\t\nfirst_name\tvarchar(100)\tNO\t\tNULL\t\nlast_name\tvarchar(100)\tYES\t\tNULL\t\nemail\tvarchar(320)\tYES\t\tNULL\t\nphone\tvarchar(32)\tYES\t\tNULL\t\ncompany\tvarchar(255)\tYES\t\tNULL\t\ncontact_type\tenum('borrower','re_agent','attorney','insurance','title_co','builder','lender','other')\tNO\t\tborrower\t\nstatus\tenum('new','contacted','qualified','appointment_set','converted','lost','nurturing')\tNO\t\tnew\t\npipeline_stage\tenum('new','contacted','qualified','proposal','negotiation','closed_won','closed_lost')\tNO\t\tnew\t\nsource\tvarchar(255)\tYES\t\tmanual\t\nscore\tint\tYES\t\t0\t\nloan_amount\tdecimal(12,2)\tYES\t\tNULL\t\nproperty_address\ttext\tYES\t\tNULL\t\nnotes\ttext\tYES\t\tNULL\t\ntags\tjson\tYES\t\tNULL\t\nlast_contacted_at\ttimestamp\tYES\t\tNULL\t\nnext_follow_up_at\ttimestamp\tYES\t\tNULL\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\nclient_id\tint\tYES\t\tNULL\t\nvapi_assistant_id\tvarchar(255)\tYES\t\tNULL\t\nvapi_call_initiated\ttimestamp\tYES\t\tNULL\t\nlast_contact_date\ttimestamp\tYES\t\tNULL\t\nappointment_date\ttimestamp\tYES\t\tNULL\t\ncustom_fields\ttext\tYES\t\tNULL\t\nscore_tier\tenum('hot','warm','cold')\tYES\t\tcold\t\nbirthday\ttimestamp\tYES\t\tNULL\t\nbirthday_notification_sent\ttinyint(1)\tYES\t\t0\t\nbirthday_video_approved\ttinyint(1)\tYES\t\t0\t\nbirthday_video_url\ttext\tYES\t\tNULL\t\nappointment_booked_at\ttimestamp\tYES\t\tNULL\t\nvapi_call_scheduled_at\ttimestamp\tYES\t\tNULL\t\nafter_hours_sms_sent\ttinyint(1)\tYES\t\t0\t\nclosing_date\ttimestamp\tYES\t\tNULL\t\nsix_month_anniversary_notification_sent\ttinyint(1)\tYES\t\t0\t\none_year_anniversary_notification_sent\ttinyint(1)\tYES\t\t0\t\nanniversary_video_url\ttext\tYES\t\tNULL\t\nis_test\ttinyint(1)\tYES\t\t0\t\nloan_type\tenum('purchase','refinance','heloc','reverse_mortgage','construction','other')\tYES\t\tNULL\t\nprobability\tint\tYES\t\t0\t\npartner_stage\tenum('prospect','contacted','meeting_scheduled','active_partner','top_partner')\tYES\t\tNULL\t\npartner_tier\tenum('bronze','silver','gold','platinum')\tYES\t\tNULL\t\nassigned_to_user_id\tint\tYES\t\tNULL\t\npipeline_type\tenum('loan','sales')\tYES\t\tloan\t\nrefi_prospect\ttinyint(1)\tYES\t\t0\t\nrefi_drip_started_at\ttimestamp\tYES\t\tNULL\t\nrefi_drip_step\tint\tYES\t\t0\t\nrefi_drip_completed_at\ttimestamp\tYES\t\tNULL\t\nsnoozed_until\ttimestamp\tYES\t\tNULL\t\nstripe_customer_id\tvarchar(255)\tYES\t\tNULL\t\nstripe_subscription_id\tvarchar(255)\tYES\t\tNULL\t\nproperty_type\tvarchar(100)\tYES\t\tNULL\t\ncredit_score\tint\tYES\t\tNULL\t\nannual_income\tdecimal(12,2)\tYES\t\tNULL\t\ndown_payment\tdecimal(12,2)\tYES\t\tNULL\t\nproperty_city\tvarchar(100)\tYES\t\tNULL\t\nproperty_state\tvarchar(100)\tYES\t\tNULL\t\nproperty_zip\tvarchar(20)\tYES\t\tNULL\t\nreferral_partner_id\tint\tYES\t\tNULL\t\nassigned_to\tint\tYES\t\tNULL\t\nnext_follow_up\ttimestamp\tYES\t\tNULL\t\nutm_source\tvarchar(255)\tYES\t\tNULL\t\nutm_medium\tvarchar(255)\tYES\t\tNULL\t\nutm_campaign\tvarchar(255)\tYES\t\tNULL\t\nip_address\tvarchar(45)\tYES\t\tNULL\t\ndevice_type\tvarchar(50)\tYES\t\tNULL\t\nfacebook_lead_id\tvarchar(255)\tYES\t\tNULL\t\nad_id\tvarchar(255)\tYES\t\tNULL\t\nad_name\tvarchar(500)\tYES\t\tNULL\t\nadset_id\tvarchar(255)\tYES\t\tNULL\t\nadset_name\tvarchar(500)\tYES\t\tNULL\t\ncampaign_id\tvarchar(255)\tYES\t\tNULL\t\ncampaign_name\tvarchar(500)\tYES\t\tNULL\t\nform_id\tvarchar(255)\tYES\t\tNULL\t\nform_name\tvarchar(500)\tYES\t\tNULL\t\nvapi_call_id\tvarchar(255)\tYES\t\tNULL\t\ncall_duration\tint\tYES\t\tNULL\t\ncall_recording_url\ttext\tYES\t\tNULL\t\ncall_transcript\ttext\tYES\t\tNULL\t\ncall_outcome\tvarchar(100)\tYES\t\tNULL\t\ncall_sentiment\tvarchar(50)\tYES\t\tNULL\t\ncall_notes\ttext\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 376
+}

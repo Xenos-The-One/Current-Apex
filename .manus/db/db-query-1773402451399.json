@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE conversations ADD COLUMN tags VARCHAR(500) NULL DEFAULT NULL COMMENT 'JSON array of tag strings';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute ALTER TABLE conversations ADD COLUMN tags VARCHAR(500) NULL DEFAULT NULL COMMENT 'JSON array of tag strings';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 819
+}
