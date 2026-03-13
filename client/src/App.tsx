@@ -159,9 +159,9 @@ function Router() {
       <Route path="/leads/:id" component={LeadDetail} />
 
       <Route path="/ai-scripts" component={MarketingHub} />
-      <Route path="/email-campaigns" component={MarketingHub} />
-      <Route path="/sms-campaigns" component={MarketingHub} />
-      <Route path="/ai-calling" component={lazy(() => import('./pages/AICalling'))} />
+      <Route path="/email-campaigns" component={lazy(() => import('./pages/Campaigns'))} />
+      <Route path="/sms-campaigns" component={lazy(() => import('./pages/Campaigns'))} />
+      <Route path="/ai-calling" component={lazy(() => import('./pages/Campaigns'))} />
       <Route path="/ad-manager" component={lazy(() => import('./pages/AdManager'))} />
       <Route path="/suggested-follow-ups" component={SuggestedFollowUps} />
       <Route path="/content-approvals" component={ContentApprovals} />
@@ -176,7 +176,7 @@ function Router() {
       <Route path="/refinance" component={RefinanceCalculator} />
       <Route path="/first-time-buyer" component={FirstTimeBuyerGuide} />
       <Route path="/campaigns/dashboard" component={CampaignDashboard} />
-      <Route path="/campaigns" component={CampaignMonitoring} />
+      <Route path="/campaigns" component={lazy(() => import('./pages/Campaigns'))} />
       <Route path="/drip-sequences" component={DripSequences} />
       <Route path="/investor-booking" component={InvestorBooking} />
       {/* ── Legacy activity routes → ActivityHub ── */}

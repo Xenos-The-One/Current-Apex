@@ -916,3 +916,8 @@
 - [x] Updated conversations.sendMessage to send actual SMS via Twilio with statusCallback URL and store MessageSid in externalMessageId
 - [x] Added DeliveryStatus component — tooltip-enabled icons for Sent (faint ✓✓), Delivered (bright ✓✓), Read (full-opacity ✓✓), Failed (✗ red) on all outbound SMS and email bubbles
 - [x] Frontend passes window.location.origin so statusCallback URL resolves correctly in all environments
+
+## Campaigns Consolidation (Round 8)
+- [x] Unified Campaigns page with AI Calling, Email, and SMS sub-tabs
+- [x] Removed separate "Communicate" section from client sidebar nav (AI Calling, Email Campaigns, SMS Campaigns)
+- [x] Updated App.tsx routes — /campaigns now loads unified page; /ai-calling, /email-campaigns, /sms-campaigns redirect to /campaigns

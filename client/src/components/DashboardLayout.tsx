@@ -226,14 +226,6 @@ const clientMenuSections: MenuSection[] = [
     ],
   },
   {
-    id: "communicate", label: "Communicate", icon: Phone,
-    items: [
-      { icon: Bot, label: "AI Calling", path: "/ai-calling" },
-      { icon: Mail, label: "Email Campaigns", path: "/email-campaigns" },
-      { icon: MessageSquare, label: "SMS Campaigns", path: "/sms-campaigns" },
-    ],
-  },
-  {
     id: "content", label: "Content & Ads", icon: Instagram,
     items: [
       { icon: Share2, label: "Social Media", path: "/social" },
