@@ -526,6 +526,7 @@ export default function Conversations() {
   const [assignOpen, setAssignOpen] = useState(false);
   const [bulkMode, setBulkMode] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<number>>(new Set());
+  const [showContactDrawer, setShowContactDrawer] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // ── Queries ──
@@ -559,6 +560,12 @@ export default function Conversations() {
     { enabled: !!selectedConvId, refetchInterval: 5000 }
   );
   const messages: Message[] = Array.isArray(messagesRaw) ? messagesRaw : [];
+
+  const selectedLeadId = (selectedConv as any)?.leadId || null;
+  const { data: leadDetail } = trpc.conversations.getLeadDetail.useQuery(
+    { leadId: selectedLeadId! },
+    { enabled: !!selectedLeadId && showContactDrawer }
+  );
 
   const { data: teamMembersRaw } = trpc.conversations.getTeamMembers.useQuery(
     { agencyId: AGENCY_ID }, { enabled: assignOpen }
@@ -760,27 +767,7 @@ export default function Conversations() {
             })}
           </div>
 
-          {/* Tag filter */}
-          <div className="flex gap-1 px-3 py-1.5 border-b border-gray-100 overflow-x-auto scrollbar-none">
-            <button
-              onClick={() => setActiveTagFilter(null)}
-              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors
-                ${!activeTagFilter ? "bg-gray-800 text-white" : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"}`}
-            >
-              All
-            </button>
-            {PRESET_TAGS.map(t => (
-              <button
-                key={t.label}
-                onClick={() => setActiveTagFilter(activeTagFilter === t.label ? null : t.label)}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap border transition-all
-                  ${activeTagFilter === t.label ? t.color + " shadow-sm" : "bg-transparent text-gray-400 border-gray-200 hover:border-gray-300 hover:text-gray-600"}`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${t.dot}`} />
-                {t.label}
-              </button>
-            ))}
-          </div>
+
 
           {/* Bulk action bar */}
           {bulkMode && checkedIds.size > 0 && (
@@ -885,6 +872,15 @@ export default function Conversations() {
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
+                  <Button
+                    variant={showContactDrawer ? "default" : "outline"}
+                    size="sm"
+                    className="h-7 text-[12px] gap-1 border-gray-200"
+                    onClick={() => setShowContactDrawer(v => !v)}
+                  >
+                    <Info className="h-3 w-3" />
+                    Contact
+                  </Button>
                   {selectedConv.leadId && (
                     <Button variant="outline" size="sm" className="h-7 text-[12px] gap-1 border-gray-200"
                       onClick={() => window.open(`/leads/${selectedConv.leadId}`, "_blank")}>
@@ -1142,10 +1138,126 @@ export default function Conversations() {
           )}
         </div>
 
+        {/* ── Contact Info Drawer ──────────────────────────────────────────── */}
+        {showContactDrawer && selectedConv && (
+          <div className="w-72 flex-shrink-0 border-l border-gray-200 bg-white overflow-y-auto">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <h3 className="text-[13px] font-semibold text-gray-800">Contact Info</h3>
+              <button onClick={() => setShowContactDrawer(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              {/* Avatar + name */}
+              <div className="flex items-center gap-3">
+                <Avatar className="h-12 w-12">
+                  <AvatarFallback className={`text-[14px] font-bold bg-gradient-to-br ${getAvatarGradient(displayName)} text-white`}>
+                    {getInitials(displayName)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-[14px] font-semibold text-gray-900">{displayName}</p>
+                  <p className="text-[11px] text-gray-400 capitalize">{selectedConv.channel} conversation</p>
+                </div>
+              </div>
+              {/* Contact fields */}
+              <div className="space-y-2.5">
+                {selectedConv.contactPhone && (
+                  <div className="flex items-center gap-2.5">
+                    <Phone className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                    <a href={`tel:${selectedConv.contactPhone}`} className="text-[12px] text-blue-600 hover:underline">{selectedConv.contactPhone}</a>
+                  </div>
+                )}
+                {selectedConv.contactEmail && (
+                  <div className="flex items-center gap-2.5">
+                    <Mail className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                    <a href={`mailto:${selectedConv.contactEmail}`} className="text-[12px] text-blue-600 hover:underline truncate">{selectedConv.contactEmail}</a>
+                  </div>
+                )}
+              </div>
+              {/* Lead detail from DB */}
+              {leadDetail && (
+                <>
+                  <div className="border-t border-gray-100 pt-3 space-y-2.5">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Pipeline</p>
+                    {(leadDetail as any).status && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-[12px] text-gray-500">Status</span>
+                        <Badge variant="outline" className="text-[11px] capitalize">{(leadDetail as any).status}</Badge>
+                      </div>
+                    )}
+                    {(leadDetail as any).loanType && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-[12px] text-gray-500">Loan Type</span>
+                        <span className="text-[12px] font-medium text-gray-800 capitalize">{(leadDetail as any).loanType}</span>
+                      </div>
+                    )}
+                    {(leadDetail as any).loanAmount && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-[12px] text-gray-500">Loan Amount</span>
+                        <span className="text-[12px] font-medium text-gray-800">${Number((leadDetail as any).loanAmount).toLocaleString()}</span>
+                      </div>
+                    )}
+                    {(leadDetail as any).creditScore && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-[12px] text-gray-500">Credit Score</span>
+                        <span className="text-[12px] font-medium text-gray-800">{(leadDetail as any).creditScore}</span>
+                      </div>
+                    )}
+                    {(leadDetail as any).source && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-[12px] text-gray-500">Source</span>
+                        <span className="text-[12px] font-medium text-gray-800 capitalize">{(leadDetail as any).source}</span>
+                      </div>
+                    )}
+                  </div>
+                  {(leadDetail as any).notes && (
+                    <div className="border-t border-gray-100 pt-3">
+                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Notes</p>
+                      <p className="text-[12px] text-gray-600 leading-relaxed">{(leadDetail as any).notes}</p>
+                    </div>
+                  )}
+                  <div className="border-t border-gray-100 pt-3">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Activity</p>
+                    <div className="flex gap-4">
+                      <div className="text-center">
+                        <div className="text-[16px] font-bold text-gray-800">{Number((leadDetail as any).activityCount) || 0}</div>
+                        <div className="text-[10px] text-gray-400">Activities</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-[16px] font-bold text-gray-800">{Number((leadDetail as any).appointmentCount) || 0}</div>
+                        <div className="text-[10px] text-gray-400">Appts</div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+              {/* Quick actions */}
+              <div className="border-t border-gray-100 pt-3 space-y-2">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Quick Actions</p>
+                {selectedConv.leadId && (
+                  <Button variant="outline" size="sm" className="w-full h-8 text-[12px] justify-start gap-2"
+                    onClick={() => window.open(`/leads/${selectedConv.leadId}`, "_blank")}>
+                    <ChevronRight className="h-3.5 w-3.5" /> View Full Profile
+                  </Button>
+                )}
+                {selectedConv.contactPhone && (
+                  <Button variant="outline" size="sm" className="w-full h-8 text-[12px] justify-start gap-2"
+                    onClick={() => window.open(`tel:${selectedConv.contactPhone}`)}
+                  >
+                    <Phone className="h-3.5 w-3.5" /> Call {selectedConv.contactPhone}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
         {/* ── AI Coach sidebar ────────────────────────────────────────────── */}
-        <div className="w-64 flex-shrink-0 border-l border-gray-200 bg-white overflow-y-auto p-4 hidden xl:block">
-          <AISuccessCoachPanel context="conversations" />
-        </div>
+        {!showContactDrawer && (
+          <div className="w-64 flex-shrink-0 border-l border-gray-200 bg-white overflow-y-auto p-4 hidden xl:block">
+            <AISuccessCoachPanel context="conversations" />
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

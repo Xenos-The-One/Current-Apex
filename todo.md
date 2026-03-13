@@ -893,3 +893,8 @@
 ## Conversations UI Polish (Round N)
 - [ ] Remove fake seed conversations (Marcus Williams, Sandra Kim, Derek Patel, Lisa Chen)
 - [ ] Premium UI refinement: tighter inbox list density, unread/starred states, thread spacing, SMS vs email differentiation, workflow event styling, composer UX
+
+## Conversations Improvements (Round 4)
+- [ ] Remove tag filter bar (Hot Lead, Follow Up, etc.) from left panel
+- [ ] Add Twilio inbound SMS webhook at /api/twilio/inbound-sms
+- [ ] Add contact info slide-out drawer when conversation is open

@@ -436,6 +436,28 @@ export const conversationsRouter = router({
       }
     }),
 
+  /** Get lead detail for the contact drawer */
+  getLeadDetail: protectedProcedure
+    .input(z.object({ leadId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const conn = await getConn();
+      try {
+        const [rows] = await conn.execute(
+          `SELECT l.id, l.firstName, l.lastName, l.email, l.phone, l.status, l.loanType, l.source,
+                  l.loanAmount, l.creditScore, l.propertyType, l.city, l.state, l.notes,
+                  l.createdAt, l.updatedAt,
+                  (SELECT COUNT(*) FROM lead_activities la WHERE la.leadId = l.id) as activityCount,
+                  (SELECT COUNT(*) FROM appointments a WHERE a.leadId = l.id) as appointmentCount
+           FROM leads l WHERE l.id = ? LIMIT 1`,
+          [input.leadId]
+        );
+        if (!(rows as any[]).length) return null;
+        return (rows as any[])[0];
+      } finally {
+        await conn.end();
+      }
+    }),
+
   /** Search conversations */
   search: protectedProcedure
     .input(z.object({

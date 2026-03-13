@@ -8,6 +8,7 @@ import { registerClientLoginRoute } from "../client-login-page";
 import { facebookWebhookVerify, facebookWebhookHandler } from "../webhooks/facebook";
 import { handleStripeWebhook } from "../webhooks/stripe";
 import { handleSquareWebhook } from "../webhooks/square";
+import { handleInboundSms } from "../webhooks/inbound-sms";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -64,6 +65,9 @@ async function startServer() {
   // Facebook Lead Ads webhook
   app.get("/api/webhooks/facebook", facebookWebhookVerify);
   app.post("/api/webhooks/facebook", facebookWebhookHandler);
+
+  // Twilio inbound SMS — lead replies land here and are saved to conversations
+  app.post("/api/twilio/inbound-sms", handleInboundSms);
 
   // tRPC API
   app.use(
