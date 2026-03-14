@@ -1,4 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
+import { CampaignTemplateCard } from "@/components/campaigns/CampaignTemplateCard";
+import { TemplatePreviewDrawer } from "@/components/campaigns/TemplatePreviewDrawer";
+import { TemplateCategoryFilter } from "@/components/campaigns/TemplateCategoryFilter";
+import { UseTemplateWizard } from "@/components/campaigns/UseTemplateWizard";
+import { CAMPAIGN_TEMPLATES, type CampaignTemplate, type CampaignChannel, type CampaignCategory } from "@/data/campaignTemplates";
 import { useAgency } from "@/contexts/AgencyContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +24,7 @@ import {
   ExternalLink, FileText, Loader2, Mail, MessageSquare, Mic, MoreHorizontal,
   Pause, Phone, PhoneCall, PhoneMissed, PhoneOff, Play, Plus, RefreshCw,
   Send, Sparkles, Star, TrendingUp, Users, Zap, AlertCircle, Info,
-  ArrowUpRight, Activity, Target,
+  ArrowUpRight, Activity, Target, Search, LayoutGrid,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -987,6 +992,60 @@ export default function Campaigns() {
   const [mainTab, setMainTab] = useState("ai-calling");
   const [callSubTab, setCallSubTab] = useState("history");
   const [selectedCampaign, setSelectedCampaign] = useState<{ campaign: any; type: "email" | "sms" } | null>(null);
+  // Template library state
+  const [templateLibraryTab, setTemplateLibraryTab] = useState<"email" | "sms" | "ai-calling" | null>(null);
+  const [templateSearch, setTemplateSearch] = useState("");
+  const [templateChannel, setTemplateChannel] = useState<CampaignChannel | "all">("all");
+  const [templateCategory, setTemplateCategory] = useState<CampaignCategory | "all">("all");
+  const [previewTemplate, setPreviewTemplate] = useState<CampaignTemplate | null>(null);
+  const [wizardTemplate, setWizardTemplate] = useState<CampaignTemplate | null>(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
+
+  const openTemplateLibrary = useCallback((channel: "email" | "sms" | "ai-calling") => {
+    setTemplateChannel(channel);
+    setTemplateCategory("all");
+    setTemplateSearch("");
+    setTemplateLibraryTab(channel);
+    setMainTab("templates");
+  }, []);
+
+  const handleUseTemplate = useCallback((template: CampaignTemplate) => {
+    setWizardTemplate(template);
+    setWizardOpen(true);
+  }, []);
+
+  const filteredTemplates = useMemo(() => {
+    return CAMPAIGN_TEMPLATES.filter((t) => {
+      if (templateChannel !== "all" && t.channel !== templateChannel) return false;
+      if (templateCategory !== "all" && t.category !== templateCategory) return false;
+      if (templateSearch) {
+        const q = templateSearch.toLowerCase();
+        return (
+          t.name.toLowerCase().includes(q) ||
+          t.description.toLowerCase().includes(q) ||
+          t.category.toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  }, [templateChannel, templateCategory, templateSearch]);
+
+  const templateCounts = useMemo(() => {
+    const all = CAMPAIGN_TEMPLATES;
+    const byCategory: Record<string, number> = {};
+    all.forEach((t) => {
+      if (templateChannel === "all" || t.channel === templateChannel) {
+        byCategory[t.category] = (byCategory[t.category] ?? 0) + 1;
+      }
+    });
+    return {
+      all: templateChannel === "all" ? all.length : all.filter((t) => t.channel === templateChannel).length,
+      email: all.filter((t) => t.channel === "email").length,
+      sms: all.filter((t) => t.channel === "sms").length,
+      "ai-calling": all.filter((t) => t.channel === "ai-calling").length,
+      byCategory,
+    };
+  }, [templateChannel]);
 
   const { data: myInfo } = trpc.crm.getMyInfo.useQuery();
   const clientId = myInfo?.client?.id ?? 1;
@@ -1169,6 +1228,10 @@ export default function Campaigns() {
                 <TabsTrigger value="sms" className="gap-1.5 text-xs sm:text-sm">
                   <MessageSquare className="w-3.5 h-3.5" /> SMS
                   {(smsCampaigns?.length ?? 0) > 0 && <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">{smsCampaigns?.length}</Badge>}
+                </TabsTrigger>
+                <TabsTrigger value="templates" className="gap-1.5 text-xs sm:text-sm">
+                  <LayoutGrid className="w-3.5 h-3.5" /> Templates
+                  <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">{CAMPAIGN_TEMPLATES.length}</Badge>
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -1469,8 +1532,8 @@ export default function Campaigns() {
                       description="Create your first email campaign to start reaching leads with personalized messages, rate updates, and follow-ups."
                       primaryCta={<CreateEmailCampaignDialog clientId={clientId} onSuccess={refetchEmail} />}
                       secondaryCta={
-                        <Button variant="outline" onClick={() => toast.info("Templates coming soon")}>
-                          <FileText className="w-4 h-4 mr-2" /> Use a Template
+                        <Button variant="outline" onClick={() => openTemplateLibrary("email")}>
+                          <LayoutGrid className="w-4 h-4 mr-2" /> Browse Templates
                         </Button>
                       }
                     />
@@ -1555,8 +1618,8 @@ export default function Campaigns() {
                       description="Send your first SMS blast to reach leads instantly. SMS has a 98% open rate — the most effective channel for mortgage follow-ups."
                       primaryCta={<CreateSMSCampaignDialog clientId={clientId} onSuccess={refetchSMS} />}
                       secondaryCta={
-                        <Button variant="outline" onClick={() => toast.info("Templates coming soon")}>
-                          <FileText className="w-4 h-4 mr-2" /> Use a Template
+                        <Button variant="outline" onClick={() => openTemplateLibrary("sms")}>
+                          <LayoutGrid className="w-4 h-4 mr-2" /> Browse Templates
                         </Button>
                       }
                     />
@@ -1590,7 +1653,77 @@ export default function Campaigns() {
                 </Card>
               )}
             </TabsContent>
+
+            {/* ════════════════════════════════════════════════════════════
+                TEMPLATE LIBRARY TAB
+            ════════════════════════════════════════════════════════════ */}
+            <TabsContent value="templates" className="mt-4 space-y-4">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-semibold">Campaign Template Library</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">{CAMPAIGN_TEMPLATES.length} proven templates across Email, SMS, and AI Calling</p>
+                </div>
+                <div className="relative w-full sm:w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search templates..."
+                    value={templateSearch}
+                    onChange={(e) => setTemplateSearch(e.target.value)}
+                    className="w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </div>
+              </div>
+
+              {/* Filters */}
+              <TemplateCategoryFilter
+                selectedChannel={templateChannel}
+                selectedCategory={templateCategory}
+                onChannelChange={setTemplateChannel}
+                onCategoryChange={setTemplateCategory}
+                counts={templateCounts}
+              />
+
+              {/* Grid */}
+              {filteredTemplates.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <Search className="h-10 w-10 text-muted-foreground/40 mb-3" />
+                  <p className="text-sm font-medium">No templates found</p>
+                  <p className="text-xs text-muted-foreground mt-1">Try adjusting your search or filters</p>
+                  <Button variant="outline" size="sm" className="mt-4" onClick={() => { setTemplateSearch(""); setTemplateChannel("all"); setTemplateCategory("all"); }}>Clear filters</Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredTemplates.map((template) => (
+                    <CampaignTemplateCard
+                      key={template.id}
+                      template={template}
+                      onPreview={setPreviewTemplate}
+                      onUse={handleUseTemplate}
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
           </Tabs>
+
+          {/* ── Template Preview Drawer ──────────────────────────────── */}
+          <TemplatePreviewDrawer
+            template={previewTemplate}
+            open={!!previewTemplate}
+            onClose={() => setPreviewTemplate(null)}
+            onUse={handleUseTemplate}
+          />
+
+          {/* ── Use Template Wizard ──────────────────────────────────── */}
+          <UseTemplateWizard
+            template={wizardTemplate}
+            clientId={clientId}
+            open={wizardOpen}
+            onClose={() => { setWizardOpen(false); setWizardTemplate(null); }}
+            onSuccess={() => { refetchEmail(); refetchSMS(); }}
+          />
 
           {/* ── Recent Activity ──────────────────────────────────────────── */}
           <Card className="border-0 shadow-sm">

@@ -54,7 +54,7 @@ export default function PortalContent() {
     <PortalLayout activePath="/seo/portal/content">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-foreground">My Content</h2>
-        <p className="text-sm mt-1" className="text-muted-foreground">View and manage your content</p>
+        <p className="text-sm mt-1 text-muted-foreground">View and manage your content</p>
       </div>
 
       {/* Filters */}

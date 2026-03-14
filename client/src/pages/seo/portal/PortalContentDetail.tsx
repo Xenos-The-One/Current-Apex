@@ -63,7 +63,7 @@ export default function PortalContentDetail() {
     return (
       <PortalLayout activePath="/seo/portal/content">
         <div className="flex items-center justify-center py-32">
-          <div className="animate-pulse" className="text-muted-foreground">Loading content...</div>
+          <div className="animate-pulse text-muted-foreground">Loading content...</div>
         </div>
       </PortalLayout>
     );
@@ -107,7 +107,7 @@ export default function PortalContentDetail() {
           </Link>
           <div>
             <h2 className="text-2xl font-bold text-foreground">{content.title}</h2>
-            <p className="text-sm mt-1" className="text-muted-foreground">{content.topic}</p>
+            <p className="text-sm mt-1 text-muted-foreground">{content.topic}</p>
           </div>
         </div>
         <Badge className={statusClass}>

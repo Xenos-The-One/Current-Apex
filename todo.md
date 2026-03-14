@@ -1169,3 +1169,13 @@
 - [ ] Frontend: detailed results summary (imported/skipped/failed rows)
 - [ ] Frontend: downloadable template CSV
 - [ ] Tests: vitest for the import procedure duplicate detection logic
+
+## Feature: Campaign Template Library
+- [x] Campaign template data file (42 templates: Email, SMS, AI Calling)
+- [x] CampaignTemplateCard component
+- [x] CategoryFilter component
+- [x] TemplatePreviewDrawer component
+- [x] UseTemplateWizard (audience, edit, schedule, launch)
+- [x] Template Library sub-tab inside Email/SMS/AI Calling tabs
+- [x] Improved empty states with quick-start template buttons
+- [x] vitest tests for template data and wizard logic

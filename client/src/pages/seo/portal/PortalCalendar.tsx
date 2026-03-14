@@ -61,7 +61,7 @@ export default function PortalCalendar() {
     <PortalLayout activePath="/seo/portal/calendar">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-foreground">Content Calendar</h2>
-        <p className="text-sm mt-1" className="text-muted-foreground">View your scheduled content</p>
+        <p className="text-sm mt-1 text-muted-foreground">View your scheduled content</p>
       </div>
 
       {/* Calendar Controls */}
