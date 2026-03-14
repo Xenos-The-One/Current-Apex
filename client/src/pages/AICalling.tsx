@@ -267,7 +267,7 @@ export default function AICalling() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           {[
             { label: "Total Calls", value: stats.total, icon: Phone, color: "text-blue-600", bg: "bg-blue-50" },
             { label: "Answered", value: stats.answered, icon: PhoneCall, color: "text-green-600", bg: "bg-green-50" },
@@ -398,7 +398,7 @@ export default function AICalling() {
 
           {/* AI Assistants Tab */}
           <TabsContent value="assistants" className="mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {[
                 {
                   name: "Facebook Lead Assistant",
@@ -455,7 +455,7 @@ export default function AICalling() {
           <TabsContent value="how-it-works" className="mt-4">
             <Card className="border-0 shadow-sm">
               <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-4">
                   {[
                     {
                       step: "1",

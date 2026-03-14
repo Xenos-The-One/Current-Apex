@@ -1773,7 +1773,7 @@ export default function Pipeline() {
         {/* ── Kanban Board ── */}
         {view === "kanban" && (
           <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-            <div className="flex gap-4 overflow-x-auto pb-4 flex-1 min-h-0">
+            <div className="flex gap-4 overflow-x-auto pb-4 flex-1 min-h-0 kanban-board-scroll">
               {stages.map(stage => (
                 <KanbanColumn
                   key={stage.id}

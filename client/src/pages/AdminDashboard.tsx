@@ -587,7 +587,7 @@ export default function AdminDashboard() {
               </Link>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-3 rounded-lg bg-muted/40">
                   <FileText className="h-5 w-5 mx-auto mb-1 text-primary" />
                   <div className="text-2xl font-bold">{seoSummary.totalContent}</div>

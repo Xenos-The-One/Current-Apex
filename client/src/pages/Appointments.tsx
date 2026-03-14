@@ -98,7 +98,7 @@ export default function Appointments() {
         </div>
 
         {/* Compact Stat Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {[
             { label: "Total", value: stats.total, icon: Calendar, color: "text-muted-foreground" },
             { label: "Scheduled", value: stats.scheduled, icon: Clock, color: "text-blue-500" },
@@ -116,7 +116,7 @@ export default function Appointments() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex gap-1 border-b pb-0">
+        <div className="flex gap-1 border-b pb-0 overflow-x-auto scrollbar-hide">
           {(["all", "scheduled", "confirmed", "completed", "cancelled", "no_show", "no_answer", "busy"] as const).map((s) => (
             <button
               key={s}

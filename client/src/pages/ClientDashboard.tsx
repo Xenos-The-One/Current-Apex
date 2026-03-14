@@ -447,8 +447,8 @@ export default function ClientDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="flex gap-4">
-        <div className="flex-1 min-w-0 space-y-4" >
+      <div className="flex gap-4 dashboard-main-flex flex-col lg:flex-row">
+        <div className="flex-1 min-w-0 space-y-4">
         {/* Header */}
         <div className="page-header">
           <div>
@@ -523,7 +523,7 @@ export default function ClientDashboard() {
         </div>
 
         {/* KPI Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <div className="stat-card flex items-center gap-3">
             <Users className="h-5 w-5 text-blue-500 shrink-0" />
             <div className="min-w-0">
@@ -574,7 +574,7 @@ export default function ClientDashboard() {
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 client-perf-grid">
               <div className="stat-card flex flex-col gap-1">
                 <div className="flex items-center gap-1.5">
                   <Users className="h-4 w-4 text-blue-500" />
@@ -650,7 +650,7 @@ export default function ClientDashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 quick-actions-grid">
               <button
                 onClick={() => welcomeMutation.mutate()}
                 disabled={welcomeMutation.isPending}
@@ -886,7 +886,7 @@ export default function ClientDashboard() {
         </div>
         </div>
         {/* Right sidebar: AI Coach + Follow-Ups */}
-        <div className="w-72 flex-shrink-0 space-y-4">
+        <div className="w-full lg:w-72 flex-shrink-0 space-y-4 dashboard-sidebar">
           <AISuccessCoachPanel context="dashboard" />
           <SuggestedFollowUpsPanel />
         </div>

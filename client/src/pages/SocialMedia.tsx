@@ -122,7 +122,7 @@ function CalendarView({ posts, onReschedule, isRescheduling }: CalendarViewProps
   };
 
   return (
-    <div className="select-none">
+    <div className="select-none social-calendar-grid">
       {/* Month-level stats banner */}
       <div className="flex items-center gap-3 mb-3 px-1 flex-wrap">
         <div className="flex items-center gap-1.5 bg-muted/60 rounded-lg px-3 py-1.5">
@@ -145,13 +145,13 @@ function CalendarView({ posts, onReschedule, isRescheduling }: CalendarViewProps
         <Button variant="ghost" size="sm" onClick={nextMonth}><ChevronRight className="w-4 h-4" /></Button>
       </div>
 
-      <div className="grid grid-cols-7 mb-1">
+      <div className="grid grid-cols-7 mb-1 min-w-[420px]">
         {DAY_NAMES.map(d => (
           <div key={d} className="text-center text-xs font-medium text-muted-foreground py-1">{d}</div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden border">
+      <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden border min-w-[420px]">
         {grid.map((day, idx) => {
           const isToday = day !== null && new Date(year, month, day).toDateString() === today.toDateString();
           const isDragOver = dragOverDay === day && day !== null;
@@ -277,7 +277,7 @@ export default function SocialMedia() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-4 mb-6 social-stats-grid">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Posts</CardTitle>

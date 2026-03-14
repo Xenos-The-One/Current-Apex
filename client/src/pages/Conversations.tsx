@@ -856,7 +856,7 @@ export default function Conversations() {
       <div className="flex flex-1 min-h-0 -m-3 overflow-hidden bg-gray-50/50">
 
         {/* ── Left Panel ─────────────────────────────────────────────────── */}
-        <div className="w-[280px] flex flex-col bg-white border-r border-gray-200 shrink-0">
+        <div className={`conversations-list-panel w-[280px] flex flex-col bg-white border-r border-gray-200 shrink-0 ${selectedConvId ? 'hidden md:flex' : 'flex'}`}>
 
           {/* Header */}
           <div className="px-4 pt-3.5 pb-2.5 border-b border-gray-100">
@@ -1019,12 +1019,20 @@ export default function Conversations() {
         </div>
 
         {/* ── Right Panel ────────────────────────────────────────────────── */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div className={`conversations-thread-panel flex-1 flex flex-col min-w-0 overflow-hidden ${!selectedConvId ? 'hidden md:flex' : 'flex'}`}>
           {selectedConv ? (
             <>
               {/* Thread header */}
               <div className="flex items-center justify-between px-5 py-3 bg-white border-b border-gray-200 shrink-0">
                 <div className="flex items-center gap-3 min-w-0">
+                  {/* Mobile back button */}
+                  <button
+                    className="flex md:hidden items-center justify-center h-8 w-8 rounded-full hover:bg-gray-100 text-gray-600 shrink-0"
+                    onClick={() => setSelectedConvId(null)}
+                    aria-label="Back to inbox"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                  </button>
                   <Avatar className="h-9 w-9 shrink-0">
                     <AvatarFallback className={`text-[12px] font-bold bg-gradient-to-br ${getAvatarGradient(displayName)} text-white`}>
                       {getInitials(displayName)}

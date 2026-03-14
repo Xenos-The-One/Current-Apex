@@ -123,8 +123,8 @@ export default function AdsPerformance() {
 
   return (
     <DashboardLayout>
-      <div className="flex gap-4 p-6">
-        <div className="flex-1 min-w-0 space-y-6">
+      <div className="flex gap-4 flex-col lg:flex-row dashboard-main-flex">
+        <div className="flex-1 min-w-0 space-y-4">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
@@ -139,7 +139,7 @@ export default function AdsPerformance() {
         </div>
 
         {/* Top Metrics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <MetricCard
             label="Ad-Sourced Leads"
             value={totalAdLeads.toString()}
@@ -167,7 +167,7 @@ export default function AdsPerformance() {
         {/* Platform Breakdown */}
         <div>
           <h2 className="text-sm font-semibold text-muted-foreground mb-3">Platform Breakdown</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <PlatformCard
               platform="Facebook Ads"
               icon={Facebook}
@@ -258,7 +258,7 @@ export default function AdsPerformance() {
         </Card>
       </div>
         {/* Right sidebar: AI Coach */}
-        <div className="w-72 flex-shrink-0 space-y-4">
+        <div className="w-full lg:w-72 flex-shrink-0 space-y-4 dashboard-sidebar">
           <AISuccessCoachPanel context="ads" />
         </div>
       </div>

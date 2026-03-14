@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./pwa-native.css";
+@import "./mobile-layout.css";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));

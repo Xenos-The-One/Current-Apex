@@ -125,7 +125,7 @@ export default function LoaDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="text-center">
@@ -234,7 +234,7 @@ export default function LoaDashboard() {
         </Card>
 
         {/* Quick Actions */}
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-3">
           <Link href="/appointments">
             <Card className="hover:shadow-md transition-shadow cursor-pointer">
               <CardContent className="pt-6">

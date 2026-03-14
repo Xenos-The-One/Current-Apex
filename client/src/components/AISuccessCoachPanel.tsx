@@ -1,10 +1,9 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { RefreshCw, Loader2 } from "lucide-react";
-import React from "react";
+import { RefreshCw, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 
 interface CoachInsight {
   text: React.ReactNode;
@@ -76,6 +75,7 @@ interface AISuccessCoachPanelProps {
 
 export default function AISuccessCoachPanel({ context = "dashboard", className }: AISuccessCoachPanelProps) {
   const [refreshKey, setRefreshKey] = useState(0);
+  const [expanded, setExpanded] = useState(false);
 
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = trpc.crm.dashboardStats.useQuery(undefined, {
     refetchOnWindowFocus: false,
@@ -97,12 +97,23 @@ export default function AISuccessCoachPanel({ context = "dashboard", className }
   return (
     <Card className={className}>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-          AI Success Coach
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+            AI Success Coach
+          </CardTitle>
+          {/* Mobile collapse toggle */}
+          <button
+            className="flex lg:hidden items-center gap-1 text-xs text-muted-foreground p-1 rounded"
+            onClick={() => setExpanded(e => !e)}
+            aria-label={expanded ? "Collapse" : "Expand"}
+          >
+            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      {/* On mobile: collapsed by default, show first insight as preview */}
+      <CardContent className={`space-y-4 ${!expanded ? 'max-h-[200px] overflow-hidden lg:max-h-none' : ''} transition-all duration-300`}>
         {isLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -131,6 +142,16 @@ export default function AISuccessCoachPanel({ context = "dashboard", className }
           </>
         )}
       </CardContent>
+      {/* Mobile expand button */}
+      {!expanded && !isLoading && insights.length > 1 && (
+        <button
+          className="flex lg:hidden w-full items-center justify-center gap-1.5 py-2 text-xs text-primary border-t border-border"
+          onClick={() => setExpanded(true)}
+        >
+          <ChevronDown className="h-3.5 w-3.5" />
+          Show {insights.length - 1} more tips
+        </button>
+      )}
     </Card>
   );
 }

@@ -1102,3 +1102,17 @@
 - [x] Offline state UI (offline banner + graceful fallback pages)
 - [x] Mobile responsiveness audit: Dashboard, Pipeline, Contacts, Conversations
 - [x] Notification preferences page (per-type toggles + quiet hours)
+
+## Mobile Layout Pass (Full Responsive Audit)
+- [x] Global mobile CSS foundations: single-column defaults, card stacking, touch targets, no tiny grids
+- [x] Dashboard: reflow KPI cards (1-col mobile, 2-col max for simple stats), fix AI coach panel (collapsible), fix quick actions (full-width), fix SLA alerts, fix lead sources widget
+- [x] Contacts page: full-width table/list on mobile, fix filter bar, fix action buttons
+- [x] Pipeline/Kanban: horizontal scroll on mobile, full-width cards per stage
+- [x] Conversations: full-width message list, fix sidebar/panel split on mobile
+- [x] Calendar: mobile-friendly month/week view, fix event cards
+- [x] Campaigns: full-width campaign cards, fix stats row, fix action buttons
+- [x] Social Media: full-width post cards, fix scheduler grid
+- [x] Analytics: fix chart containers, fix metric grid (1-col mobile)
+- [x] AI SEO portal pages: fix content cards, fix sidebar, fix metric widgets
+- [x] Content generation pages: fix card layout, fix text-heavy panels
+- [x] Global: fix all 3-4 column grids → 1-2 col on mobile, fix card padding, fix button stacking

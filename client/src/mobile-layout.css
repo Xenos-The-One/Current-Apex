@@ -1,0 +1,461 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE LAYOUT PASS — Agency CRM Platform
+   Strategy: Global overrides for small screens + section-specific rules.
+   Breakpoint: < 640px (Tailwind's "sm") = phone.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. GLOBAL: Kill cramped multi-column grids on phones ───────────────── */
+@media (max-width: 639px) {
+
+  /* ── Page wrapper padding ── */
+  [data-page-content],
+  .page-content,
+  .dashboard-content {
+    padding: 12px !important;
+  }
+
+  /* ── Container: ensure full-width with comfortable padding ── */
+  .container {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  /* ── Stat cards: max 2-col, never 3-4 ── */
+  .stat-card {
+    padding: 14px 12px !important;
+    min-height: 64px;
+  }
+
+  /* ── Generic grid collapse rules ──
+     Any grid with 3+ columns collapses to 1 column on mobile.
+     Any grid with 2 columns stays 2 only if items are simple (icon + number).
+     We handle this by targeting common patterns. ── */
+
+  /* 3-col grids → 1-col */
+  .grid-cols-3,
+  [class*="grid-cols-3"]:not([class*="sm:grid-cols"]):not([class*="md:grid-cols"]) {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+
+  /* 4-col grids → 2-col (simple KPIs) */
+  .grid-cols-4,
+  [class*="grid-cols-4"]:not([class*="sm:grid-cols"]):not([class*="md:grid-cols"]) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* 5+ col grids → 2-col */
+  .grid-cols-5,
+  .grid-cols-6,
+  .grid-cols-7,
+  .grid-cols-8,
+  .grid-cols-9,
+  .grid-cols-10,
+  .grid-cols-11,
+  .grid-cols-12 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* md: prefix overrides — these only activate at md breakpoint,
+     but on mobile we need to reset them to 1-col */
+  [class*="md:grid-cols-3"],
+  [class*="md:grid-cols-4"],
+  [class*="md:grid-cols-5"] {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+
+  [class*="md:grid-cols-2"] {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+
+  /* lg: prefix overrides */
+  [class*="lg:grid-cols-2"],
+  [class*="lg:grid-cols-3"],
+  [class*="lg:grid-cols-4"],
+  [class*="lg:col-span-2"],
+  [class*="lg:col-span-3"] {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+    grid-column: span 1 / span 1 !important;
+  }
+
+  /* xl: prefix overrides */
+  [class*="xl:grid-cols-3"],
+  [class*="xl:grid-cols-4"],
+  [class*="xl:grid-cols-5"],
+  [class*="xl:grid-cols-6"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* ── Card padding: ensure breathing room ── */
+  .card,
+  [class*="rounded-xl"][class*="border"],
+  [class*="rounded-lg"][class*="border"] {
+    padding: 0 !important; /* Let CardContent/CardHeader handle padding */
+  }
+
+  /* ── CardHeader / CardContent ── */
+  [data-slot="card-header"],
+  .card-header {
+    padding: 14px 14px 8px !important;
+  }
+
+  [data-slot="card-content"],
+  .card-content {
+    padding: 0 14px 14px !important;
+  }
+
+  /* ── Buttons: full-width primary actions in card footers ── */
+  [data-slot="card-footer"] .btn-primary,
+  [data-slot="card-footer"] button[class*="bg-primary"],
+  .card-cta-full {
+    width: 100% !important;
+  }
+
+  /* ── Flex rows that become too cramped: allow wrapping ── */
+  .flex-nowrap-mobile-wrap {
+    flex-wrap: wrap !important;
+  }
+
+  /* ── Tables: horizontal scroll ── */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+
+  /* ── Dialogs / Sheets: full-width on mobile ── */
+  [role="dialog"] > div,
+  [data-radix-dialog-content] {
+    max-width: 100vw !important;
+    margin: 0 !important;
+    border-radius: 16px 16px 0 0 !important;
+  }
+}
+
+/* ─── 2. DASHBOARD: specific layout fixes ────────────────────────────────── */
+@media (max-width: 639px) {
+
+  /* Right sidebar (AI Coach + Follow-Ups) — move below main content */
+  .dashboard-sidebar {
+    width: 100% !important;
+    flex-shrink: 1 !important;
+  }
+
+  /* Dashboard outer flex → column */
+  .dashboard-main-flex {
+    flex-direction: column !important;
+  }
+
+  /* Performance stats grid: 2-col max */
+  .client-perf-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* Quick actions: full-width single column */
+  .quick-actions-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+
+  /* AI Coach: compact on mobile */
+  .ai-coach-panel {
+    max-height: 280px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .ai-coach-panel.expanded {
+    max-height: none;
+  }
+
+  .ai-coach-expand-btn {
+    display: flex !important;
+  }
+
+  /* SLA alerts: full-width */
+  .sla-alert-row {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  /* Pipeline funnel: full-width */
+  .pipeline-funnel-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+}
+
+/* ─── 3. CONVERSATIONS: two-panel → single panel on mobile ───────────────── */
+@media (max-width: 767px) {
+
+  /* The inbox list panel */
+  .conversations-list-panel {
+    width: 100% !important;
+    flex-shrink: 0 !important;
+    border-right: none !important;
+  }
+
+  /* The message thread panel: hidden by default, shown when conv selected */
+  .conversations-thread-panel {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 50 !important;
+    background: white !important;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+  }
+
+  .conversations-thread-panel.open {
+    transform: translateX(0);
+  }
+
+  /* Right info panel: hidden on mobile */
+  .conversations-info-panel {
+    display: none !important;
+  }
+
+  /* Back button in thread: show on mobile */
+  .conversations-back-btn {
+    display: flex !important;
+  }
+}
+
+/* ─── 4. PIPELINE / KANBAN: horizontal scroll, min card width ────────────── */
+@media (max-width: 639px) {
+
+  /* Kanban board: horizontal scroll with snapping */
+  .kanban-board-scroll {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 16px !important;
+  }
+
+  /* Each kanban column: snap point, min width */
+  .kanban-column {
+    scroll-snap-align: start;
+    min-width: 280px !important;
+    width: 280px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Pipeline stats: 2-col */
+  .pipeline-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* ─── 5. ANALYTICS / METRICS: fix chart containers ──────────────────────── */
+@media (max-width: 639px) {
+
+  /* Chart containers: full-width, reasonable height */
+  .recharts-wrapper,
+  .recharts-responsive-container {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Analytics metric grid: 2-col */
+  .analytics-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* Analytics chart grid: 1-col */
+  .analytics-chart-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+}
+
+/* ─── 6. SOCIAL MEDIA CALENDAR: 7-col → scrollable ─────────────────────── */
+@media (max-width: 639px) {
+
+  /* Calendar grid: horizontal scroll */
+  .social-calendar-grid {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .social-calendar-grid .grid-cols-7 {
+    min-width: 560px; /* 7 × 80px */
+  }
+
+  /* Social stats: 2-col */
+  .social-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* ─── 7. CONTACTS PAGE: table → card list on mobile ─────────────────────── */
+@media (max-width: 639px) {
+
+  /* Contacts filter bar: wrap */
+  .contacts-filter-bar {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .contacts-filter-bar > * {
+    flex: 1 1 auto !important;
+    min-width: 120px !important;
+  }
+
+  /* Contacts table: horizontal scroll */
+  .contacts-table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ─── 8. CALENDAR PAGE: fix event grid ───────────────────────────────────── */
+@media (max-width: 639px) {
+
+  /* Calendar header: stack month nav */
+  .calendar-header {
+    flex-direction: column !important;
+    gap: 8px !important;
+    align-items: flex-start !important;
+  }
+
+  /* Calendar grid: horizontal scroll for week view */
+  .calendar-week-grid {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ─── 9. FORMS & DIALOGS: 2-col form grids → 1-col on mobile ────────────── */
+@media (max-width: 639px) {
+
+  /* Form grids inside dialogs/sheets */
+  [role="dialog"] .grid-cols-2,
+  [data-radix-dialog-content] .grid-cols-2,
+  [data-radix-sheet-content] .grid-cols-2 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+}
+
+/* ─── 10. GENERAL SPACING & TYPOGRAPHY ───────────────────────────────────── */
+@media (max-width: 639px) {
+
+  /* Page headers: reduce size */
+  .page-header h1,
+  h1.text-3xl,
+  h1.text-2xl {
+    font-size: 1.25rem !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Reduce excessive padding on page wrappers */
+  .p-6 {
+    padding: 12px !important;
+  }
+
+  .p-8 {
+    padding: 16px !important;
+  }
+
+  /* Ensure buttons are thumb-friendly */
+  button,
+  [role="button"],
+  a[class*="btn"] {
+    min-height: 36px;
+  }
+
+  /* Prevent text overflow in cards */
+  .truncate-mobile {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+}
+
+/* ─── 11. TABLET (640–1023px): moderate density reduction ────────────────── */
+@media (min-width: 640px) and (max-width: 1023px) {
+
+  /* 4-col grids → 2-col on tablet */
+  [class*="lg:grid-cols-4"],
+  [class*="xl:grid-cols-4"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* 6-col grids → 3-col on tablet */
+  [class*="xl:grid-cols-6"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  /* Dashboard sidebar: narrower on tablet */
+  .dashboard-sidebar {
+    width: 240px !important;
+  }
+}
+
+/* ─── 12. COLLAPSIBLE AI COACH (mobile-specific) ─────────────────────────── */
+.ai-coach-expand-btn {
+  display: none; /* hidden on desktop */
+}
+
+@media (max-width: 639px) {
+  .ai-coach-expand-btn {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    padding: 8px;
+    font-size: 12px;
+    color: var(--muted-foreground);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+  }
+
+  .ai-coach-panel {
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+
+  .ai-coach-panel:not(.expanded) {
+    max-height: 220px;
+  }
+
+  .ai-coach-panel.expanded {
+    max-height: 2000px;
+  }
+}
+
+/* ─── 13. MOBILE-SPECIFIC UTILITY CLASSES ────────────────────────────────── */
+
+/* Full-width on mobile only */
+@media (max-width: 639px) {
+  .mobile-full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+
+  .mobile-hide {
+    display: none !important;
+  }
+
+  .mobile-show {
+    display: block !important;
+  }
+
+  .mobile-1col {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+
+  .mobile-2col {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* Card with full-width CTA button */
+  .mobile-cta-full button:last-child,
+  .mobile-cta-full a:last-child {
+    width: 100% !important;
+  }
+}

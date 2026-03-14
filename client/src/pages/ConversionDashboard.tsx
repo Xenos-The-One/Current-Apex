@@ -29,11 +29,11 @@ export default function ConversionDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6">Conversion Funnel Analytics</h1>
+      <div className="container mx-auto p-4 sm:p-6">
+        <h1 className="text-xl font-bold mb-4">Conversion Funnel Analytics</h1>
         
         {/* Funnel Overview */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 gap-4 mb-6">
           <Card className="p-6">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-muted-foreground">Total Leads</h3>
@@ -80,7 +80,7 @@ export default function ConversionDashboard() {
         {/* Webinar Funnel */}
         <Card className="p-6 mb-8">
           <h2 className="text-xl font-bold mb-4">Webinar Conversion Funnel</h2>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-medium text-muted-foreground">Webinar Signups</h3>
@@ -171,7 +171,7 @@ function AbTestingPanel() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3">
           <Input placeholder="Test name (e.g. Headline Test)" value={testName} onChange={(e) => setTestName(e.target.value)} />
           <Input placeholder="Variant A copy" value={variantA} onChange={(e) => setVariantA(e.target.value)} />
           <Input placeholder="Variant B copy" value={variantB} onChange={(e) => setVariantB(e.target.value)} />

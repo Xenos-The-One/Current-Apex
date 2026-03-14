@@ -390,7 +390,7 @@ export default function AdManager() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           {[
             { label: "Total Ads", value: stats.total, icon: Megaphone, color: "text-blue-600", bg: "bg-blue-50" },
             { label: "Active Ads", value: stats.active, icon: Play, color: "text-green-600", bg: "bg-green-50" },
@@ -433,11 +433,11 @@ export default function AdManager() {
           </div>
 
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {[1, 2, 3].map(i => <Skeleton key={i} className="h-48 w-full rounded-xl" />)}
             </div>
           ) : filteredAds.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {filteredAds.map((ad: any) => (
                 <AdCard
                   key={ad.id}

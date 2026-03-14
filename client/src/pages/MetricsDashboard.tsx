@@ -128,7 +128,7 @@ export default function MetricsDashboard() {
       {/* Metrics Grid */}
       <section className="py-8">
         <div className="container">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 gap-4">
             {stats.map((stat, index) => {
               const Icon = stat.icon;
               return (
@@ -228,7 +228,7 @@ export default function MetricsDashboard() {
               <CardDescription>Based on current performance metrics</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <div className="text-sm text-muted-foreground mb-1">CRM Cost</div>
                   <div className="text-2xl font-bold">$2,000/mo</div>
