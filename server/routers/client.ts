@@ -8,6 +8,7 @@ import {
   getAgencyByOwnerId,
   getClientsByAgencyId,
   getLeadsByAgencyId,
+  getLeadsByAgencyIdPaginated,
   getLeadsByClientId,
   getLeadsByClientIdPaginated,
   getDistinctLeadTags,
@@ -180,6 +181,25 @@ export const clientRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       const client = await resolveClient(ctx);
+
+      // Admin without impersonation: show all leads across the agency
+      if (!client && isAdminUser(ctx.user.role)) {
+        const agency = await getAgencyByOwnerId(ctx.user.id);
+        if (!agency) {
+          return { leads: [], total: 0, page: input.page, limit: input.limit };
+        }
+        const offset = (input.page - 1) * input.limit;
+        const result = await getLeadsByAgencyIdPaginated(
+          agency.id,
+          input.limit,
+          offset,
+          input.status,
+          input.search,
+          input.tag
+        );
+        return { leads: result.leads, total: result.total, page: input.page, limit: input.limit };
+      }
+
       if (!client) {
         throw new TRPCError({
           code: "NOT_FOUND",

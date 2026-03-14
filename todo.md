@@ -1132,3 +1132,6 @@
 - [x] Social Media: fix "Generate Post" error (resolveClient now works for admin+impersonation)
 - [x] Social Media: fix duplicate className JSX parse error that prevented page from loading
 - [x] Social Media: fix "Connect a Platform" button doing nothing (same resolveClient root cause)
+
+## Bug Fix: Contacts Page API Error
+- [x] Fix /contacts page "Unexpected token '<'" error — admin without impersonation now shows all agency leads instead of throwing NOT_FOUND

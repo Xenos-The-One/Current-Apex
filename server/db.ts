@@ -420,6 +420,39 @@ export async function getLeadsByAgencyId(agencyId: number) {
   return await db.select().from(leads).where(eq(leads.agencyId, agencyId)).orderBy(desc(leads.createdAt));
 }
 
+export async function getLeadsByAgencyIdPaginated(
+  agencyId: number,
+  limit: number = 100,
+  offset: number = 0,
+  status?: string,
+  search?: string,
+  tag?: string
+) {
+  const db = await getDb();
+  if (!db) return { leads: [], total: 0 };
+
+  const conditions: any[] = [eq(leads.agencyId, agencyId)];
+  if (status) conditions.push(eq(leads.status, status as any));
+  if (search) {
+    const q = `%${search}%`;
+    conditions.push(
+      sql`(${leads.firstName} LIKE ${q} OR ${leads.lastName} LIKE ${q} OR ${leads.email} LIKE ${q} OR ${leads.phone} LIKE ${q})`
+    );
+  }
+  if (tag) {
+    conditions.push(sql`JSON_SEARCH(${leads.tags}, 'one', ${tag}) IS NOT NULL`);
+  }
+
+  const where = and(...conditions);
+
+  const [rows, countRows] = await Promise.all([
+    db.select().from(leads).where(where).orderBy(desc(leads.createdAt)).limit(limit).offset(offset),
+    db.select({ total: count() }).from(leads).where(where),
+  ]);
+
+  return { leads: rows, total: countRows[0]?.total ?? 0 };
+}
+
 export async function updateLead(id: number, data: Partial<InsertLead>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
