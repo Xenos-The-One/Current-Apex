@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE team_notifications \n  MODIFY COLUMN userId int NULL DEFAULT NULL,\n  MODIFY COLUMN type enum('new_lead','appointment_reminder','campaign_sent','call_completed','task_due','workflow_triggered','document_uploaded','system','daily_standup','weekly_strategy','weekly_report','hot_lead','birthday_alert','no_show_alert','webinar_milestone','ad_spend_alert','custom','appointment_booked','vapi_call','lead_status_change','facebook_lead','content_comment') NOT NULL DEFAULT 'system';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute ALTER TABLE team_notifications \n  MODIFY COLUMN userId int NULL DEFAULT NULL,\n  MODIFY COLUMN type enum('new_lead','appointment_reminder','campaign_sent','call_completed','task_due','workflow_triggered','document_uploaded','system','daily_standup','weekly_strategy','weekly_report','hot_lead','birthday_alert','no_show_alert','webinar_milestone','ad_spend_alert','custom','appointment_booked','vapi_call','lead_status_change','facebook_lead','content_comment') NOT NULL DEFAULT 'system';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 557
+}

@@ -1070,6 +1070,9 @@
 - [ ] Performance audit (Lighthouse PWA score) — manual step for user
 - [x] Save checkpoint and deploy
 
+## PWA Bug Fix
+- [x] Fix team_notifications insert error when sending test push notification (DB column mismatch)
+
 ## PWA Next Steps (Round 2)
 - [x] Add VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY secrets for push notifications
 - [x] Wire VAPID keys into push subscription backend (subscribe/unsubscribe procedures)
