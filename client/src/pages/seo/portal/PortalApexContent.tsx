@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -868,12 +868,38 @@ function GenerateContentTab() {
   const [shouldGenerateImage, setShouldGenerateImage] = useState(false);
   const utils = trpc.useUtils();
 
-  // Resolve seo client ID for this portal user
+  // Resolve seo client ID for this portal user — auto-provision if missing
   const { data: myInfo } = trpc.crm.getMyInfo.useQuery(undefined, { enabled: !!user });
-  const { data: seoClient } = trpc.seo.clients.getByCrmId.useQuery(
+  const [resolvedSeoClientId, setResolvedSeoClientId] = useState<number | null>(null);
+  const [isProvisioning, setIsProvisioning] = useState(false);
+
+  // First try to find existing SEO client by CRM ID
+  const { data: seoClient, isLoading: seoClientLoading } = trpc.seo.clients.getByCrmId.useQuery(
     { crmClientId: myInfo?.client?.id ?? 0 },
     { enabled: !!myInfo?.client?.id }
   );
+
+  // Auto-provision mutation — called when no SEO client exists yet
+  const ensureMutation = trpc.seo.clients.ensureForCurrentUser.useMutation({
+    onSuccess: (data) => {
+      if (data.seoClientId) setResolvedSeoClientId(data.seoClientId);
+      setIsProvisioning(false);
+    },
+    onError: () => setIsProvisioning(false),
+  });
+
+  // When myInfo loads and no SEO client found, auto-provision
+  useEffect(() => {
+    if (myInfo?.client && !seoClientLoading && !seoClient?.id && !isProvisioning && !resolvedSeoClientId) {
+      setIsProvisioning(true);
+      ensureMutation.mutate();
+    }
+    if (seoClient?.id && !resolvedSeoClientId) {
+      setResolvedSeoClientId(seoClient.id);
+    }
+  }, [myInfo, seoClient, seoClientLoading]);
+
+  const effectiveSeoClientId = resolvedSeoClientId ?? seoClient?.id ?? null;
 
   const generateMutation = trpc.seo.content.generate.useMutation({
     onSuccess: () => {
@@ -889,7 +915,7 @@ function GenerateContentTab() {
   const selectedType = CONTENT_TYPES.find((t) => t.value === contentType);
 
   const handleGenerate = () => {
-    if (!seoClient?.id) {
+    if (!effectiveSeoClientId) {
       toast.error("Your account is not fully set up yet. Please contact your agency.");
       return;
     }
@@ -906,7 +932,7 @@ function GenerateContentTab() {
       .join("\n");
 
     generateMutation.mutate({
-      clientId: seoClient.id,
+      clientId: effectiveSeoClientId,
       topic,
       contentType: contentType as any,
       customPrompt: customPrompt || undefined,
@@ -1041,7 +1067,7 @@ function GenerateContentTab() {
       <Button
         className="w-full"
         onClick={handleGenerate}
-        disabled={!topic.trim() || generateMutation.isPending || !seoClient?.id}
+        disabled={!topic.trim() || generateMutation.isPending || (!effectiveSeoClientId && !isProvisioning)}
         style={{
           background: "linear-gradient(135deg, hsl(var(--primary)/0.08), hsl(var(--primary)/0.15))",
           border: "1px solid hsl(var(--border))",
@@ -1061,9 +1087,10 @@ function GenerateContentTab() {
         )}
       </Button>
 
-      {!seoClient?.id && myInfo?.client && (
-        <p className="text-xs text-amber-400/70 text-center">
-          Your SEO profile is being set up. Content generation will be available shortly.
+      {isProvisioning && (
+        <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          Setting up your content profile…
         </p>
       )}
     </div>

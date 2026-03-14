@@ -64,6 +64,27 @@ export const seoRouter = router({
         const { getSeoClientByCrmId } = await import("./seo-db");
         return getSeoClientByCrmId(input.crmClientId);
       }),
+    // Auto-provision an SEO client record for the current portal user.
+    // Creates one linked to their CRM client if it doesn't exist yet.
+    ensureForCurrentUser: protectedProcedure.mutation(async ({ ctx }) => {
+      const { getClientByUserId } = await import("./db");
+      const { ensureLinkedSeoClient, getFirstAdminSeoUser, getSeoClientByCrmId } = await import("./seo-db");
+      const crmClient = await getClientByUserId(ctx.user.id);
+      if (!crmClient) return { seoClientId: null, created: false };
+      const existing = await getSeoClientByCrmId(crmClient.id);
+      if (existing) return { seoClientId: existing.id, created: false };
+      const adminSeoUser = await getFirstAdminSeoUser();
+      if (!adminSeoUser) return { seoClientId: null, created: false };
+      const seoClientId = await ensureLinkedSeoClient({
+        crmClientId: crmClient.id,
+        name: (crmClient as any).name ?? ctx.user.name ?? "Client",
+        email: (crmClient as any).email ?? ctx.user.email ?? undefined,
+        phone: (crmClient as any).phone ?? undefined,
+        businessType: (crmClient as any).businessType ?? undefined,
+        seoUserId: adminSeoUser.id,
+      });
+      return { seoClientId, created: true };
+    }),
     create: protectedProcedure
       .input(z.object({
         name: z.string().min(1),

@@ -981,3 +981,7 @@
 - [x] Fix sidebar footer to show impersonated client name in client view mode (not admin name)
 - [x] Verified socialConnections router scoped to current user via getClientByUserId (no cross-account leakage)
 - [x] PortalSocialMedia auto-derives business name from crm.getMyInfo (no manual client selector)
+
+## Content Generation Fix
+- [x] Fix seoClientId resolution in PortalApexContent Generate tab — added seo.clients.ensureForCurrentUser mutation that auto-provisions SEO client record on first visit
+- [x] Ensure Generate button is enabled for portal users with valid CRM client profiles — button now enabled once ensureForCurrentUser resolves the SEO client ID
