@@ -472,13 +472,15 @@ function CreateEmailCampaignDialog({ clientId, onSuccess, initialTemplate }: { c
     subject: initialTemplate?.subject ?? "",
     previewText: "",
     content: initialTemplate?.content ?? "",
-    recipientFilter: "all" as const, scheduledDate: "", sendNow: false,
+    recipientFilter: "all" as const,
+    recipientStatus: "new" as string,
+    scheduledDate: "", sendNow: false,
   });
   const createCampaign = trpc.campaignsOld.createEmailCampaign.useMutation({
     onSuccess: () => {
       toast.success("Email campaign created");
       setOpen(false);
-      setForm({ name: "", subject: "", previewText: "", content: "", recipientFilter: "all", scheduledDate: "", sendNow: false });
+      setForm({ name: "", subject: "", previewText: "", content: "", recipientFilter: "all", recipientStatus: "new", scheduledDate: "", sendNow: false });
       onSuccess();
     },
     onError: (e: any) => toast.error(e.message),
@@ -555,10 +557,23 @@ function CreateEmailCampaignDialog({ clientId, onSuccess, initialTemplate }: { c
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Leads</SelectItem>
-                <SelectItem value="status">By Status (New / Contacted / Qualified...)</SelectItem>
+                <SelectItem value="status">By Status</SelectItem>
                 <SelectItem value="custom">Custom Selection</SelectItem>
               </SelectContent>
             </Select>
+            {form.recipientFilter === "status" && (
+              <Select value={form.recipientStatus} onValueChange={v => setForm(f => ({ ...f, recipientStatus: v }))}>
+                <SelectTrigger className="mt-2"><SelectValue placeholder="Select a status..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">New</SelectItem>
+                  <SelectItem value="contacted">Contacted</SelectItem>
+                  <SelectItem value="qualified">Qualified</SelectItem>
+                  <SelectItem value="appointment_set">Appointment Set</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
+                  <SelectItem value="lost">Lost</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label className="text-sm flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> Schedule Send <span className="text-muted-foreground font-normal">(optional)</span></Label>
@@ -581,6 +596,7 @@ function CreateEmailCampaignDialog({ clientId, onSuccess, initialTemplate }: { c
               subject: form.subject,
               content: form.content,
               recipientFilter: form.recipientFilter,
+              recipientStatus: form.recipientFilter === "status" ? form.recipientStatus : undefined,
               scheduledDate: form.scheduledDate ? new Date(form.scheduledDate) : undefined,
               sendNow: form.sendNow,
             })}

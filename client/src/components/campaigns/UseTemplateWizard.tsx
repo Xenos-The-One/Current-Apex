@@ -380,9 +380,13 @@ function ScheduleStep({
 function ReviewStep({
   template,
   state,
+  onSendTest,
+  isSendingTest,
 }: {
   template: CampaignTemplate;
   state: WizardState;
+  onSendTest?: () => void;
+  isSendingTest?: boolean;
 }) {
   const colors = CHANNEL_COLORS[template.channel];
   const ChannelIcon =
@@ -431,6 +435,27 @@ function ReviewStep({
         </div>
       </div>
 
+      {template.channel === "email" && onSendTest && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+          <p className="text-xs text-amber-800 mb-2">
+            Send a preview to your own inbox to check formatting before launching.
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full border-amber-300 text-amber-800 hover:bg-amber-100"
+            onClick={onSendTest}
+            disabled={isSendingTest}
+          >
+            {isSendingTest ? (
+              <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Sending preview...</>
+            ) : (
+              <><Mail className="h-3.5 w-3.5 mr-1.5" /> Send Test Email to Myself</>
+            )}
+          </Button>
+        </div>
+      )}
+
       {state.sendNow && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 flex gap-2">
           <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
@@ -471,6 +496,20 @@ export function UseTemplateWizard({
   const createSms = trpc.campaigns.createSmsCampaign.useMutation();
   const seedToClient = trpc.campaigns.seedTemplateToClient.useMutation();
   const trackUsage = trpc.campaigns.trackTemplateUsage.useMutation();
+  const sendTestEmail = trpc.campaigns.sendTestEmail.useMutation({
+    onSuccess: (data) => {
+      if (data.demo) {
+        toast.info("Test email (demo mode)", {
+          description: `Would have sent to ${data.to}. Configure SendGrid to send real emails.`,
+        });
+      } else {
+        toast.success("Test email sent!", {
+          description: `Preview delivered to ${data.to}. Check your inbox.`,
+        });
+      }
+    },
+    onError: (err) => toast.error("Failed to send test email", { description: err.message }),
+  });
 
   if (!template) return null;
 
@@ -603,7 +642,12 @@ export function UseTemplateWizard({
             <ScheduleStep state={state} onChange={onChange} />
           )}
           {currentStep === "review" && (
-            <ReviewStep template={template} state={state} />
+            <ReviewStep
+              template={template}
+              state={state}
+              onSendTest={() => sendTestEmail.mutate({ subject: state.subject || state.campaignName, content: state.content })}
+              isSendingTest={sendTestEmail.isPending}
+            />
           )}
         </ScrollArea>
 

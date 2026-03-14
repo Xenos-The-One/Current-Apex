@@ -446,6 +446,47 @@ export const campaignsRouter = router({
       }
     }),
 
+  // ─── Send Test Email ─────────────────────────────────────────────────────
+  sendTestEmail: protectedProcedure
+    .input(z.object({
+      subject: z.string().min(1),
+      content: z.string().min(1),
+      toEmail: z.string().email().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      const recipient = input.toEmail ?? ctx.user.email;
+      if (!recipient) throw new TRPCError({ code: "BAD_REQUEST", message: "No email address available" });
+      const FROM_EMAIL = process.env.FROM_EMAIL ?? "noreply@example.com";
+      // Replace common template variables with sample values for the preview
+      const previewContent = input.content
+        .replace(/\{name\}/g, ctx.user.name ?? "Test Lead")
+        .replace(/\{agent_name\}/g, ctx.user.name ?? "Your Agent")
+        .replace(/\{company\}/g, "Your Agency")
+        .replace(/\{date\}/g, new Date().toLocaleDateString())
+        .replace(/\{time\}/g, "10:00 AM");
+      const htmlContent = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+        <div style="background:#f59e0b;color:#fff;padding:8px 16px;border-radius:4px 4px 0 0;font-size:12px;font-weight:bold">
+          ⚠️ TEST EMAIL — Preview sent to ${recipient}
+        </div>
+        <div style="padding:24px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 4px 4px">
+          ${previewContent.replace(/\n/g, "<br/>")}
+        </div>
+      </div>`;
+      const result = await sendEmail({
+        to: [recipient],
+        from: FROM_EMAIL,
+        subject: `[TEST] ${input.subject}`,
+        html: htmlContent,
+        text: `[TEST EMAIL]\n\n${previewContent}`,
+      });
+      if (!result.success) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: result.error ?? "Failed to send test email" });
+      }
+      return { sent: true, to: recipient, demo: result.demo ?? false };
+    }),
+
   // ─── Save as Template ─────────────────────────────────────────────────────
   saveAsTemplate: protectedProcedure
     .input(z.object({

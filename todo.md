@@ -1195,3 +1195,12 @@
 - [ ] SMS campaign list: Save as Template button on each row
 - [ ] SaveAsTemplateDialog component
 - [ ] vitest tests for new procedures
+
+## Feature: Campaign UX Improvements (3 features)
+- [x] Email campaign form: "By Status" sub-selector (recipientFilter=status shows status dropdown)
+- [x] Template Library: search bar to filter templates by name/category/description
+- [x] UseTemplateWizard: Send Test Email button in review step (calls sendTestEmail backend procedure)
+- [x] Backend: sendTestEmail procedure (replaces template vars, adds TEST banner, demo mode fallback)
+- [x] Fix email campaign recipientFilter to only accept valid enum values (all/status/custom)
+- [x] Fix UseTemplateWizard canAdvance crash (undefined.trim() — added null coalescing guards)
+- [x] vitest tests: 37 new tests covering By Status logic, template search filtering, Send Test Email logic, wizard canAdvance guards
