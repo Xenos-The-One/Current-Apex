@@ -1079,3 +1079,8 @@
 - [x] Send real push notifications via web-push library for new leads and appointments
 - [x] Expand manifest shortcuts (Pipeline, Conversations, Calendar, Contacts)
 - [x] Add Lighthouse PWA audit guide page in admin Settings → PWA
+
+## Round N: 3 Suggested Next Steps
+- [x] Fix GROUP BY SQL error in leads query (only_full_group_by mode incompatibility)
+- [x] Wire push notifications for new leads entering the pipeline
+- [x] Add real-time unread notification badge counter to the bell icon in top nav

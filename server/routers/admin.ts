@@ -24,6 +24,7 @@ import {
 import { clients as clientsTable } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { ensureLinkedSeoClient, upsertUser as upsertSeoUser, getUserByOpenId } from "../seo-db";
+import { pushNewLead } from "../push-triggers";
 
 // Middleware to check if user is admin or super_admin
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -252,7 +253,16 @@ export const adminRouter = router({
       notes: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
-      await createLead(input);
+      const lead = await createLead(input);
+      // Fire push notification for new lead (non-blocking)
+      pushNewLead({
+        leadId: lead.id,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        phone: input.phone || "",
+        source: input.source || "Manual",
+        email: input.email,
+      }).catch(e => console.error("[Admin createLead] Push notification failed:", e));
       return { success: true };
     }),
 

@@ -124,8 +124,8 @@ export default function CRMLayout({ children, agencyId }: CRMLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const { data: notifData } = trpc.notifications.unreadCount.useQuery(
-    { agencyId: agencyId ?? 1 },
-    { enabled: !!user }
+    undefined,
+    { enabled: !!user, refetchInterval: 30000 }
   );
   const unreadCount = notifData?.count ?? 0;
 

@@ -223,7 +223,7 @@ Make each creative unique with different hooks and angles.`;
       WHERE source = 'facebook'
         AND createdAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)
         AND custom_fields->>'$.campaign_id' IS NOT NULL
-      GROUP BY campaign_id, campaign_name
+      GROUP BY custom_fields->>'$.campaign_id', custom_fields->>'$.campaign_name'
     `);
     
     return (result as any[]).map((row: any) => ({
