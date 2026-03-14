@@ -6,6 +6,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { ImpersonationProvider } from "./contexts/ImpersonationContext";
+import { trpc } from "@/lib/trpc";
 import Home from "./pages/Home";
 import { usePWA } from "./hooks/usePWA";
 import Login from "./pages/Login";
@@ -263,6 +264,24 @@ function Router() {
 //   to keep consistent foreground/background color across components
 // - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
 
+/**
+ * Reads the current user ID from tRPC and passes it to ImpersonationProvider
+ * so it can auto-clear stale impersonation data on logout, session expiry,
+ * or account switch — without needing the React context to be inside tRPC.
+ */
+function AuthAwareImpersonationProvider({ children }: { children: React.ReactNode }) {
+  const { data: user } = trpc.auth.me.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false,
+    staleTime: 30_000,
+  });
+  return (
+    <ImpersonationProvider currentUserId={user?.id ?? null}>
+      {children}
+    </ImpersonationProvider>
+  );
+}
+
 function App() {
   usePWA();
   return (
@@ -271,12 +290,12 @@ function App() {
         defaultTheme="light"
         // switchable
       >
-        <ImpersonationProvider>
+        <AuthAwareImpersonationProvider>
           <TooltipProvider>
             <Toaster />
             <Router />
           </TooltipProvider>
-        </ImpersonationProvider>
+        </AuthAwareImpersonationProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

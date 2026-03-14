@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 
 export type ImpersonationViewMode = "admin" | "client";
 
@@ -41,9 +41,33 @@ const ImpersonationContext = createContext<ImpersonationState>({
   startImpersonating: () => {},
 });
 
-const STORAGE_KEY = "impersonating_client";
+export const IMPERSONATION_STORAGE_KEY = "impersonating_client";
+/** @deprecated use IMPERSONATION_STORAGE_KEY */
+const STORAGE_KEY = IMPERSONATION_STORAGE_KEY;
 
-export function ImpersonationProvider({ children }: { children: ReactNode }) {
+/**
+ * Synchronously removes the impersonation entry from localStorage.
+ * Safe to call from any logout path — works outside of React context.
+ */
+export function clearImpersonationStorage(): void {
+  try {
+    localStorage.removeItem(IMPERSONATION_STORAGE_KEY);
+  } catch {
+    // localStorage may be unavailable in SSR or restricted environments
+  }
+}
+
+/**
+ * Pass `currentUserId` so the provider can automatically clear impersonation
+ * when the authenticated user changes (logout, session expiry, or account switch).
+ */
+export function ImpersonationProvider({
+  children,
+  currentUserId,
+}: {
+  children: ReactNode;
+  currentUserId?: number | null;
+}) {
   const [state, setState] = useState<{
     clientId: number | null;
     clientName: string | null;
@@ -79,6 +103,21 @@ export function ImpersonationProvider({ children }: { children: ReactNode }) {
     setState({ clientId: null, clientName: null, viewMode: null });
     localStorage.removeItem(STORAGE_KEY);
   }, []);
+
+  // Auto-clear impersonation when the authenticated user changes.
+  // This covers: explicit logout, session expiry, and account switching.
+  // We track the previous user ID so a switch from userA -> userB also clears state.
+  const prevUserIdRef = React.useRef<number | null | undefined>(currentUserId);
+  useEffect(() => {
+    const prev = prevUserIdRef.current;
+    prevUserIdRef.current = currentUserId;
+    // Only act when the user ID actually changes (not on initial mount)
+    if (prev === undefined) return; // first render — skip
+    if (prev !== currentUserId) {
+      // User logged out (null) or a different user logged in
+      stopImpersonating();
+    }
+  }, [currentUserId, stopImpersonating]);
 
   return (
     <ImpersonationContext.Provider

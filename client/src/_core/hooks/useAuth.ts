@@ -1,5 +1,6 @@
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
+import { clearImpersonationStorage } from "@/contexts/ImpersonationContext";
 import { TRPCClientError } from "@trpc/client";
 import { useCallback, useEffect, useMemo } from "react";
 
@@ -36,6 +37,9 @@ export function useAuth(options?: UseAuthOptions) {
       }
       throw error;
     } finally {
+      // Always clear impersonation state on logout so stale client IDs
+      // can never be sent in subsequent requests after re-login.
+      clearImpersonationStorage();
       utils.auth.me.setData(undefined, null);
       await utils.auth.me.invalidate();
     }

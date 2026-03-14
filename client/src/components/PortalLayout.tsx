@@ -30,6 +30,7 @@ import {
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
+import { clearImpersonationStorage } from "@/contexts/ImpersonationContext";
 
 interface PortalLayoutProps {
   children: React.ReactNode;
@@ -53,6 +54,13 @@ export default function PortalLayout({ children, activePath }: PortalLayoutProps
 
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
+      // Clear any stale impersonation data before redirecting to login
+      clearImpersonationStorage();
+      window.location.href = getLoginUrl();
+    },
+    onError: () => {
+      // Clear even on error so stale data can't persist
+      clearImpersonationStorage();
       window.location.href = getLoginUrl();
     },
   });

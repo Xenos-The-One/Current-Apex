@@ -1153,3 +1153,9 @@
 
 ## Bug Fix: SEO Portal Dashboard /seo/portal/dashboard error
 - [x] Fix socialConnections.listConnections crashing with client_id=90001 (stale impersonation header)
+
+## Feature: Clear stale impersonation on logout
+- [x] Export clearImpersonationStorage() from ImpersonationContext
+- [x] Call clearImpersonationStorage() in useAuth logout finally block
+- [x] Call clearImpersonationStorage() in PortalLayout handleLogout onSuccess
+- [x] Add useEffect in ImpersonationContext to clear storage when user becomes null (session expiry)
