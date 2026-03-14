@@ -22,7 +22,14 @@ type Platform = (typeof SUPPORTED_PLATFORMS)[number];
 
 const ADMIN_ROLES = ["admin", "super_admin", "agency_owner"];
 
-async function resolveClient(ctx: { user: { id: number; role: string; name?: string | null; email?: string | null }; req: any }) {
+/**
+ * Resolve the active client for social connection procedures.
+ * Returns null (instead of throwing) when an admin has no valid client context
+ * so callers can return empty results gracefully.
+ */
+async function resolveClient(
+  ctx: { user: { id: number; role: string; name?: string | null; email?: string | null }; req: any }
+): Promise<Awaited<ReturnType<typeof getClientById>> | null> {
   const isAdmin = ADMIN_ROLES.includes(ctx.user.role);
 
   // If admin is impersonating a client, use that client
@@ -31,13 +38,24 @@ async function resolveClient(ctx: { user: { id: number; role: string; name?: str
     if (impersonateId) {
       const clientId = parseInt(impersonateId, 10);
       if (!isNaN(clientId)) {
-        const client = await getClientById(clientId);
-        if (client) return client;
+        try {
+          const client = await getClientById(clientId);
+          if (client) return client;
+          // Stale/invalid impersonation ID — fall through to own profile
+          console.warn(`[socialConnections] Impersonated client id=${clientId} not found, ignoring stale header`);
+        } catch (err) {
+          // DB error for invalid FK value — treat as "not found"
+          console.warn(`[socialConnections] Error fetching impersonated client id=${clientId}:`, err);
+        }
       }
     }
+    // Admin without valid impersonation — return null so callers can return empty results
+    // (admins don't have their own client profile)
+    const ownClient = await getClientByUserId(ctx.user.id);
+    return ownClient ?? null;
   }
 
-  // Fall back to the user's own client profile (auto-provision for client_user)
+  // Non-admin: fall back to the user's own client profile (auto-provision for client_user)
   let client = await getClientByUserId(ctx.user.id);
   if (!client) {
     client = await ensureClientProfile(ctx.user) ?? undefined;
@@ -52,6 +70,16 @@ export const socialConnectionsRouter = router({
   // ── List all platform connection statuses for the current client ──────────
   listConnections: protectedProcedure.query(async ({ ctx }) => {
     const client = await resolveClient(ctx);
+    // Admin without a valid client context — return empty disconnected defaults
+    if (!client) {
+      return SUPPORTED_PLATFORMS.map((platform) => ({
+        platform,
+        connected: false,
+        username: null,
+        pageName: null,
+        lastSyncAt: null,
+      }));
+    }
     const db = await getDb();
     if (!db) return [];
 
@@ -85,6 +113,7 @@ export const socialConnectionsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const client = await resolveClient(ctx);
+      if (!client) throw new TRPCError({ code: "BAD_REQUEST", message: "Please select a client to manage social connections for." });
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
 
@@ -128,6 +157,7 @@ export const socialConnectionsRouter = router({
     .input(z.object({ platform: z.enum(SUPPORTED_PLATFORMS) }))
     .mutation(async ({ ctx, input }) => {
       const client = await resolveClient(ctx);
+      if (!client) throw new TRPCError({ code: "BAD_REQUEST", message: "Please select a client to manage social connections for." });
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
 

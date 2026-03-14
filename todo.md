@@ -1150,3 +1150,6 @@
 - [x] Add OfflineQueueBanner showing pending count and manual sync trigger
 - [x] Auto-sync on reconnect using online/offline events
 - [x] Write vitest tests for the offline queue hook
+
+## Bug Fix: SEO Portal Dashboard /seo/portal/dashboard error
+- [x] Fix socialConnections.listConnections crashing with client_id=90001 (stale impersonation header)
