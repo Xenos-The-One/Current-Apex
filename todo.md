@@ -1143,3 +1143,10 @@
 - [x] Add "no phone/email" guard with inline warning in composer
 - [x] Show send result feedback (sent vs demo mode) in composer
 - [x] Write vitest tests for the admin-without-impersonation send path
+
+## Feature: Offline Queue for Quick-Add Leads
+- [x] Build useOfflineLeadQueue hook (localStorage persistence, enqueue, dequeue, sync)
+- [x] Integrate offline queue into QuickAddLeadFAB (offline submit path, pending badge)
+- [x] Add OfflineQueueBanner showing pending count and manual sync trigger
+- [x] Auto-sync on reconnect using online/offline events
+- [x] Write vitest tests for the offline queue hook

@@ -93,6 +93,7 @@ import { Eye, EyeOff, LogIn } from "lucide-react";
 import { GlobalSearch, useGlobalSearch } from "./GlobalSearch";
 import { AlertCircle } from "lucide-react";
 import { OfflineBanner } from "./OfflineBanner";
+import { OfflineQueueBanner } from "./OfflineQueueBanner";
 import { PWAInstallBanner, IOSInstallBanner } from "./PWABanner";
 import { PWAUpdateBanner } from "./PWAUpdateBanner";
 import { MobileBottomNav } from "./MobileBottomNav";
@@ -1296,6 +1297,7 @@ function DashboardLayoutContent({
         })()}
         {/* Offline + PWA update banners — shown above main content */}
         <OfflineBanner />
+        <OfflineQueueBanner />
         <PWAUpdateBanner />
         <main className="flex-1 p-3 overflow-hidden flex flex-col min-h-0">{children}</main>
       </SidebarInset>
