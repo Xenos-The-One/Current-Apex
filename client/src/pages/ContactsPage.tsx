@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/useMobile";
 import { BottomSheet } from "@/components/BottomSheet";
+import { PullToRefresh } from "@/components/PullToRefresh";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Lead = {
@@ -154,95 +155,176 @@ function MobileContactCard({
   onNavigate: (lead: Lead) => void;
 }) {
   const tags = parseTags(lead.tags);
+  const [swipeX, setSwipeX] = useState(0);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const isSwipingRef = useRef(false);
+  const SWIPE_THRESHOLD = 60;
+  const MAX_SWIPE = 140;
+
+  function haptic(ms = 10) {
+    if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(ms);
+  }
+
+  function onTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isSwipingRef.current = false;
+  }
+
+  function onTouchMove(e: React.TouchEvent) {
+    const dx = e.touches[0].clientX - touchStartX.current;
+    const dy = e.touches[0].clientY - touchStartY.current;
+    if (!isSwipingRef.current && Math.abs(dy) > Math.abs(dx)) return; // vertical scroll wins
+    isSwipingRef.current = true;
+    const clamped = Math.max(-MAX_SWIPE, Math.min(MAX_SWIPE, dx));
+    setSwipeX(clamped);
+  }
+
+  function onTouchEnd() {
+    if (Math.abs(swipeX) < SWIPE_THRESHOLD) {
+      setSwipeX(0);
+    } else {
+      // snap to reveal panel
+      const snap = swipeX < 0 ? -MAX_SWIPE : MAX_SWIPE;
+      setSwipeX(snap);
+      haptic(8);
+    }
+    isSwipingRef.current = false;
+  }
+
+  function resetSwipe() { setSwipeX(0); }
+
   return (
-    <div
-      className="flex items-start gap-3 px-4 py-3.5 border-b last:border-b-0 active:bg-muted/60 transition-colors cursor-pointer"
-      onClick={() => onNavigate(lead)}
-    >
-      {/* Avatar */}
-      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0 ${avatarColor(lead.id)}`}>
-        {initials(lead)}
+    <div className="relative overflow-hidden border-b last:border-b-0">
+      {/* Left action panel (swipe right → Edit/Delete) */}
+      <div
+        className="absolute inset-y-0 left-0 flex items-stretch"
+        style={{ width: MAX_SWIPE, opacity: swipeX > 0 ? Math.min(1, swipeX / SWIPE_THRESHOLD) : 0 }}
+      >
+        <button
+          className="flex-1 flex flex-col items-center justify-center gap-1 bg-blue-500 text-white text-xs font-medium"
+          onClick={() => { haptic(); resetSwipe(); onEdit(lead); }}
+        >
+          <Pencil className="w-4 h-4" />
+          Edit
+        </button>
+        <button
+          className="flex-1 flex flex-col items-center justify-center gap-1 bg-red-500 text-white text-xs font-medium"
+          onClick={() => { haptic(20); resetSwipe(); onDelete(lead); }}
+        >
+          <Trash2 className="w-4 h-4" />
+          Delete
+        </button>
       </div>
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2">
-          <span className="font-semibold text-sm truncate">{fullName(lead)}</span>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${STATUS_COLORS[lead.status] || "bg-gray-100 text-gray-600"}`}>
-            {STATUS_LABELS[lead.status] || lead.status}
-          </span>
-        </div>
-        {lead.company && (
-          <div className="flex items-center gap-1 mt-0.5">
-            <Building2 className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-            <span className="text-xs text-muted-foreground truncate">{lead.company}</span>
+
+      {/* Right action panel (swipe left → Call/Message) */}
+      <div
+        className="absolute inset-y-0 right-0 flex items-stretch"
+        style={{ width: MAX_SWIPE, opacity: swipeX < 0 ? Math.min(1, -swipeX / SWIPE_THRESHOLD) : 0 }}
+      >
+        {lead.phone ? (
+          <a
+            href={`tel:${lead.phone}`}
+            className="flex-1 flex flex-col items-center justify-center gap-1 bg-emerald-500 text-white text-xs font-medium"
+            onClick={() => { haptic(); resetSwipe(); }}
+          >
+            <Phone className="w-4 h-4" />
+            Call
+          </a>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center gap-1 bg-emerald-500/40 text-white/60 text-xs font-medium">
+            <Phone className="w-4 h-4" />
+            Call
           </div>
         )}
-        <div className="flex items-center gap-3 mt-1">
-          {lead.phone && (
-            <a
-              href={`tel:${lead.phone}`}
-              onClick={e => e.stopPropagation()}
-              className="flex items-center gap-1 text-xs text-primary"
-            >
-              <Phone className="w-3 h-3" /> {lead.phone}
-            </a>
-          )}
-          {lead.email && !lead.phone && (
-            <a
-              href={`mailto:${lead.email}`}
-              onClick={e => e.stopPropagation()}
-              className="flex items-center gap-1 text-xs text-primary truncate max-w-[160px]"
-            >
-              <Mail className="w-3 h-3 flex-shrink-0" />
-              <span className="truncate">{lead.email}</span>
-            </a>
-          )}
-          {lead.lastContactDate && (
-            <span className="flex items-center gap-1 text-xs text-muted-foreground ml-auto">
-              <Clock className="w-3 h-3" /> {timeAgo(lead.lastContactDate)}
+        {lead.email ? (
+          <a
+            href={`mailto:${lead.email}`}
+            className="flex-1 flex flex-col items-center justify-center gap-1 bg-violet-500 text-white text-xs font-medium"
+            onClick={() => { haptic(); resetSwipe(); }}
+          >
+            <Mail className="w-4 h-4" />
+            Message
+          </a>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center gap-1 bg-violet-500/40 text-white/60 text-xs font-medium">
+            <Mail className="w-4 h-4" />
+            Message
+          </div>
+        )}
+      </div>
+
+      {/* Card content — translates with swipe */}
+      <div
+        className="flex items-start gap-3 px-4 py-3.5 bg-card active:bg-muted/60 cursor-pointer"
+        style={{
+          transform: `translateX(${swipeX}px)`,
+          transition: isSwipingRef.current ? "none" : "transform 0.2s ease",
+        }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onClick={() => { if (Math.abs(swipeX) < 5) onNavigate(lead); else resetSwipe(); }}
+      >
+        {/* Avatar */}
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0 ${avatarColor(lead.id)}`}>
+          {initials(lead)}
+        </div>
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-semibold text-sm truncate">{fullName(lead)}</span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${STATUS_COLORS[lead.status] || "bg-gray-100 text-gray-600"}`}>
+              {STATUS_LABELS[lead.status] || lead.status}
             </span>
+          </div>
+          {lead.company && (
+            <div className="flex items-center gap-1 mt-0.5">
+              <Building2 className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+              <span className="text-xs text-muted-foreground truncate">{lead.company}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-3 mt-1">
+            {lead.phone && (
+              <a
+                href={`tel:${lead.phone}`}
+                onClick={e => e.stopPropagation()}
+                className="flex items-center gap-1 text-xs text-primary"
+              >
+                <Phone className="w-3 h-3" /> {lead.phone}
+              </a>
+            )}
+            {lead.email && !lead.phone && (
+              <a
+                href={`mailto:${lead.email}`}
+                onClick={e => e.stopPropagation()}
+                className="flex items-center gap-1 text-xs text-primary truncate max-w-[160px]"
+              >
+                <Mail className="w-3 h-3 flex-shrink-0" />
+                <span className="truncate">{lead.email}</span>
+              </a>
+            )}
+            {lead.lastContactDate && (
+              <span className="flex items-center gap-1 text-xs text-muted-foreground ml-auto">
+                <Clock className="w-3 h-3" /> {timeAgo(lead.lastContactDate)}
+              </span>
+            )}
+          </div>
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {tags.slice(0, 3).map(t => (
+                <span key={t} className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">{t}</span>
+              ))}
+              {tags.length > 3 && <span className="text-[10px] text-muted-foreground">+{tags.length - 3}</span>}
+            </div>
           )}
         </div>
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1.5">
-            {tags.slice(0, 3).map(t => (
-              <span key={t} className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">{t}</span>
-            ))}
-            {tags.length > 3 && <span className="text-[10px] text-muted-foreground">+{tags.length - 3}</span>}
-          </div>
-        )}
-      </div>
-      {/* Actions */}
-      <div onClick={e => e.stopPropagation()}>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="p-1.5 rounded-full hover:bg-muted transition-colors">
-              <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onNavigate(lead)}>
-              <ExternalLink className="w-3.5 h-3.5 mr-2" /> View Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEdit(lead)}>
-              <Pencil className="w-3.5 h-3.5 mr-2" /> Edit
-            </DropdownMenuItem>
-            {lead.phone && (
-              <DropdownMenuItem asChild>
-                <a href={`tel:${lead.phone}`}><Phone className="w-3.5 h-3.5 mr-2" /> Call</a>
-              </DropdownMenuItem>
-            )}
-            {lead.email && (
-              <DropdownMenuItem asChild>
-                <a href={`mailto:${lead.email}`}><Mail className="w-3.5 h-3.5 mr-2" /> Email</a>
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-500" onClick={() => onDelete(lead)}>
-              <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Swipe hint chevrons */}
+        <div className="flex flex-col items-center justify-center gap-0.5 opacity-20" onClick={e => e.stopPropagation()}>
+          <ChevronLeft className="w-3 h-3" />
+          <ChevronRight className="w-3 h-3" />
+        </div>
       </div>
     </div>
   );
@@ -1132,22 +1214,27 @@ export default function ContactsPage() {
               )}
             </div>
           ) : isMobile ? (
-            /* ── Mobile: swipeable card list ── */
-            <div className="divide-y">
-              {leads.map(lead => (
-                <MobileContactCard
-                  key={lead.id}
-                  lead={lead}
-                  onEdit={l => setEditLead(l)}
-                  onDelete={l => {
-                    if (confirm(`Delete ${fullName(l)}? This cannot be undone.`)) {
-                      bulkDeleteMut.mutate({ leadIds: [l.id] });
-                    }
-                  }}
-                  onNavigate={l => navigate(`/contacts/${l.id}`)}
-                />
-              ))}
-            </div>
+            /* ── Mobile: swipeable card list with pull-to-refresh ── */
+            <PullToRefresh
+              onRefresh={async () => { await refetch(); }}
+              className="h-full"
+            >
+              <div className="divide-y">
+                {leads.map(lead => (
+                  <MobileContactCard
+                    key={lead.id}
+                    lead={lead}
+                    onEdit={l => setEditLead(l)}
+                    onDelete={l => {
+                      if (confirm(`Delete ${fullName(l)}? This cannot be undone.`)) {
+                        bulkDeleteMut.mutate({ leadIds: [l.id] });
+                      }
+                    }}
+                    onNavigate={l => navigate(`/contacts/${l.id}`)}
+                  />
+                ))}
+              </div>
+            </PullToRefresh>
           ) : (
             <table className="w-full text-sm">
               <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur border-b">

@@ -11,6 +11,8 @@
  */
 import { useState, useMemo, useCallback } from "react";
 import { BottomSheet } from "@/components/BottomSheet";
+import { PullToRefresh } from "@/components/PullToRefresh";
+import { useIsMobile } from "@/hooks/useMobile";
 import {
   DndContext,
   DragEndEvent,
@@ -1517,7 +1519,8 @@ export default function Pipeline() {
     return pipelines.find(p => p.isDefault) ?? pipelines[0];
   }, [pipelines, selectedPipelineId]);
 
-  const { data: rawOpps = [], isLoading: loadingOpps } = trpc.pipelines.listOpportunities.useQuery(
+  const isMobile = useIsMobile();
+  const { data: rawOpps = [], isLoading: loadingOpps, refetch: refetchOpps } = trpc.pipelines.listOpportunities.useQuery(
     {
       pipelineId: activePipeline?.id,
       status: statusFilter === "all" ? undefined : statusFilter,
@@ -1774,7 +1777,9 @@ export default function Pipeline() {
         {/* ── Kanban Board ── */}
         {view === "kanban" && (
           <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-            <div className="flex gap-4 overflow-x-auto pb-4 flex-1 min-h-0 kanban-board-scroll">
+            {isMobile ? (
+              <PullToRefresh onRefresh={async () => { await refetchOpps(); }} className="flex-1 min-h-0">
+                <div className="flex gap-4 overflow-x-auto pb-4 kanban-board-scroll">
               {stages.map(stage => (
                 <KanbanColumn
                   key={stage.id}
@@ -1790,6 +1795,25 @@ export default function Pipeline() {
                 </div>
               )}
             </div>
+              </PullToRefresh>
+            ) : (
+              <div className="flex gap-4 overflow-x-auto pb-4 flex-1 min-h-0 kanban-board-scroll">
+                {stages.map(stage => (
+                  <KanbanColumn
+                    key={stage.id}
+                    stage={stage}
+                    opps={oppsByStage[stage.id] ?? []}
+                    onCardClick={opp => setActiveOppId(opp.id)}
+                    onAddClick={stageId => setAddDialogStageId(stageId)}
+                  />
+                ))}
+                {stages.length === 0 && !loadingOpps && (
+                  <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+                    No stages configured for this pipeline.
+                  </div>
+                )}
+              </div>
+            )}
             <DragOverlay>
               {dragActiveOpp && (
                 <div className="bg-white dark:bg-slate-800 rounded-lg border-2 border-primary shadow-2xl p-3 w-72 opacity-90">

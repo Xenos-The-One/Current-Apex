@@ -60,9 +60,14 @@ export function BottomSheet({
     if (delta > 0) setDragY(delta); // only allow downward drag
   };
 
+  function haptic(ms = 10) {
+    if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(ms);
+  }
+
   const handleTouchEnd = () => {
     setIsDragging(false);
     if (dragY > 120) {
+      haptic(12);
       onClose();
     } else {
       setDragY(0);

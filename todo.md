@@ -1121,3 +1121,8 @@
 - [x] Contacts: responsive card list on mobile (replaces wide table on small screens)
 - [x] Lead/contact detail: bottom sheet on mobile (slide-up panel instead of full navigation)
 - [x] Floating action button (FAB) on Dashboard + Pipeline with quick-add lead bottom sheet
+
+## Mobile UX Round 3: Swipe Actions + Pull-to-Refresh + Haptics
+- [x] Swipe-to-action on contact cards (left=Call/Message, right=Edit/Delete)
+- [x] Pull-to-refresh on Contacts card list and Pipeline Kanban
+- [x] Haptic feedback on FAB tap and card action buttons

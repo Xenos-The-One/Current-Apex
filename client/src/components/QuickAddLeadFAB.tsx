@@ -75,15 +75,22 @@ export function QuickAddLeadFAB({ hasBottomNav = false }: QuickAddLeadFABProps) 
     },
   });
 
+  function haptic(ms = 10) {
+    if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(ms);
+  }
+
   const handleSubmit = () => {
     if (!form.firstName.trim()) {
+      haptic(20);
       toast.error("First name is required");
       return;
     }
     if (!form.lastName.trim()) {
+      haptic(20);
       toast.error("Last name is required");
       return;
     }
+    haptic(8);
     setIsSubmitting(true);
     createMut.mutate({
       firstName: form.firstName.trim(),
@@ -104,7 +111,7 @@ export function QuickAddLeadFAB({ hasBottomNav = false }: QuickAddLeadFABProps) 
     <>
       {/* FAB button */}
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => { haptic(12); setOpen(true); }}
         aria-label="Add new lead"
         className={cn(
           "fixed right-4 z-40 w-14 h-14 rounded-full",
