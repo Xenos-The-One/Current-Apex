@@ -7,7 +7,7 @@ import { getAgencyByOwnerId, getClientsByAgencyId } from "../db";
 import { sendEmail } from "../sendgrid";
 import { eq, and, inArray, sql, desc } from "drizzle-orm";
 import { sendBulkEmail, isDemoMode as isEmailDemoMode } from "../sendgrid";
-import { sendBulkSMS, isDemoMode as isSMSDemoMode } from "../twilio";
+import { sendBulkSMS, sendSMS, isDemoMode as isSMSDemoMode } from "../twilio";
 
 export const campaignsRouter = router({
   // Webinar registration
@@ -542,5 +542,30 @@ export const campaignsRouter = router({
         createdBy: ctx.user.id,
       });
       return { id: (result as any).insertId, name: input.name };
+    }),
+
+  // ─── Send Test SMS ─────────────────────────────────────────────────────────────────────
+  sendTestSms: protectedProcedure
+    .input(z.object({
+      message: z.string().min(1),
+      toPhone: z.string().min(7).max(20),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Replace common template variables with sample values
+      const previewMessage = input.message
+        .replace(/\{name\}/g, ctx.user.name ?? "Test Lead")
+        .replace(/\{first_name\}/g, (ctx.user.name ?? "Test Lead").split(" ")[0])
+        .replace(/\{agent_name\}/g, ctx.user.name ?? "Your Agent")
+        .replace(/\{company\}/g, "Your Agency")
+        .replace(/\{date\}/g, new Date().toLocaleDateString())
+        .replace(/\{time\}/g, "10:00 AM")
+        .replace(/\{rate\}/g, "6.5%")
+        .replace(/\{loan_amount\}/g, "$350,000");
+      const body = `[TEST SMS] ${previewMessage}`;
+      const result = await sendSMS({ to: input.toPhone, body });
+      if (!result.success && !result.demo) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: result.error ?? "Failed to send test SMS" });
+      }
+      return { sent: true, to: input.toPhone, demo: result.demo ?? false };
     }),
 });

@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -56,7 +57,8 @@ interface WizardState {
   // Step 2: Audience
   recipientFilter: "all" | "status" | "custom";
   recipientStatus: string;
-  specificClientId: number | null;  // when recipientFilter === "custom" (specific client)
+  specificContactIds: number[];  // when recipientFilter === "custom" (specific contacts)
+  /** @deprecated use specificContactIds */ specificClientId: number | null;
   // Step 3: Schedule
   sendNow: boolean;
   scheduledDate: string;
@@ -108,6 +110,7 @@ function buildInitialState(template: CampaignTemplate): WizardState {
     content,
     recipientFilter: "all",
     recipientStatus: "new",
+    specificContactIds: [],
     specificClientId: null,
     sendNow: true,
     scheduledDate: "",
@@ -255,10 +258,24 @@ function AudienceStep({
   onChange: (updates: Partial<WizardState>) => void;
 }) {
   const { data: contacts = [], isLoading: contactsLoading } = trpc.campaigns.listContacts.useQuery();
+  const [contactSearch, setContactSearch] = useState("");
 
-  const selectedContact = state.specificClientId
-    ? contacts.find((c: any) => c.id === state.specificClientId)
-    : null;
+  const filteredContacts = useMemo(() => {
+    if (!contactSearch.trim()) return contacts as any[];
+    const q = contactSearch.toLowerCase();
+    return (contacts as any[]).filter(
+      (c) =>
+        `${c.firstName} ${c.lastName}`.toLowerCase().includes(q) ||
+        (c.email ?? "").toLowerCase().includes(q)
+    );
+  }, [contacts, contactSearch]);
+
+  const toggleContact = (id: number) => {
+    const ids = state.specificContactIds;
+    onChange({
+      specificContactIds: ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id],
+    });
+  };
 
   const audienceTip = () => {
     if (state.recipientFilter === "all") {
@@ -267,12 +284,13 @@ function AudienceStep({
     if (state.recipientFilter === "status") {
       return `This will send to all contacts with status \"${LEAD_STATUS_OPTIONS.find((o) => o.value === state.recipientStatus)?.label ?? state.recipientStatus}\".`;
     }
-    if (state.recipientFilter === "custom" && selectedContact) {
-      const name = `${(selectedContact as any).firstName} ${(selectedContact as any).lastName}`.trim();
-      const email = (selectedContact as any).email ? ` (${(selectedContact as any).email})` : "";
-      return `This will send directly to ${name}${email}.`;
+    if (state.recipientFilter === "custom") {
+      const n = state.specificContactIds.length;
+      return n === 0
+        ? "Select one or more contacts below."
+        : `This will send directly to ${n} selected contact${n !== 1 ? "s" : ""}.`;
     }
-    return "Select a specific contact to send directly to them.";
+    return "";
   };
 
   return (
@@ -281,7 +299,7 @@ function AudienceStep({
         <Label className="text-sm">Who should receive this campaign?</Label>
         <Select
           value={state.recipientFilter}
-          onValueChange={(v) => onChange({ recipientFilter: v as WizardState["recipientFilter"], specificClientId: null })}
+          onValueChange={(v) => onChange({ recipientFilter: v as WizardState["recipientFilter"], specificContactIds: [] })}
         >
           <SelectTrigger>
             <SelectValue />
@@ -289,7 +307,7 @@ function AudienceStep({
           <SelectContent>
             <SelectItem value="all">All Contacts</SelectItem>
             <SelectItem value="status">Contacts by Status</SelectItem>
-            <SelectItem value="custom">Specific Contact</SelectItem>
+            <SelectItem value="custom">Specific Contacts</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -316,29 +334,89 @@ function AudienceStep({
       )}
 
       {state.recipientFilter === "custom" && (
-        <div className="space-y-1.5">
-          <Label className="text-sm">Select Contact</Label>
-          <Select
-            value={state.specificClientId?.toString() ?? ""}
-            onValueChange={(v) => onChange({ specificClientId: v ? parseInt(v, 10) : null })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={contactsLoading ? "Loading contacts..." : "Choose a contact..."} />
-            </SelectTrigger>
-            <SelectContent>
-              {contactsLoading ? (
-                <div className="px-3 py-2 text-xs text-muted-foreground">Loading...</div>
-              ) : contacts.length === 0 ? (
-                <div className="px-3 py-2 text-xs text-muted-foreground">No contacts found</div>
-              ) : (
-                contacts.map((c: any) => (
-                  <SelectItem key={c.id} value={c.id.toString()}>
-                    {c.firstName} {c.lastName}{c.email ? ` — ${c.email}` : ""}
-                  </SelectItem>
-                ))
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm">Select Contacts</Label>
+            {state.specificContactIds.length > 0 && (
+              <span className="text-xs text-primary font-medium">
+                {state.specificContactIds.length} selected
+              </span>
+            )}
+          </div>
+          {/* Search input */}
+          <div className="relative">
+            <Input
+              placeholder="Search by name or email..."
+              value={contactSearch}
+              onChange={(e) => setContactSearch(e.target.value)}
+              className="h-8 text-xs pl-3 pr-8"
+            />
+            {contactSearch && (
+              <button
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                onClick={() => setContactSearch("")}
+              >
+                <span className="text-xs">×</span>
+              </button>
+            )}
+          </div>
+          {/* Checkbox list */}
+          <div className="rounded-md border border-border/60 max-h-48 overflow-y-auto">
+            {contactsLoading ? (
+              <div className="px-3 py-4 text-xs text-muted-foreground text-center">
+                <Loader2 className="h-3.5 w-3.5 animate-spin inline mr-1" />Loading contacts...
+              </div>
+            ) : filteredContacts.length === 0 ? (
+              <div className="px-3 py-4 text-xs text-muted-foreground text-center">
+                {contactSearch ? "No contacts match your search." : "No contacts found."}
+              </div>
+            ) : (
+              filteredContacts.map((c: any) => {
+                const checked = state.specificContactIds.includes(c.id);
+                return (
+                  <label
+                    key={c.id}
+                    className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors border-b border-border/40 last:border-b-0 ${
+                      checked ? "bg-primary/5" : ""
+                    }`}
+                  >
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={() => toggleContact(c.id)}
+                      className="h-3.5 w-3.5 shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium truncate">
+                        {c.firstName} {c.lastName}
+                      </p>
+                      {c.email && (
+                        <p className="text-xs text-muted-foreground truncate">{c.email}</p>
+                      )}
+                    </div>
+                  </label>
+                );
+              })
+            )}
+          </div>
+          {/* Select all / clear */}
+          {!contactsLoading && filteredContacts.length > 0 && (
+            <div className="flex gap-3">
+              <button
+                className="text-xs text-primary hover:underline"
+                onClick={() => onChange({ specificContactIds: filteredContacts.map((c: any) => c.id) })}
+              >
+                Select all ({filteredContacts.length})
+              </button>
+              {state.specificContactIds.length > 0 && (
+                <button
+                  className="text-xs text-muted-foreground hover:underline"
+                  onClick={() => onChange({ specificContactIds: [] })}
+                >
+                  Clear
+                </button>
               )}
-            </SelectContent>
-          </Select>
+            </div>
+          )}
         </div>
       )}
 
@@ -588,6 +666,10 @@ function ReviewStep({
   isSendingTest,
   testEmail,
   onTestEmailChange,
+  onSendTestSms,
+  isSendingTestSms,
+  testPhone,
+  onTestPhoneChange,
 }: {
   template: CampaignTemplate;
   state: WizardState;
@@ -595,22 +677,22 @@ function ReviewStep({
   isSendingTest?: boolean;
   testEmail?: string;
   onTestEmailChange?: (email: string) => void;
+  onSendTestSms?: () => void;
+  isSendingTestSms?: boolean;
+  testPhone?: string;
+  onTestPhoneChange?: (phone: string) => void;
 }) {
   const colors = CHANNEL_COLORS[template.channel];
   const ChannelIcon =
     template.channel === "email" ? Mail : template.channel === "sms" ? MessageSquare : Phone;
 
-  const { data: contacts = [] } = trpc.campaigns.listContacts.useQuery();
-  const specificContact = state.specificClientId
-    ? (contacts as any[]).find((c) => c.id === state.specificClientId)
-    : null;
   const audienceLabel =
     state.recipientFilter === "all"
       ? "All Contacts"
       : state.recipientFilter === "custom"
-      ? specificContact
-        ? `${specificContact.firstName} ${specificContact.lastName}`.trim()
-        : "Specific Contact"
+      ? state.specificContactIds.length > 0
+        ? `${state.specificContactIds.length} contact${state.specificContactIds.length !== 1 ? "s" : ""} selected`
+        : "Specific Contacts"
       : `Contacts with status: ${LEAD_STATUS_OPTIONS.find((o) => o.value === state.recipientStatus)?.label ?? state.recipientStatus}`;
 
   const scheduleLabel = state.sendNow
@@ -698,6 +780,45 @@ function ReviewStep({
         </div>
       )}
 
+      {template.channel === "sms" && onSendTestSms && (
+        <div className="rounded-lg border border-green-200 bg-green-50 p-3 space-y-2.5">
+          <p className="text-xs font-medium text-green-900">Send a preview SMS</p>
+          <p className="text-xs text-green-700">
+            Check the message on a real device before launching. Enter any phone number below.
+          </p>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="test-phone-input" className="text-xs text-green-800 font-medium">
+              Phone Number
+            </Label>
+            <Input
+              id="test-phone-input"
+              type="tel"
+              placeholder="+1 555 123 4567"
+              value={testPhone ?? ""}
+              onChange={(e) => onTestPhoneChange?.(e.target.value)}
+              className="h-8 text-xs bg-white border-green-300 focus-visible:ring-green-400"
+              disabled={isSendingTestSms}
+            />
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full border-green-300 text-green-800 hover:bg-green-100"
+            onClick={onSendTestSms}
+            disabled={isSendingTestSms || !testPhone?.trim() || testPhone.replace(/[\s\-().+]/g, "").length < 7}
+          >
+            {isSendingTestSms ? (
+              <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Sending preview...</>
+            ) : (
+              <><MessageSquare className="h-3.5 w-3.5 mr-1.5" /> Send Test SMS</>
+            )}
+          </Button>
+          {testPhone && testPhone.replace(/[\s\-().+]/g, "").length < 7 && (
+            <p className="text-xs text-red-600">Please enter a valid phone number.</p>
+          )}
+        </div>
+      )}
+
       {state.sendNow && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 flex gap-2">
           <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
@@ -726,6 +847,7 @@ export function UseTemplateWizard({
   const [isLaunching, setIsLaunching] = useState(false);
   const { user } = useAuth();
   const [testEmail, setTestEmail] = useState<string>("");
+  const [testPhone, setTestPhone] = useState<string>("");
 
   // Pre-fill test email with logged-in user's email when wizard opens
   useMemo(() => {
@@ -761,6 +883,20 @@ export function UseTemplateWizard({
     },
     onError: (err) => toast.error("Failed to send test email", { description: err.message }),
   });
+  const sendTestSms = trpc.campaigns.sendTestSms.useMutation({
+    onSuccess: (data) => {
+      if (data.demo) {
+        toast.info("Test SMS (demo mode)", {
+          description: `Would have sent to ${data.to}. Configure Twilio to send real SMS.`,
+        });
+      } else {
+        toast.success("Test SMS sent!", {
+          description: `Preview delivered to ${data.to}. Check your phone.`,
+        });
+      }
+    },
+    onError: (err) => toast.error("Failed to send test SMS", { description: err.message }),
+  });
 
   if (!template) return null;
 
@@ -778,8 +914,8 @@ export function UseTemplateWizard({
       if (!(state.content ?? "").trim()) return false;
     }
     if (currentStep === "audience") {
-      // When "Specific Client" is selected, a client must be chosen
-      if (state.recipientFilter === "custom" && !state.specificClientId) return false;
+      // When "Specific Contact" is selected, at least one contact must be chosen
+      if (state.recipientFilter === "custom" && state.specificContactIds.length === 0) return false;
     }
     if (currentStep === "schedule") {
       if (!state.sendNow && (!state.scheduledDate || !state.scheduledTime)) return false;
@@ -812,11 +948,8 @@ export function UseTemplateWizard({
       // Track template usage (non-blocking)
       trackUsage.mutate({ templateId: template.id, channel: template.channel, clientId });
 
-      // For specific contact: use their clientId and pass their lead ID as recipientIds
-      const isSpecificContact = state.recipientFilter === "custom" && state.specificClientId;
-      // We need the contact's clientId from the contacts list (fetched in ReviewStep / AudienceStep)
-      // The contacts query is available via trpc but here we use the state directly.
-      // The backend createEmailCampaign accepts recipientIds to target specific leads.
+      // For specific contacts: pass their lead IDs as recipientIds
+      const isSpecificContacts = state.recipientFilter === "custom" && state.specificContactIds.length > 0;
       const targetClientId = clientId; // always use the prop clientId for the campaign record
 
       if (template.channel === "email") {
@@ -825,9 +958,9 @@ export function UseTemplateWizard({
           name: state.campaignName,
           subject: state.subject,
           content: state.content,
-          recipientFilter: isSpecificContact ? "custom" : state.recipientFilter,
+          recipientFilter: isSpecificContacts ? "custom" : state.recipientFilter,
           recipientStatus: state.recipientFilter === "status" ? state.recipientStatus : undefined,
-          recipientIds: isSpecificContact && state.specificClientId ? [state.specificClientId] : undefined,
+          recipientIds: isSpecificContacts ? state.specificContactIds : undefined,
           scheduledDate,
           sendNow: state.sendNow,
         });
@@ -836,9 +969,9 @@ export function UseTemplateWizard({
           clientId: targetClientId,
           name: state.campaignName,
           message: state.content,
-          recipientFilter: isSpecificContact ? "custom" : state.recipientFilter,
+          recipientFilter: isSpecificContacts ? "custom" : state.recipientFilter,
           recipientStatus: state.recipientFilter === "status" ? state.recipientStatus : undefined,
-          recipientIds: isSpecificContact && state.specificClientId ? [state.specificClientId] : undefined,
+          recipientIds: isSpecificContacts ? state.specificContactIds : undefined,
           scheduledDate,
           sendNow: state.sendNow,
         });
@@ -919,6 +1052,15 @@ export function UseTemplateWizard({
               isSendingTest={sendTestEmail.isPending}
               testEmail={testEmail}
               onTestEmailChange={setTestEmail}
+              onSendTestSms={() =>
+                sendTestSms.mutate({
+                  message: state.content,
+                  toPhone: testPhone.trim(),
+                })
+              }
+              isSendingTestSms={sendTestSms.isPending}
+              testPhone={testPhone}
+              onTestPhoneChange={setTestPhone}
             />
           )}
         </ScrollArea>

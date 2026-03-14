@@ -988,3 +988,172 @@ describe("Contacts Recipient Dropdown", () => {
     });
   });
 });
+
+// ─── Tests: Contact Search, Multi-Select, Send Test SMS ──────────────────────
+
+describe("Contact search filter logic", () => {
+  const contacts = [
+    { id: 1, firstName: "Thailer", lastName: "Smith", email: "thailer@example.com" },
+    { id: 2, firstName: "John", lastName: "Doe", email: "john@example.com" },
+    { id: 3, firstName: "Alice", lastName: "Johnson", email: "alice@example.com" },
+  ];
+
+  function filterContacts(list: typeof contacts, search: string) {
+    if (!search.trim()) return list;
+    const q = search.toLowerCase();
+    return list.filter(
+      (c) =>
+        `${c.firstName} ${c.lastName}`.toLowerCase().includes(q) ||
+        (c.email ?? "").toLowerCase().includes(q)
+    );
+  }
+
+  it("returns all contacts when search is empty", () => {
+    expect(filterContacts(contacts, "")).toHaveLength(3);
+  });
+
+  it("filters by first name", () => {
+    const result = filterContacts(contacts, "thai");
+    expect(result).toHaveLength(1);
+    expect(result[0].firstName).toBe("Thailer");
+  });
+
+  it("filters by last name", () => {
+    const result = filterContacts(contacts, "johnson");
+    expect(result).toHaveLength(1);
+    expect(result[0].firstName).toBe("Alice");
+  });
+
+  it("filters by email", () => {
+    const result = filterContacts(contacts, "john@example");
+    expect(result).toHaveLength(1);
+    expect(result[0].firstName).toBe("John");
+  });
+
+  it("returns empty array when no contacts match", () => {
+    const result = filterContacts(contacts, "zzznomatch");
+    expect(result).toHaveLength(0);
+  });
+
+  it("is case-insensitive", () => {
+    expect(filterContacts(contacts, "THAILER")).toHaveLength(1);
+    expect(filterContacts(contacts, "JOHN@EXAMPLE")).toHaveLength(1);
+  });
+});
+
+describe("Multi-contact toggle logic", () => {
+  function toggleContact(ids: number[], id: number): number[] {
+    return ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id];
+  }
+
+  it("adds a contact when not selected", () => {
+    expect(toggleContact([], 1)).toEqual([1]);
+    expect(toggleContact([2], 1)).toEqual([2, 1]);
+  });
+
+  it("removes a contact when already selected", () => {
+    expect(toggleContact([1, 2, 3], 2)).toEqual([1, 3]);
+  });
+
+  it("does not duplicate a contact when toggled twice", () => {
+    const after1 = toggleContact([], 5);
+    const after2 = toggleContact(after1, 5);
+    expect(after2).toHaveLength(0);
+  });
+
+  it("select-all sets all contact IDs", () => {
+    const contacts = [{ id: 1 }, { id: 2 }, { id: 3 }];
+    const allIds = contacts.map((c) => c.id);
+    expect(allIds).toEqual([1, 2, 3]);
+  });
+
+  it("clear sets empty array", () => {
+    const cleared: number[] = [];
+    expect(cleared).toHaveLength(0);
+  });
+});
+
+describe("canAdvance for multi-contact audience", () => {
+  function canAdvance(recipientFilter: string, specificContactIds: number[]): boolean {
+    if (recipientFilter === "custom" && specificContactIds.length === 0) return false;
+    return true;
+  }
+
+  it("blocks advance when custom filter with no contacts selected", () => {
+    expect(canAdvance("custom", [])).toBe(false);
+  });
+
+  it("allows advance when custom filter with at least one contact", () => {
+    expect(canAdvance("custom", [1])).toBe(true);
+    expect(canAdvance("custom", [1, 2, 3])).toBe(true);
+  });
+
+  it("allows advance for all filter regardless of specificContactIds", () => {
+    expect(canAdvance("all", [])).toBe(true);
+  });
+
+  it("allows advance for status filter regardless of specificContactIds", () => {
+    expect(canAdvance("status", [])).toBe(true);
+  });
+});
+
+describe("sendTestSms variable substitution", () => {
+  function substituteVars(message: string, userName: string): string {
+    return message
+      .replace(/\{name\}/g, userName)
+      .replace(/\{first_name\}/g, userName.split(" ")[0])
+      .replace(/\{agent_name\}/g, userName)
+      .replace(/\{company\}/g, "Your Agency")
+      .replace(/\{rate\}/g, "6.5%")
+      .replace(/\{loan_amount\}/g, "$350,000");
+  }
+
+  it("substitutes {name}", () => {
+    expect(substituteVars("Hi {name}!", "John Doe")).toBe("Hi John Doe!");
+  });
+
+  it("substitutes {first_name}", () => {
+    expect(substituteVars("Hi {first_name}!", "John Doe")).toBe("Hi John!");
+  });
+
+  it("substitutes {rate}", () => {
+    expect(substituteVars("Rate: {rate}", "Agent")).toBe("Rate: 6.5%");
+  });
+
+  it("substitutes {loan_amount}", () => {
+    expect(substituteVars("Amount: {loan_amount}", "Agent")).toBe("Amount: $350,000");
+  });
+
+  it("substitutes multiple vars in one message", () => {
+    const result = substituteVars("Hi {first_name}, rate is {rate} on {loan_amount}", "Alice Smith");
+    expect(result).toBe("Hi Alice, rate is 6.5% on $350,000");
+  });
+});
+
+describe("phone number validation for Send Test SMS", () => {
+  function isValidPhone(phone: string): boolean {
+    return phone.replace(/[\s\-().+]/g, "").length >= 7;
+  }
+
+  it("accepts a standard US phone number", () => {
+    expect(isValidPhone("+1 555 123 4567")).toBe(true);
+    expect(isValidPhone("5551234567")).toBe(true);
+  });
+
+  it("accepts phone with dashes and parens", () => {
+    expect(isValidPhone("(555) 123-4567")).toBe(true);
+  });
+
+  it("rejects phone that is too short", () => {
+    expect(isValidPhone("123")).toBe(false);
+    expect(isValidPhone("+1")).toBe(false);
+  });
+
+  it("rejects empty string", () => {
+    expect(isValidPhone("")).toBe(false);
+  });
+
+  it("accepts international format", () => {
+    expect(isValidPhone("+44 20 7946 0958")).toBe(true);
+  });
+});

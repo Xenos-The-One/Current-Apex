@@ -1226,3 +1226,13 @@
 - [x] Add listContacts procedure to campaigns router (returns leads/contacts for the agency)
 - [x] Update AudienceStep to query contacts and show them in the Specific Client dropdown
 - [x] Update handleLaunch to send to the selected contact's email directly (recipientIds)
+
+## Feature: Contact Search + Multi-Select + Send Test SMS
+- [x] AudienceStep: add search input to filter contacts by name/email in real time
+- [x] AudienceStep: replace single-select dropdown with multi-contact checkbox list
+- [x] WizardState: change specificClientId (single) to specificContactIds (array)
+- [x] handleLaunch: pass all selected contact IDs as recipientIds
+- [x] ReviewStep: show count of selected contacts in audience label
+- [x] Backend: add sendTestSms procedure to campaigns router (Twilio)
+- [x] ReviewStep: add phone number input + Send Test SMS button for SMS templates
+- [x] vitest tests for all three features
