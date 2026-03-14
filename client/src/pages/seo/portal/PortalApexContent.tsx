@@ -23,7 +23,6 @@ import {
 import PortalLayout from "@/components/PortalLayout";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { FeedbackThread } from "@/components/FeedbackThread";
-import { CreditUsageIndicator } from "@/components/CreditUsageIndicator";
 import { ContentStatusBadge } from "@/components/ContentStatusBadge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -846,16 +845,71 @@ function ApprovalsTab() {
 }
 
 // ─── Generate Content Tab ─────────────────────────────────────────────────────
-const CONTENT_TYPES = [
-  { value: "blog-post", label: "Blog Post", description: "Long-form article for your website", credits: 5 },
-  { value: "how-to", label: "How-To Guide", description: "Step-by-step instructional content", credits: 4 },
-  { value: "listicle", label: "Listicle", description: "List-based article format", credits: 3 },
-  { value: "case-study", label: "Case Study", description: "Client success story", credits: 5 },
-  { value: "newsletter", label: "Newsletter", description: "Email newsletter content", credits: 3 },
-  { value: "social-post", label: "Social Post", description: "Platform-optimized social content", credits: 2 },
-  { value: "press-release", label: "Press Release", description: "Official announcement", credits: 4 },
-  { value: "video-script", label: "Video Script", description: "Script for video content", credits: 4 },
-] as const;
+const CONTENT_GROUPS = [
+  {
+    group: "Website / SEO",
+    icon: "🌐",
+    types: [
+      { value: "blog-post",         label: "Blog Post",         description: "Long-form SEO article" },
+      { value: "how-to",            label: "How-To Guide",      description: "Step-by-step instructions" },
+      { value: "listicle",          label: "Listicle",          description: "List-based article" },
+      { value: "case-study",        label: "Case Study",        description: "Client success story" },
+      { value: "guide",             label: "Ultimate Guide",    description: "Comprehensive authority guide" },
+      { value: "news",              label: "News Article",      description: "Timely news-style content" },
+      { value: "faq",               label: "FAQ Content",       description: "Q&A for your website" },
+      { value: "service-page",      label: "Service Page Copy", description: "Persuasive service page" },
+      { value: "landing-page",      label: "Landing Page Copy", description: "Conversion-focused page" },
+      { value: "product-description",label: "Product Description",description: "Feature-rich product copy" },
+    ],
+  },
+  {
+    group: "Email",
+    icon: "✉️",
+    types: [
+      { value: "newsletter",        label: "Newsletter",        description: "Engaging email newsletter" },
+      { value: "email-sequence",    label: "Email Sequence",    description: "Multi-email nurture series" },
+      { value: "promotional-email", label: "Promotional Email", description: "Offer or campaign email" },
+      { value: "follow-up-email",   label: "Follow-Up Email",   description: "Re-engagement email" },
+    ],
+  },
+  {
+    group: "Social Media",
+    icon: "📱",
+    types: [
+      { value: "social-post",       label: "Social Media Post",  description: "General social content" },
+      { value: "facebook-post",     label: "Facebook Post",      description: "Engagement-driven post" },
+      { value: "instagram-caption", label: "Instagram Caption",  description: "Caption with hashtags" },
+      { value: "linkedin-post",     label: "LinkedIn Post",      description: "Professional thought leadership" },
+      { value: "twitter-post",      label: "X / Twitter Post",   description: "Tweet or short thread" },
+      { value: "gbp-post",          label: "Google Business Post",description: "Local SEO post" },
+      { value: "carousel-copy",     label: "Carousel Copy",      description: "Slide-by-slide social content" },
+      { value: "promotional-social",label: "Promotional Post",   description: "Offer or sale social post" },
+      { value: "educational-social",label: "Educational Post",   description: "Tips and insights post" },
+      { value: "engagement-social", label: "Engagement Post",    description: "Conversation-starter post" },
+    ],
+  },
+  {
+    group: "PR / Authority",
+    icon: "📣",
+    types: [
+      { value: "press-release",     label: "Press Release",     description: "Official announcement" },
+      { value: "announcement",      label: "Announcement",      description: "News or update post" },
+      { value: "testimonial-story", label: "Testimonial / Success Story", description: "Client result story" },
+    ],
+  },
+  {
+    group: "Long-Form / Resources",
+    icon: "📚",
+    types: [
+      { value: "whitepaper",        label: "Whitepaper",        description: "Authoritative research doc" },
+      { value: "lead-magnet",       label: "Lead Magnet Copy",  description: "Opt-in resource copy" },
+      { value: "guide-resource",    label: "Guide / Resource",  description: "Comprehensive reference guide" },
+    ],
+  },
+];
+
+// Flat list for lookup
+const ALL_CONTENT_TYPES = CONTENT_GROUPS.flatMap((g) => g.types);
 
 function GenerateContentTab() {
   const { user } = useAuth();
@@ -866,6 +920,7 @@ function GenerateContentTab() {
   const [customInstructions, setCustomInstructions] = useState("");
   const [enableWebResearch, setEnableWebResearch] = useState(true);
   const [shouldGenerateImage, setShouldGenerateImage] = useState(false);
+  const [generatedResult, setGeneratedResult] = useState<{ id: number; title: string; content: string } | null>(null);
   const utils = trpc.useUtils();
 
   // Resolve seo client ID for this portal user — auto-provision if missing
@@ -873,13 +928,11 @@ function GenerateContentTab() {
   const [resolvedSeoClientId, setResolvedSeoClientId] = useState<number | null>(null);
   const [isProvisioning, setIsProvisioning] = useState(false);
 
-  // First try to find existing SEO client by CRM ID
   const { data: seoClient, isLoading: seoClientLoading } = trpc.seo.clients.getByCrmId.useQuery(
     { crmClientId: myInfo?.client?.id ?? 0 },
     { enabled: !!myInfo?.client?.id }
   );
 
-  // Auto-provision mutation — called when no SEO client exists yet
   const ensureMutation = trpc.seo.clients.ensureForCurrentUser.useMutation({
     onSuccess: (data) => {
       if (data.seoClientId) setResolvedSeoClientId(data.seoClientId);
@@ -888,7 +941,6 @@ function GenerateContentTab() {
     onError: () => setIsProvisioning(false),
   });
 
-  // When myInfo loads and no SEO client found, auto-provision
   useEffect(() => {
     if (myInfo?.client && !seoClientLoading && !seoClient?.id && !isProvisioning && !resolvedSeoClientId) {
       setIsProvisioning(true);
@@ -902,17 +954,15 @@ function GenerateContentTab() {
   const effectiveSeoClientId = resolvedSeoClientId ?? seoClient?.id ?? null;
 
   const generateMutation = trpc.seo.content.generate.useMutation({
-    onSuccess: () => {
-      toast.success("Content is being generated! Check 'My Content' in a few minutes.");
-      setTopic("");
-      setTargetKeywords("");
-      setCustomInstructions("");
+    onSuccess: (data) => {
+      toast.success("Content generated successfully!");
+      setGeneratedResult({ id: data.id, title: data.title, content: data.content });
       utils.seo.content.listForPortal.invalidate();
     },
-    onError: (e: any) => toast.error(e.message || "Generation failed"),
+    onError: (e: any) => toast.error(e.message || "Generation failed. Please try again."),
   });
 
-  const selectedType = CONTENT_TYPES.find((t) => t.value === contentType);
+  const selectedType = ALL_CONTENT_TYPES.find((t) => t.value === contentType);
 
   const handleGenerate = () => {
     if (!effectiveSeoClientId) {
@@ -920,76 +970,129 @@ function GenerateContentTab() {
       return;
     }
     if (!topic.trim()) {
-      toast.error("Please enter a topic");
+      toast.error("Please enter a topic to generate content about.");
       return;
     }
-    const customPrompt = [
+    setGeneratedResult(null);
+    const customPromptParts = [
       targetKeywords ? `Target keywords: ${targetKeywords}` : "",
       tone !== "professional" ? `Tone: ${tone}` : "",
       customInstructions,
-    ]
-      .filter(Boolean)
-      .join("\n");
+    ].filter(Boolean);
 
     generateMutation.mutate({
       clientId: effectiveSeoClientId,
-      topic,
+      topic: topic.trim(),
       contentType: contentType as any,
-      customPrompt: customPrompt || undefined,
+      customPrompt: customPromptParts.length > 0 ? customPromptParts.join("\n") : undefined,
       enableWebResearch,
       shouldGenerateImage,
     });
   };
 
+  // If we just generated, show the result inline
+  if (generatedResult) {
+    return (
+      <div className="max-w-3xl space-y-4">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => setGeneratedResult(null)} className="gap-1.5">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Generator
+          </Button>
+          <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Draft Saved
+          </Badge>
+        </div>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">{generatedResult.title}</CardTitle>
+            <CardDescription>{selectedType?.label ?? contentType} · Draft</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-lg bg-muted/50 border p-4 max-h-[60vh] overflow-y-auto">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed">{generatedResult.content}</p>
+            </div>
+            <div className="flex gap-3 mt-4">
+              <Button
+                className="flex-1"
+                onClick={() => {
+                  setTopic("");
+                  setTargetKeywords("");
+                  setCustomInstructions("");
+                  setGeneratedResult(null);
+                }}
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Generate Another
+              </Button>
+              <Button variant="outline" onClick={() => setGeneratedResult(null)}>
+                View in My Content
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl space-y-6">
-      {/* Credit indicator */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Generate New Content</h3>
-          <p className="text-sm text-muted-foreground mt-0.5">AI-powered content creation for your business</p>
-        </div>
-        <CreditUsageIndicator contentType={contentType} variant="badge" />
+      <div>
+        <h3 className="text-lg font-semibold">Generate New Content</h3>
+        <p className="text-sm text-muted-foreground mt-0.5">Choose a content type, enter your topic, and let AI do the writing.</p>
       </div>
 
-      {/* Content type grid */}
-      <div>
-        <Label className="text-sm text-muted-foreground mb-3 block">Content Type</Label>
-        <div className="grid grid-cols-2 gap-2">
-          {CONTENT_TYPES.map((ct) => {
-            const isActive = contentType === ct.value;
-            return (
-              <button
-                key={ct.value}
-                onClick={() => setContentType(ct.value)}
-                className={`flex items-start gap-3 p-3 rounded-xl text-left transition-all border ${isActive ? "border-primary bg-primary/5" : "border-border/50 bg-muted/30"}`}
-              >
-                <div
-                  className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${isActive ? "bg-primary/15" : "bg-muted"}`}
-                >
-                  <FileText className={`h-3.5 w-3.5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
-                </div>
-                <div>
-                  <p className={`text-sm font-medium ${isActive ? "text-primary" : "text-foreground"}`}>
-                    {ct.label}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{ct.description}</p>
-                  <p className={`text-[10px] mt-1 ${isActive ? "text-primary" : "text-muted-foreground/60"}`}>
-                    {ct.credits} credits
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+      {/* Content type groups */}
+      <div className="space-y-4">
+        {CONTENT_GROUPS.map((group) => (
+          <div key={group.group}>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              {group.icon} {group.group}
+            </p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {group.types.map((ct) => {
+                const isActive = contentType === ct.value;
+                return (
+                  <button
+                    key={ct.value}
+                    onClick={() => setContentType(ct.value)}
+                    className={`flex items-start gap-2.5 p-2.5 rounded-lg text-left transition-all border ${
+                      isActive
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : "border-border/40 bg-muted/20 hover:border-border hover:bg-muted/40"
+                    }`}
+                  >
+                    <div className={`h-6 w-6 rounded-md flex items-center justify-center shrink-0 mt-0.5 ${
+                      isActive ? "bg-primary/15" : "bg-muted"
+                    }`}>
+                      <FileText className={`h-3 w-3 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className={`text-sm font-medium leading-tight ${isActive ? "text-primary" : "text-foreground"}`}>
+                        {ct.label}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight">{ct.description}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
+
+      {/* Divider */}
+      <div className="border-t" />
 
       {/* Topic */}
       <div className="space-y-1.5">
-        <Label htmlFor="topic">Topic *</Label>
+        <Label htmlFor="topic">
+          Topic <span className="text-destructive">*</span>
+        </Label>
         <Textarea
           id="topic"
-          placeholder="e.g. 5 reasons first-time homebuyers should work with a local mortgage broker in Dallas"
+          placeholder={`e.g. ${selectedType?.label === "Instagram Caption" ? "Behind-the-scenes look at how we help first-time homebuyers" : selectedType?.label === "Newsletter" ? "This month's mortgage rate update and what it means for buyers" : "5 reasons first-time homebuyers should work with a local mortgage broker"}`}
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           rows={3}
@@ -997,9 +1100,11 @@ function GenerateContentTab() {
         />
       </div>
 
-      {/* Target keywords */}
+      {/* Keywords */}
       <div className="space-y-1.5">
-        <Label htmlFor="keywords">Target Keywords <span className="text-muted-foreground/60">(optional)</span></Label>
+        <Label htmlFor="keywords">
+          Target Keywords <span className="text-muted-foreground/60 font-normal">(optional)</span>
+        </Label>
         <Input
           id="keywords"
           placeholder="e.g. first-time homebuyer, Dallas mortgage, FHA loan"
@@ -1017,20 +1122,23 @@ function GenerateContentTab() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="professional">Professional</SelectItem>
-            <SelectItem value="friendly">Friendly</SelectItem>
+            <SelectItem value="friendly">Friendly &amp; Approachable</SelectItem>
             <SelectItem value="casual">Casual</SelectItem>
             <SelectItem value="authoritative">Authoritative</SelectItem>
             <SelectItem value="inspirational">Inspirational</SelectItem>
+            <SelectItem value="conversational">Conversational</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       {/* Custom instructions */}
       <div className="space-y-1.5">
-        <Label htmlFor="instructions">Custom Instructions <span className="text-muted-foreground/60">(optional)</span></Label>
+        <Label htmlFor="instructions">
+          Custom Instructions <span className="text-muted-foreground/60 font-normal">(optional)</span>
+        </Label>
         <Textarea
           id="instructions"
-          placeholder="e.g. Include a section about down payment assistance programs. Mention our 5-star Google rating."
+          placeholder="e.g. Mention our 5-star Google rating. Include a section about down payment assistance. Keep it under 600 words."
           value={customInstructions}
           onChange={(e) => setCustomInstructions(e.target.value)}
           rows={2}
@@ -1039,60 +1147,55 @@ function GenerateContentTab() {
       </div>
 
       {/* Options */}
-      <div className="flex gap-6">
-        <label className="flex items-center gap-2 cursor-pointer">
+      <div className="flex flex-wrap gap-x-6 gap-y-2">
+        <label className="flex items-center gap-2 cursor-pointer select-none">
           <input
             type="checkbox"
             checked={enableWebResearch}
             onChange={(e) => setEnableWebResearch(e.target.checked)}
-            className="rounded"
+            className="rounded accent-primary"
           />
           <span className="text-sm text-muted-foreground">Enable web research</span>
         </label>
-        <label className="flex items-center gap-2 cursor-pointer">
+        <label className="flex items-center gap-2 cursor-pointer select-none">
           <input
             type="checkbox"
             checked={shouldGenerateImage}
             onChange={(e) => setShouldGenerateImage(e.target.checked)}
-            className="rounded"
+            className="rounded accent-primary"
           />
           <span className="text-sm text-muted-foreground">Generate featured image</span>
         </label>
       </div>
 
-      {/* Credit summary */}
-      <CreditUsageIndicator contentType={contentType} variant="card" />
-
       {/* Generate button */}
-      <Button
-        className="w-full"
-        onClick={handleGenerate}
-        disabled={!topic.trim() || generateMutation.isPending || (!effectiveSeoClientId && !isProvisioning)}
-        style={{
-          background: "linear-gradient(135deg, hsl(var(--primary)/0.08), hsl(var(--primary)/0.15))",
-          border: "1px solid hsl(var(--border))",
-          color: "hsl(var(--primary))",
-        }}
-      >
-        {generateMutation.isPending ? (
-          <>
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            Generating…
-          </>
-        ) : (
-          <>
-            <Sparkles className="h-4 w-4 mr-2" />
-            Generate {selectedType?.label ?? "Content"}
-          </>
+      <div className="space-y-2">
+        <Button
+          className="w-full h-11 text-base"
+          onClick={handleGenerate}
+          disabled={!topic.trim() || generateMutation.isPending || isProvisioning}
+        >
+          {generateMutation.isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Generating {selectedType?.label ?? "Content"}…
+            </>
+          ) : isProvisioning ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Setting up your account…
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4 mr-2" />
+              Generate {selectedType?.label ?? "Content"}
+            </>
+          )}
+        </Button>
+        {!topic.trim() && (
+          <p className="text-xs text-muted-foreground text-center">Enter a topic above to get started</p>
         )}
-      </Button>
-
-      {isProvisioning && (
-        <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
-          <Loader2 className="h-3 w-3 animate-spin" />
-          Setting up your content profile…
-        </p>
-      )}
+      </div>
     </div>
   );
 }

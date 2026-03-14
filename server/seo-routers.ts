@@ -998,9 +998,21 @@ Return JSON: { "headline1": "max 40 chars", "primaryText": "max 125 chars", "des
         enableWebResearch: z.boolean().default(true),
         aiModel: z.string().optional(),
         contentType: z.enum([
+          // Website / SEO
           "blog-post", "how-to", "listicle", "case-study", "guide", "news",
-          "newsletter", "email-sequence", "social-post", "press-release",
-          "landing-page", "video-script", "whitepaper", "product-description"
+          "faq", "service-page", "landing-page", "product-description",
+          // Email
+          "newsletter", "email-sequence", "promotional-email", "follow-up-email",
+          // Social Media
+          "social-post", "facebook-post", "instagram-caption", "linkedin-post",
+          "twitter-post", "gbp-post", "carousel-copy", "promotional-social",
+          "educational-social", "engagement-social",
+          // PR / Authority
+          "press-release", "announcement", "testimonial-story",
+          // Long-Form / Resources
+          "whitepaper", "lead-magnet", "guide-resource",
+          // Legacy (kept for backward compat)
+          "video-script"
         ]).default("blog-post"),
         contentSubtype: z.string().optional(), // e.g. "linkedin", "twitter", "instagram" for social-post
       }))
@@ -1112,6 +1124,24 @@ Return JSON: { "headline1": "max 40 chars", "primaryText": "max 125 chars", "des
           "video-script":      { system: "You are an expert video script writer. Write engaging scripts with clear scene directions, hooks, and CTAs.", user: (t) => `Write a video script about: ${t}. Include: Hook (0-5s), Main Content with scene notes, and Outro CTA.` },
           "whitepaper":        { system: "You are an expert technical/business writer. Write authoritative whitepapers with executive summary, problem statement, solution, data, and conclusion.", user: (t) => `Write a whitepaper about: ${t}. Include: Executive Summary, Problem Statement, Solution Overview, Supporting Data, and Conclusion.` },
           "product-description": { system: "You are an expert e-commerce copywriter. Write compelling product descriptions that highlight features, benefits, and drive conversions.", user: (t) => `Write a product description for: ${t}. Include: Headline, Short Description, Key Features (bullet list), and Why Buy section.` },
+          // New types
+          "faq":                 { system: "You are an expert content writer specializing in FAQ pages. Write clear, helpful Q&A content that answers common customer questions and improves SEO.", user: (t) => `Write a comprehensive FAQ section about: ${t}. Include 8-12 questions with detailed answers, organized logically.` },
+          "service-page":        { system: "You are an expert conversion copywriter specializing in service pages. Write persuasive, benefit-focused service page copy that converts visitors.", user: (t) => `Write service page copy for: ${t}. Include: Hero Headline, Service Overview, Key Benefits, Process/How It Works, Who It's For, and CTA.` },
+          "promotional-email":   { system: "You are an expert email marketing copywriter. Write high-converting promotional emails with compelling subject lines and CTAs.", user: (t) => `Write a promotional email about: ${t}. Include: Subject Line, Preview Text, Headline, Body Copy, and CTA Button text.` },
+          "follow-up-email":     { system: "You are an expert sales copywriter. Write warm, personalized follow-up emails that re-engage prospects and move them toward a decision.", user: (t) => `Write a follow-up email about: ${t}. Include: Subject Line, Personalized Opening, Value Reminder, Soft CTA, and P.S. line.` },
+          "facebook-post":       { system: "You are an expert Facebook content creator. Write engaging Facebook posts that drive comments, shares, and reach. Use a conversational tone with a hook, story or value, and CTA.", user: (t) => `Write a Facebook post about: ${t}. Include a strong hook, main content (2-3 short paragraphs), and engagement CTA. Add relevant hashtags.` },
+          "instagram-caption":   { system: "You are an expert Instagram copywriter. Write scroll-stopping captions with a strong first line, engaging body, and strategic hashtags.", user: (t) => `Write an Instagram caption about: ${t}. Include: Hook (first line), Story/Value (2-3 sentences), CTA, and 15-20 relevant hashtags.` },
+          "linkedin-post":       { system: "You are an expert LinkedIn content creator. Write professional, thought-leadership posts that establish authority and drive engagement.", user: (t) => `Write a LinkedIn post about: ${t}. Use a bold opening line, structured body with insights or story, key takeaways, and a question or CTA to drive comments.` },
+          "twitter-post":        { system: "You are an expert X/Twitter copywriter. Write punchy, engaging tweets and thread starters that drive retweets and replies.", user: (t) => `Write a Twitter/X post (or short thread of 3-5 tweets) about: ${t}. Keep each tweet under 280 characters. Include relevant hashtags.` },
+          "gbp-post":            { system: "You are an expert Google Business Profile content writer. Write local SEO-optimized posts that drive calls, visits, and conversions.", user: (t) => `Write a Google Business Profile post about: ${t}. Keep it under 300 words, include a local angle, and end with a clear CTA (call, visit, book, etc.).` },
+          "carousel-copy":       { system: "You are an expert social media carousel copywriter. Write slide-by-slide copy for educational or promotional carousels that keep people swiping.", user: (t) => `Write carousel copy about: ${t}. Create 6-8 slides with: Slide 1 (Hook), Slides 2-6 (Value/Steps), Slide 7 (Summary), Slide 8 (CTA). Label each slide.` },
+          "promotional-social":  { system: "You are an expert social media copywriter specializing in promotional content. Write posts that drive action without feeling salesy.", user: (t) => `Write a promotional social media post about: ${t}. Lead with value or a limited-time angle, highlight the key benefit, and end with a clear CTA.` },
+          "educational-social":  { system: "You are an expert educational content creator for social media. Write posts that teach something valuable and position the brand as an authority.", user: (t) => `Write an educational social media post about: ${t}. Use a 'Did you know?' or tip format, provide 3-5 actionable insights, and end with a follow-for-more CTA.` },
+          "engagement-social":   { system: "You are an expert social media community manager. Write posts designed to spark conversations, comments, and shares.", user: (t) => `Write an engagement-focused social media post about: ${t}. Use a question, poll idea, or relatable scenario to invite responses. Keep it conversational and end with a direct question.` },
+          "announcement":        { system: "You are an expert communications writer. Write clear, exciting announcements that generate buzz and inform your audience.", user: (t) => `Write an announcement about: ${t}. Include: Headline, What's happening, Why it matters, Key details, and Next steps or CTA.` },
+          "testimonial-story":   { system: "You are an expert storytelling copywriter. Write compelling client success stories and testimonials that build trust and social proof.", user: (t) => `Write a client success story / testimonial piece about: ${t}. Structure it as: Challenge → Solution → Results → Client Quote → CTA.` },
+          "lead-magnet":         { system: "You are an expert lead generation copywriter. Write compelling lead magnet copy that clearly communicates value and drives opt-ins.", user: (t) => `Write lead magnet copy for: ${t}. Include: Title, Subtitle, What You'll Learn (5-7 bullets), Who It's For, and Opt-In CTA.` },
+          "guide-resource":      { system: "You are an expert resource guide writer. Write comprehensive, well-organized guide content that becomes a go-to reference for your audience.", user: (t) => `Write a guide/resource document about: ${t}. Include: Introduction, 5-7 main sections with subheadings, practical tips, and a conclusion with next steps.` },
         };
         const typeConfig = CONTENT_TYPE_PROMPTS[contentType] ?? CONTENT_TYPE_PROMPTS["blog-post"];
         const systemPrompt = customPrompt || typeConfig.system + " Always match the client's brand voice and write for their specific target audience.";

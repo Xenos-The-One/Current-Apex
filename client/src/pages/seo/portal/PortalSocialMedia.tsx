@@ -23,7 +23,6 @@ import PortalLayout from "@/components/PortalLayout";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { PlatformConnectionCard, PlatformConnectionGrid, type PlatformKey } from "@/components/PlatformConnectionCard";
 import { SocialPostPreview, type SocialPlatform } from "@/components/SocialPostPreview";
-import { CreditUsageIndicator } from "@/components/CreditUsageIndicator";
 
 // ─── Platform icon helper ─────────────────────────────────────────────────────
 const PLATFORM_ICONS: Record<string, React.ElementType> = {
@@ -319,7 +318,6 @@ function GeneratePostDialog({
             </div>
 
             {/* Credit indicator */}
-            <CreditUsageIndicator contentType="social-post" variant="card" />
 
             {/* Generate button */}
             <Button
@@ -685,7 +683,6 @@ export default function PortalSocialMedia() {
                     Generate platform-optimized social media posts with AI — with a live preview.
                   </CardDescription>
                 </div>
-                <CreditUsageIndicator contentType="social-post" variant="badge" />
               </div>
             </CardHeader>
             <CardContent>

@@ -985,3 +985,11 @@
 ## Content Generation Fix
 - [x] Fix seoClientId resolution in PortalApexContent Generate tab — added seo.clients.ensureForCurrentUser mutation that auto-provisions SEO client record on first visit
 - [x] Ensure Generate button is enabled for portal users with valid CRM client profiles — button now enabled once ensureForCurrentUser resolves the SEO client ID
+
+## Apex Content Studio Overhaul (Round 2)
+- [x] Restore full written content types (30+ types in 5 groups: Website/SEO, Email, Social Media, PR/Authority, Long-Form)
+- [x] Remove all credit/token cost UI from client-facing generate page (badges, cards, cost language)
+- [x] Fix content generation flow end-to-end (form submit → draft saved → appears in My Content)
+- [x] Ensure seo.content.generate procedure accepts all new content type values
+- [x] Clean up GenerateTab: no client selector, no credit UI, no ad/video types
+- [x] Verify generated content appears in My Content tab after generation

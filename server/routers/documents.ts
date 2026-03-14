@@ -67,7 +67,7 @@ export const documentsRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const token = nanoid(32);
-      await db.update(documents).set({
+      await db.update(documents).set({ shareToken: token })
         .where(and(eq(documents.id, input.id), eq(documents.agencyId, input.agencyId)));
       return { shareToken: token };
     }),
