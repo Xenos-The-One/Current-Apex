@@ -1008,3 +1008,8 @@
 - [x] Pass selected model to seo.content.generate backend procedure via invokeLLM model param
 - [x] Fix featured image generation — added detailed logging; image error now surfaced in response
 - [x] Show image generation error in UI via toast.warning when image fails, content still saved
+
+## Featured Image Fix
+- [x] Find exact image generation error from server logs — image was generating successfully but imageUrl was never rendered in the UI
+- [x] Fix image generation API call — was working, no fix needed
+- [x] Display image in content detail view when imageUrl is present — added <img> to ContentDetailSheet and inline generated result view

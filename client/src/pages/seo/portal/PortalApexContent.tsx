@@ -137,6 +137,20 @@ function ContentDetailSheet({
                 </div>
               ) : (
                 <>
+                  {/* Featured image */}
+                  {content.imageUrl && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Featured Image</p>
+                      <div className="rounded-lg overflow-hidden border">
+                        <img
+                          src={content.imageUrl}
+                          alt={content.title ?? "Featured image"}
+                          className="w-full h-48 object-cover"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {/* Content body */}
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Content</p>
@@ -929,7 +943,7 @@ function GenerateContentTab() {
   const [enableWebResearch, setEnableWebResearch] = useState(true);
   const [shouldGenerateImage, setShouldGenerateImage] = useState(false);
   const [aiModel, setAiModel] = useState("gpt-4o");
-  const [generatedResult, setGeneratedResult] = useState<{ id: number; title: string; content: string; imageError?: string | null } | null>(null);
+  const [generatedResult, setGeneratedResult] = useState<{ id: number; title: string; content: string; imageUrl?: string; imageError?: string | null } | null>(null);
   const utils = trpc.useUtils();
 
   // Resolve seo client ID for this portal user — auto-provision if missing
@@ -965,7 +979,7 @@ function GenerateContentTab() {
       if (data.imageError) {
         toast.warning("Content saved, but featured image could not be generated. You can add one later.");
       }
-      setGeneratedResult({ id: data.id, title: data.title, content: data.content, imageError: data.imageError });
+      setGeneratedResult({ id: data.id, title: data.title, content: data.content, imageUrl: data.imageUrl || undefined, imageError: data.imageError });
       utils.seo.content.listForPortal.invalidate();
     },
     onError: (e: any) => toast.error(e.message || "Generation failed. Please try again."),
@@ -1024,6 +1038,15 @@ function GenerateContentTab() {
             <CardDescription>{selectedType?.label ?? contentType} · Draft</CardDescription>
           </CardHeader>
           <CardContent>
+            {generatedResult.imageUrl && (
+              <div className="rounded-lg overflow-hidden border mb-4">
+                <img
+                  src={generatedResult.imageUrl}
+                  alt={generatedResult.title}
+                  className="w-full h-48 object-cover"
+                />
+              </div>
+            )}
             <div className="rounded-lg bg-muted/50 border p-4 max-h-[60vh] overflow-y-auto">
               <p className="whitespace-pre-wrap text-sm leading-relaxed">{generatedResult.content}</p>
             </div>
