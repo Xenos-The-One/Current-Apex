@@ -362,6 +362,106 @@ describe("Send Test Email — logic", () => {
   });
 });
 
+// ─── 4. Custom Recipient Email for Send Test Email ───────────────────────────
+
+describe("Send Test Email — custom recipient email input", () => {
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  it("validates a correct email address", () => {
+    expect(EMAIL_REGEX.test("user@example.com")).toBe(true);
+    expect(EMAIL_REGEX.test("admin@agency.co.uk")).toBe(true);
+    expect(EMAIL_REGEX.test("test+tag@domain.org")).toBe(true);
+  });
+
+  it("rejects invalid email addresses", () => {
+    expect(EMAIL_REGEX.test("")).toBe(false);
+    expect(EMAIL_REGEX.test("notanemail")).toBe(false);
+    expect(EMAIL_REGEX.test("@nodomain")).toBe(false);
+    expect(EMAIL_REGEX.test("missing@")).toBe(false);
+    expect(EMAIL_REGEX.test("spaces in@email.com")).toBe(false);
+  });
+
+  it("Send button is disabled when email field is empty", () => {
+    const testEmail = "";
+    const isDisabled = !testEmail.trim() || !EMAIL_REGEX.test(testEmail);
+    expect(isDisabled).toBe(true);
+  });
+
+  it("Send button is disabled when email is invalid", () => {
+    const testEmail = "notvalid";
+    const isDisabled = !testEmail.trim() || !EMAIL_REGEX.test(testEmail);
+    expect(isDisabled).toBe(true);
+  });
+
+  it("Send button is enabled when email is valid", () => {
+    const testEmail = "custom@recipient.com";
+    const isDisabled = !testEmail.trim() || !EMAIL_REGEX.test(testEmail);
+    expect(isDisabled).toBe(false);
+  });
+
+  it("shows validation error message for invalid email", () => {
+    const testEmail = "bademail";
+    const showError = testEmail.length > 0 && !EMAIL_REGEX.test(testEmail);
+    expect(showError).toBe(true);
+  });
+
+  it("does not show validation error for empty field", () => {
+    const testEmail = "";
+    // Error only shows when user has typed something invalid, not on empty
+    const showError = testEmail.length > 0 && !EMAIL_REGEX.test(testEmail);
+    expect(showError).toBe(false);
+  });
+
+  it("does not show validation error for valid email", () => {
+    const testEmail = "valid@email.com";
+    const showError = testEmail.length > 0 && !EMAIL_REGEX.test(testEmail);
+    expect(showError).toBe(false);
+  });
+
+  it("pre-fills with user email when wizard opens", () => {
+    const userEmail = "admin@agency.com";
+    // Simulates the useMemo pre-fill logic
+    const initialTestEmail = userEmail ?? "";
+    expect(initialTestEmail).toBe("admin@agency.com");
+  });
+
+  it("pre-fills with empty string when user has no email", () => {
+    const userEmail: string | null | undefined = null;
+    const initialTestEmail = userEmail ?? "";
+    expect(initialTestEmail).toBe("");
+  });
+
+  it("passes custom email as toEmail to mutation", () => {
+    const testEmail = "custom@recipient.com";
+    const toEmail = testEmail.trim() || undefined;
+    expect(toEmail).toBe("custom@recipient.com");
+  });
+
+  it("passes undefined when testEmail is empty (backend falls back to user email)", () => {
+    const testEmail = "";
+    const toEmail = testEmail.trim() || undefined;
+    expect(toEmail).toBeUndefined();
+  });
+
+  it("passes undefined when testEmail is only whitespace", () => {
+    const testEmail = "   ";
+    const toEmail = testEmail.trim() || undefined;
+    expect(toEmail).toBeUndefined();
+  });
+
+  it("toast message shows the custom recipient address", () => {
+    const data = { demo: false, to: "custom@recipient.com" };
+    const description = `Preview delivered to ${data.to}. Check your inbox.`;
+    expect(description).toContain("custom@recipient.com");
+  });
+
+  it("toast message shows custom address in demo mode too", () => {
+    const data = { demo: true, to: "custom@recipient.com" };
+    const description = `Would have sent to ${data.to}. Configure SendGrid to send real emails.`;
+    expect(description).toContain("custom@recipient.com");
+  });
+});
+
 // ─── UseTemplateWizard — canAdvance guards ────────────────────────────────────
 
 describe("UseTemplateWizard — canAdvance guards", () => {

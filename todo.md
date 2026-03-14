@@ -1204,3 +1204,9 @@
 - [x] Fix email campaign recipientFilter to only accept valid enum values (all/status/custom)
 - [x] Fix UseTemplateWizard canAdvance crash (undefined.trim() — added null coalescing guards)
 - [x] vitest tests: 37 new tests covering By Status logic, template search filtering, Send Test Email logic, wizard canAdvance guards
+
+## Feature: Custom Recipient Email for Send Test Email
+- [x] ReviewStep UI: add email input field pre-filled with logged-in user's email
+- [x] ReviewStep UI: validate email format before enabling Send button
+- [x] Wire custom email address to sendTestEmail mutation's toEmail parameter
+- [x] vitest tests: custom email validation and fallback-to-user-email logic

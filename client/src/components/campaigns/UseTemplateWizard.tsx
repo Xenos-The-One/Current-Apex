@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import type { CampaignTemplate } from "@/data/campaignTemplates";
 import { CHANNEL_COLORS } from "@/data/campaignTemplates";
 
@@ -382,11 +383,15 @@ function ReviewStep({
   state,
   onSendTest,
   isSendingTest,
+  testEmail,
+  onTestEmailChange,
 }: {
   template: CampaignTemplate;
   state: WizardState;
   onSendTest?: () => void;
   isSendingTest?: boolean;
+  testEmail?: string;
+  onTestEmailChange?: (email: string) => void;
 }) {
   const colors = CHANNEL_COLORS[template.channel];
   const ChannelIcon =
@@ -436,23 +441,41 @@ function ReviewStep({
       </div>
 
       {template.channel === "email" && onSendTest && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-          <p className="text-xs text-amber-800 mb-2">
-            Send a preview to your own inbox to check formatting before launching.
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2.5">
+          <p className="text-xs font-medium text-amber-900">Send a preview email</p>
+          <p className="text-xs text-amber-700">
+            Check formatting before launching. Defaults to your account email — or enter any address below.
           </p>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="test-email-input" className="text-xs text-amber-800 font-medium">
+              Recipient
+            </Label>
+            <Input
+              id="test-email-input"
+              type="email"
+              placeholder="you@example.com"
+              value={testEmail ?? ""}
+              onChange={(e) => onTestEmailChange?.(e.target.value)}
+              className="h-8 text-xs bg-white border-amber-300 focus-visible:ring-amber-400"
+              disabled={isSendingTest}
+            />
+          </div>
           <Button
             size="sm"
             variant="outline"
             className="w-full border-amber-300 text-amber-800 hover:bg-amber-100"
             onClick={onSendTest}
-            disabled={isSendingTest}
+            disabled={isSendingTest || !testEmail?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testEmail)}
           >
             {isSendingTest ? (
               <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Sending preview...</>
             ) : (
-              <><Mail className="h-3.5 w-3.5 mr-1.5" /> Send Test Email to Myself</>
+              <><Mail className="h-3.5 w-3.5 mr-1.5" /> Send Test Email</>
             )}
           </Button>
+          {testEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testEmail) && (
+            <p className="text-xs text-red-600">Please enter a valid email address.</p>
+          )}
         </div>
       )}
 
@@ -482,6 +505,15 @@ export function UseTemplateWizard({
     template ? buildInitialState(template) : buildInitialState({} as CampaignTemplate)
   );
   const [isLaunching, setIsLaunching] = useState(false);
+  const { user } = useAuth();
+  const [testEmail, setTestEmail] = useState<string>("");
+
+  // Pre-fill test email with logged-in user's email when wizard opens
+  useMemo(() => {
+    if (open && user?.email) {
+      setTestEmail(user.email);
+    }
+  }, [open, user?.email]);
 
   // Reset when template changes
   const stableTemplateId = template?.id;
@@ -645,8 +677,16 @@ export function UseTemplateWizard({
             <ReviewStep
               template={template}
               state={state}
-              onSendTest={() => sendTestEmail.mutate({ subject: state.subject || state.campaignName, content: state.content })}
+              onSendTest={() =>
+                sendTestEmail.mutate({
+                  subject: state.subject || state.campaignName,
+                  content: state.content,
+                  toEmail: testEmail.trim() || undefined,
+                })
+              }
               isSendingTest={sendTestEmail.isPending}
+              testEmail={testEmail}
+              onTestEmailChange={setTestEmail}
             />
           )}
         </ScrollArea>
