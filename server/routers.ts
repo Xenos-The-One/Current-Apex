@@ -84,6 +84,7 @@ export const appRouter = router({
     trackTemplateUsage: campaignsRouter._def.procedures.trackTemplateUsage,
     getTemplateUsageCounts: campaignsRouter._def.procedures.getTemplateUsageCounts,
     listAgencyClients: campaignsRouter._def.procedures.listAgencyClients,
+    listContacts: campaignsRouter._def.procedures.listContacts,
     seedTemplateToClient: campaignsRouter._def.procedures.seedTemplateToClient,
     sendTestEmail: campaignsRouter._def.procedures.sendTestEmail,
     saveAsTemplate: campaignsRouter._def.procedures.saveAsTemplate,

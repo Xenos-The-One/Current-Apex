@@ -1221,3 +1221,8 @@
 ## Bug Fixes: Campaign Wizard
 - [x] Fix: campaigns router not registered — "No procedure found on path campaigns.createEmailCampaign"
 - [x] Fix: Add "Specific Client" recipient option to wizard audience step (pick individual client by name)
+
+## Bug Fix: Specific Client dropdown shows contacts/leads
+- [x] Add listContacts procedure to campaigns router (returns leads/contacts for the agency)
+- [x] Update AudienceStep to query contacts and show them in the Specific Client dropdown
+- [x] Update handleLaunch to send to the selected contact's email directly (recipientIds)

@@ -388,6 +388,36 @@ export const campaignsRouter = router({
       }
     }),
 
+  // ─── List Contacts / Leads for recipient picker ────────────────────────────
+  listContacts: protectedProcedure
+    .query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return [];
+      try {
+        const agency = await getAgencyByOwnerId(ctx.user.id);
+        if (!agency) return [];
+        // Return all leads for this agency, ordered by name
+        const rows = await db
+          .select({
+            id: leads.id,
+            firstName: leads.firstName,
+            lastName: leads.lastName,
+            email: leads.email,
+            phone: leads.phone,
+            status: leads.status,
+            clientId: leads.clientId,
+          })
+          .from(leads)
+          .where(eq(leads.agencyId, agency.id))
+          .orderBy(leads.firstName, leads.lastName)
+          .limit(500);
+        return rows;
+      } catch (err) {
+        console.warn("[listContacts] DB error:", (err as Error).message);
+        return [];
+      }
+    }),
+
   // ─── Seed Template to Client ──────────────────────────────────────────────
   seedTemplateToClient: protectedProcedure
     .input(z.object({

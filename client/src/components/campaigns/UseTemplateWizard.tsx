@@ -254,20 +254,25 @@ function AudienceStep({
   state: WizardState;
   onChange: (updates: Partial<WizardState>) => void;
 }) {
-  const { data: agencyClients = [] } = trpc.campaigns.listAgencyClients.useQuery();
+  const { data: contacts = [], isLoading: contactsLoading } = trpc.campaigns.listContacts.useQuery();
+
+  const selectedContact = state.specificClientId
+    ? contacts.find((c: any) => c.id === state.specificClientId)
+    : null;
 
   const audienceTip = () => {
     if (state.recipientFilter === "all") {
-      return "This will send to all leads for the selected client. Make sure they have opted in to receive communications.";
+      return "This will send to all contacts. Make sure they have opted in to receive communications.";
     }
     if (state.recipientFilter === "status") {
-      return `This will send to all leads with status \"${LEAD_STATUS_OPTIONS.find((o) => o.value === state.recipientStatus)?.label ?? state.recipientStatus}\".`;
+      return `This will send to all contacts with status \"${LEAD_STATUS_OPTIONS.find((o) => o.value === state.recipientStatus)?.label ?? state.recipientStatus}\".`;
     }
-    if (state.recipientFilter === "custom" && state.specificClientId) {
-      const client = agencyClients.find((c: any) => c.id === state.specificClientId);
-      return `This will send to all leads belonging to client \"${client?.name ?? "Selected Client"}\".`;
+    if (state.recipientFilter === "custom" && selectedContact) {
+      const name = `${(selectedContact as any).firstName} ${(selectedContact as any).lastName}`.trim();
+      const email = (selectedContact as any).email ? ` (${(selectedContact as any).email})` : "";
+      return `This will send directly to ${name}${email}.`;
     }
-    return "Select a specific client to target their leads.";
+    return "Select a specific contact to send directly to them.";
   };
 
   return (
@@ -282,16 +287,16 @@ function AudienceStep({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Leads</SelectItem>
-            <SelectItem value="status">Leads by Status</SelectItem>
-            <SelectItem value="custom">Specific Client</SelectItem>
+            <SelectItem value="all">All Contacts</SelectItem>
+            <SelectItem value="status">Contacts by Status</SelectItem>
+            <SelectItem value="custom">Specific Contact</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       {state.recipientFilter === "status" && (
         <div className="space-y-1.5">
-          <Label className="text-sm">Lead Status</Label>
+          <Label className="text-sm">Contact Status</Label>
           <Select
             value={state.recipientStatus}
             onValueChange={(v) => onChange({ recipientStatus: v })}
@@ -312,21 +317,23 @@ function AudienceStep({
 
       {state.recipientFilter === "custom" && (
         <div className="space-y-1.5">
-          <Label className="text-sm">Select Client</Label>
+          <Label className="text-sm">Select Contact</Label>
           <Select
             value={state.specificClientId?.toString() ?? ""}
             onValueChange={(v) => onChange({ specificClientId: v ? parseInt(v, 10) : null })}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Choose a client..." />
+              <SelectValue placeholder={contactsLoading ? "Loading contacts..." : "Choose a contact..."} />
             </SelectTrigger>
             <SelectContent>
-              {agencyClients.length === 0 ? (
-                <div className="px-3 py-2 text-xs text-muted-foreground">No clients found</div>
+              {contactsLoading ? (
+                <div className="px-3 py-2 text-xs text-muted-foreground">Loading...</div>
+              ) : contacts.length === 0 ? (
+                <div className="px-3 py-2 text-xs text-muted-foreground">No contacts found</div>
               ) : (
-                agencyClients.map((c: any) => (
+                contacts.map((c: any) => (
                   <SelectItem key={c.id} value={c.id.toString()}>
-                    {c.name}
+                    {c.firstName} {c.lastName}{c.email ? ` — ${c.email}` : ""}
                   </SelectItem>
                 ))
               )}
@@ -593,16 +600,18 @@ function ReviewStep({
   const ChannelIcon =
     template.channel === "email" ? Mail : template.channel === "sms" ? MessageSquare : Phone;
 
-  const { data: agencyClients = [] } = trpc.campaigns.listAgencyClients.useQuery();
-  const specificClient = state.specificClientId
-    ? (agencyClients as any[]).find((c) => c.id === state.specificClientId)
+  const { data: contacts = [] } = trpc.campaigns.listContacts.useQuery();
+  const specificContact = state.specificClientId
+    ? (contacts as any[]).find((c) => c.id === state.specificClientId)
     : null;
   const audienceLabel =
     state.recipientFilter === "all"
-      ? "All Leads"
+      ? "All Contacts"
       : state.recipientFilter === "custom"
-      ? specificClient ? `Client: ${specificClient.name}` : "Specific Client"
-      : `Leads with status: ${LEAD_STATUS_OPTIONS.find((o) => o.value === state.recipientStatus)?.label ?? state.recipientStatus}`;
+      ? specificContact
+        ? `${specificContact.firstName} ${specificContact.lastName}`.trim()
+        : "Specific Contact"
+      : `Contacts with status: ${LEAD_STATUS_OPTIONS.find((o) => o.value === state.recipientStatus)?.label ?? state.recipientStatus}`;
 
   const scheduleLabel = state.sendNow
     ? "Immediately after launch"
@@ -803,10 +812,12 @@ export function UseTemplateWizard({
       // Track template usage (non-blocking)
       trackUsage.mutate({ templateId: template.id, channel: template.channel, clientId });
 
-      // When a specific client is selected, use that client's ID instead of the prop
-      const targetClientId = state.recipientFilter === "custom" && state.specificClientId
-        ? state.specificClientId
-        : clientId;
+      // For specific contact: use their clientId and pass their lead ID as recipientIds
+      const isSpecificContact = state.recipientFilter === "custom" && state.specificClientId;
+      // We need the contact's clientId from the contacts list (fetched in ReviewStep / AudienceStep)
+      // The contacts query is available via trpc but here we use the state directly.
+      // The backend createEmailCampaign accepts recipientIds to target specific leads.
+      const targetClientId = clientId; // always use the prop clientId for the campaign record
 
       if (template.channel === "email") {
         await createEmail.mutateAsync({
@@ -814,8 +825,9 @@ export function UseTemplateWizard({
           name: state.campaignName,
           subject: state.subject,
           content: state.content,
-          recipientFilter: state.recipientFilter === "custom" ? "all" : state.recipientFilter,
+          recipientFilter: isSpecificContact ? "custom" : state.recipientFilter,
           recipientStatus: state.recipientFilter === "status" ? state.recipientStatus : undefined,
+          recipientIds: isSpecificContact && state.specificClientId ? [state.specificClientId] : undefined,
           scheduledDate,
           sendNow: state.sendNow,
         });
@@ -824,8 +836,9 @@ export function UseTemplateWizard({
           clientId: targetClientId,
           name: state.campaignName,
           message: state.content,
-          recipientFilter: state.recipientFilter === "custom" ? "all" : state.recipientFilter,
+          recipientFilter: isSpecificContact ? "custom" : state.recipientFilter,
           recipientStatus: state.recipientFilter === "status" ? state.recipientStatus : undefined,
+          recipientIds: isSpecificContact && state.specificClientId ? [state.specificClientId] : undefined,
           scheduledDate,
           sendNow: state.sendNow,
         });

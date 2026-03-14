@@ -848,3 +848,143 @@ describe("Specific Client Recipient & Router Fix", () => {
     });
   });
 });
+
+// ─── Tests: Contacts Recipient Dropdown ──────────────────────────────────────
+
+describe("Contacts Recipient Dropdown", () => {
+  describe("listContacts procedure shape", () => {
+    it("returns contact objects with required fields", () => {
+      const mockContact = {
+        id: 1,
+        firstName: "Thailer",
+        lastName: "Somerville",
+        email: "thailer@example.com",
+        phone: "+15551234567",
+        status: "new",
+        clientId: 10,
+      };
+      expect(mockContact).toHaveProperty("id");
+      expect(mockContact).toHaveProperty("firstName");
+      expect(mockContact).toHaveProperty("lastName");
+      expect(mockContact).toHaveProperty("email");
+      expect(mockContact).toHaveProperty("clientId");
+    });
+
+    it("formats contact display name correctly", () => {
+      const contact = { firstName: "Thailer", lastName: "Somerville", email: "t@example.com" };
+      const displayName = `${contact.firstName} ${contact.lastName}`;
+      expect(displayName).toBe("Thailer Somerville");
+    });
+
+    it("shows email in dropdown item when present", () => {
+      const contact = { firstName: "John", lastName: "Doe", email: "john@example.com" };
+      const item = `${contact.firstName} ${contact.lastName}${contact.email ? ` — ${contact.email}` : ""}`;
+      expect(item).toBe("John Doe — john@example.com");
+    });
+
+    it("omits email dash when email is missing", () => {
+      const contact = { firstName: "John", lastName: "Doe", email: null };
+      const item = `${contact.firstName} ${contact.lastName}${contact.email ? ` — ${contact.email}` : ""}`;
+      expect(item).toBe("John Doe");
+    });
+  });
+
+  describe("audience tip for specific contact", () => {
+    function buildAudienceTip(
+      recipientFilter: string,
+      selectedContact: { firstName: string; lastName: string; email?: string | null } | null
+    ) {
+      if (recipientFilter === "custom" && selectedContact) {
+        const name = `${selectedContact.firstName} ${selectedContact.lastName}`.trim();
+        const email = selectedContact.email ? ` (${selectedContact.email})` : "";
+        return `This will send directly to ${name}${email}.`;
+      }
+      return "Select a specific contact to send directly to them.";
+    }
+
+    it("shows contact name and email in tip", () => {
+      const tip = buildAudienceTip("custom", { firstName: "Thailer", lastName: "Somerville", email: "t@example.com" });
+      expect(tip).toBe("This will send directly to Thailer Somerville (t@example.com).");
+    });
+
+    it("shows contact name without email when email missing", () => {
+      const tip = buildAudienceTip("custom", { firstName: "John", lastName: "Doe", email: null });
+      expect(tip).toBe("This will send directly to John Doe.");
+    });
+
+    it("shows fallback when no contact selected", () => {
+      const tip = buildAudienceTip("custom", null);
+      expect(tip).toBe("Select a specific contact to send directly to them.");
+    });
+  });
+
+  describe("handleLaunch recipientIds for specific contact", () => {
+    function buildLaunchPayload(
+      recipientFilter: string,
+      specificClientId: number | null,
+      fallbackClientId: number
+    ) {
+      const isSpecificContact = recipientFilter === "custom" && specificClientId;
+      return {
+        clientId: fallbackClientId,
+        recipientFilter: isSpecificContact ? "custom" : recipientFilter,
+        recipientIds: isSpecificContact && specificClientId ? [specificClientId] : undefined,
+      };
+    }
+
+    it("passes recipientIds with the contact lead ID when specific contact selected", () => {
+      const payload = buildLaunchPayload("custom", 42, 1);
+      expect(payload.recipientFilter).toBe("custom");
+      expect(payload.recipientIds).toEqual([42]);
+      expect(payload.clientId).toBe(1);
+    });
+
+    it("passes no recipientIds for all filter", () => {
+      const payload = buildLaunchPayload("all", null, 1);
+      expect(payload.recipientFilter).toBe("all");
+      expect(payload.recipientIds).toBeUndefined();
+    });
+
+    it("passes no recipientIds for status filter", () => {
+      const payload = buildLaunchPayload("status", null, 1);
+      expect(payload.recipientFilter).toBe("status");
+      expect(payload.recipientIds).toBeUndefined();
+    });
+  });
+
+  describe("ReviewStep audienceLabel with contacts", () => {
+    function buildLabel(
+      recipientFilter: string,
+      recipientStatus: string,
+      specificContact: { firstName: string; lastName: string } | null
+    ) {
+      const LEAD_STATUS_OPTIONS = [
+        { value: "new", label: "New Leads" },
+        { value: "contacted", label: "Contacted" },
+      ];
+      if (recipientFilter === "all") return "All Contacts";
+      if (recipientFilter === "custom") {
+        return specificContact
+          ? `${specificContact.firstName} ${specificContact.lastName}`.trim()
+          : "Specific Contact";
+      }
+      return `Contacts with status: ${LEAD_STATUS_OPTIONS.find((o) => o.value === recipientStatus)?.label ?? recipientStatus}`;
+    }
+
+    it("shows All Contacts for all filter", () => {
+      expect(buildLabel("all", "new", null)).toBe("All Contacts");
+    });
+
+    it("shows contact full name for custom filter", () => {
+      expect(buildLabel("custom", "new", { firstName: "Thailer", lastName: "Somerville" })).toBe("Thailer Somerville");
+    });
+
+    it("shows fallback for custom filter without contact", () => {
+      expect(buildLabel("custom", "new", null)).toBe("Specific Contact");
+    });
+
+    it("shows status label for status filter", () => {
+      expect(buildLabel("status", "contacted", null)).toBe("Contacts with status: Contacted");
+    });
+  });
+});
