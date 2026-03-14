@@ -1159,3 +1159,13 @@
 - [x] Call clearImpersonationStorage() in useAuth logout finally block
 - [x] Call clearImpersonationStorage() in PortalLayout handleLogout onSuccess
 - [x] Add useEffect in ImpersonationContext to clear storage when user becomes null (session expiry)
+
+## Feature: Bulk Lead Import via CSV
+- [ ] Backend: enhance bulkImport with duplicate detection (email+phone) and per-row error reporting
+- [ ] Backend: add importLeadsWithDuplicateCheck helper in db.ts
+- [ ] Frontend: rewrite ImportDialog with proper CSV parsing (quoted fields, large files)
+- [ ] Frontend: richer column-mapping UI with field descriptions and required field validation
+- [ ] Frontend: live progress bar during import
+- [ ] Frontend: detailed results summary (imported/skipped/failed rows)
+- [ ] Frontend: downloadable template CSV
+- [ ] Tests: vitest for the import procedure duplicate detection logic

@@ -9,7 +9,8 @@ import {
   deleteLead,
   createLeadActivity,
   getLeadActivities,
-  bulkCreateLeads
+  bulkCreateLeads,
+  importLeadsWithDuplicateCheck
 } from "../db";
 import { makeVapiCall } from "../vapi";
 import { sendSmartAlert } from "../ai-operations-director";
@@ -314,6 +315,64 @@ export const leadsRouter = router({
         imported: importedCount,
         leads: [],
       };
+    }),
+
+  // Enhanced bulk import with duplicate detection and per-row error reporting
+  importLeads: protectedProcedure
+    .input(z.object({
+      leads: z.array(z.object({
+        firstName: z.string(),
+        lastName: z.string().default(''),
+        email: z.string().optional(),
+        phone: z.string().optional(),
+        company: z.string().optional(),
+        source: z.string().optional(),
+        notes: z.string().optional(),
+        loanType: z.string().optional(),
+        contactType: z.string().optional(),
+        propertyAddress: z.string().optional(),
+        propertyCity: z.string().optional(),
+        propertyState: z.string().optional(),
+        propertyZip: z.string().optional(),
+        loanAmount: z.number().optional(),
+        referringAgent: z.string().optional(),
+        referringBrokerage: z.string().optional(),
+      })).max(5000),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      // Resolve client via impersonation header (same pattern as clientRouter)
+      const ADMIN_ROLES = ['admin', 'super_admin', 'agency_owner'];
+      const isAdmin = ADMIN_ROLES.includes(ctx.user.role);
+      let clientId: number | null = null;
+      let agencyId = 1;
+
+      if (isAdmin) {
+        const impersonateId = (ctx.req as any).headers['x-impersonate-client-id'];
+        if (impersonateId) {
+          const parsed = parseInt(impersonateId, 10);
+          if (!isNaN(parsed)) clientId = parsed;
+        }
+      }
+
+      if (!clientId) {
+        // Fall back to user's own client profile
+        const { getClientByUserId, ensureClientProfile } = await import('../db');
+        let client = await getClientByUserId(ctx.user.id);
+        if (!client) client = await ensureClientProfile(ctx.user) ?? null;
+        if (!client) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'No client profile found. Please select a client first.' });
+        }
+        clientId = client.id;
+        agencyId = client.agencyId;
+      } else {
+        const { getClientById } = await import('../db');
+        const client = await getClientById(clientId);
+        if (!client) throw new TRPCError({ code: 'NOT_FOUND', message: 'Client not found' });
+        agencyId = client.agencyId;
+      }
+
+      const result = await importLeadsWithDuplicateCheck(agencyId, clientId, input.leads);
+      return result;
     }),
 
   // Update lead

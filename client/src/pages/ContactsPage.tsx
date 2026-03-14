@@ -611,164 +611,384 @@ function AdvancedFiltersPanel({
 }
 
 // ─── CSV Import Dialog ────────────────────────────────────────────────────────
+
+/** Parse a CSV string handling quoted fields with embedded commas, newlines, and escaped double-quotes */
+function parseCSV(text: string): { headers: string[]; rows: Record<string, string>[] } {
+  const allCells: string[][] = [];
+  let row: string[] = [];
+  let cell = '';
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"') {
+      if (inQuotes && text[i + 1] === '"') { cell += '"'; i++; } // escaped ""
+      else inQuotes = !inQuotes;
+    } else if (ch === ',' && !inQuotes) {
+      row.push(cell.trim()); cell = '';
+    } else if ((ch === '\n' || ch === '\r') && !inQuotes) {
+      if (ch === '\r' && text[i + 1] === '\n') i++;
+      row.push(cell.trim()); cell = '';
+      if (row.some(c => c !== '')) allCells.push(row);
+      row = [];
+    } else {
+      cell += ch;
+    }
+  }
+  row.push(cell.trim());
+  if (row.some(c => c !== '')) allCells.push(row);
+
+  if (allCells.length < 2) return { headers: [], rows: [] };
+
+  const headers = allCells[0];
+  const rows = allCells.slice(1).map(vals => {
+    const obj: Record<string, string> = {};
+    headers.forEach((h, i) => { obj[h] = vals[i] ?? ''; });
+    return obj;
+  });
+  return { headers, rows };
+}
+
+const IMPORT_FIELDS: Array<{ value: string; label: string; required?: boolean; hint?: string }> = [
+  { value: 'firstName', label: 'First Name', required: true, hint: 'Required' },
+  { value: 'lastName',  label: 'Last Name',  hint: 'Recommended' },
+  { value: 'email',     label: 'Email',      hint: 'Used for duplicate detection' },
+  { value: 'phone',     label: 'Phone',      hint: 'Used for duplicate detection' },
+  { value: 'company',   label: 'Company / Business' },
+  { value: 'source',    label: 'Lead Source' },
+  { value: 'notes',     label: 'Notes' },
+  { value: 'loanType',  label: 'Loan Type' },
+  { value: 'propertyAddress', label: 'Property Address' },
+  { value: 'propertyCity',    label: 'Property City' },
+  { value: 'propertyState',   label: 'Property State' },
+  { value: 'propertyZip',     label: 'Property Zip' },
+  { value: 'referringAgent',  label: 'Referring Agent' },
+];
+
+const TEMPLATE_CSV = `First Name,Last Name,Email,Phone,Company,Source,Notes
+Jane,Smith,jane@example.com,555-123-4567,Acme Corp,referral,Interested in 30yr fixed
+John,Doe,john@example.com,555-987-6543,,website,
+`;
+
+function downloadTemplate() {
+  const blob = new Blob([TEMPLATE_CSV], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'lead-import-template.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+type ImportResult = { imported: number; skipped: number; failed: number; skippedRows: Array<{ row: number; reason: string; name: string }>; failedRows: Array<{ row: number; reason: string; name: string }> };
+
 function ImportDialog({ open, onClose, onImported }: { open: boolean; onClose: () => void; onImported: () => void }) {
-  const [step, setStep] = useState<"upload" | "preview" | "done">("upload");
+  const [step, setStep] = useState<'upload' | 'map' | 'importing' | 'done'>('upload');
   const [rows, setRows] = useState<Record<string, string>[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [mapping, setMapping] = useState<Record<string, string>>({});
-  const [importing, setImporting] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [result, setResult] = useState<ImportResult | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const utils = trpc.useUtils();
-  const createLead = trpc.crm.createLead.useMutation();
+  const importLeads = trpc.leads.importLeads.useMutation();
 
-  const FIELDS = ["firstName", "lastName", "email", "phone", "company", "source", "notes", "tags"];
+  const autoMap = (hdrs: string[]): Record<string, string> => {
+    const m: Record<string, string> = {};
+    hdrs.forEach(h => {
+      const lower = h.toLowerCase().replace(/[\s_\-\.]/g, '');
+      if (lower.includes('first')) m[h] = 'firstName';
+      else if (lower.includes('last')) m[h] = 'lastName';
+      else if (lower.includes('email')) m[h] = 'email';
+      else if (lower.includes('phone') || lower.includes('mobile') || lower.includes('cell')) m[h] = 'phone';
+      else if (lower.includes('company') || lower.includes('business') || lower.includes('brokerage')) m[h] = 'company';
+      else if (lower.includes('source') || lower.includes('leadsource')) m[h] = 'source';
+      else if (lower.includes('note')) m[h] = 'notes';
+      else if (lower.includes('loan') && lower.includes('type')) m[h] = 'loanType';
+      else if (lower.includes('address') && !lower.includes('city') && !lower.includes('state') && !lower.includes('zip')) m[h] = 'propertyAddress';
+      else if (lower.includes('city')) m[h] = 'propertyCity';
+      else if (lower.includes('state')) m[h] = 'propertyState';
+      else if (lower.includes('zip') || lower.includes('postal')) m[h] = 'propertyZip';
+      else if (lower.includes('agent')) m[h] = 'referringAgent';
+    });
+    return m;
+  };
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const loadFile = (file: File) => {
+    if (!file.name.endsWith('.csv')) { toast.error('Please upload a .csv file'); return; }
     const reader = new FileReader();
     reader.onload = (ev) => {
       const text = ev.target?.result as string;
-      const lines = text.split(/\r?\n/).filter(Boolean);
-      if (lines.length < 2) { toast.error("CSV must have at least a header row and one data row"); return; }
-      const hdrs = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""));
+      const { headers: hdrs, rows: dataRows } = parseCSV(text);
+      if (hdrs.length === 0) { toast.error('CSV must have at least a header row and one data row'); return; }
       setHeaders(hdrs);
-      const dataRows = lines.slice(1, 51).map(line => {
-        const vals = line.split(",").map(v => v.trim().replace(/^"|"$/g, ""));
-        const obj: Record<string, string> = {};
-        hdrs.forEach((h, i) => { obj[h] = vals[i] || ""; });
-        return obj;
-      });
       setRows(dataRows);
-      // Auto-map common header names
-      const autoMap: Record<string, string> = {};
-      hdrs.forEach(h => {
-        const lower = h.toLowerCase().replace(/[\s_-]/g, "");
-        if (lower.includes("first")) autoMap[h] = "firstName";
-        else if (lower.includes("last")) autoMap[h] = "lastName";
-        else if (lower.includes("email")) autoMap[h] = "email";
-        else if (lower.includes("phone") || lower.includes("mobile")) autoMap[h] = "phone";
-        else if (lower.includes("company") || lower.includes("business")) autoMap[h] = "company";
-        else if (lower.includes("source")) autoMap[h] = "source";
-        else if (lower.includes("note")) autoMap[h] = "notes";
-        else if (lower.includes("tag")) autoMap[h] = "tags";
-      });
-      setMapping(autoMap);
-      setStep("preview");
+      setMapping(autoMap(hdrs));
+      setStep('map');
     };
     reader.readAsText(file);
   };
 
-  const handleImport = async () => {
-    setImporting(true);
-    let success = 0, fail = 0;
-    const allLines = rows;
-    for (const row of allLines) {
-      const data: any = {};
-      Object.entries(mapping).forEach(([header, field]) => {
-        if (field && row[header]) data[field] = row[header];
-      });
-      if (!data.firstName) {
-        // Try to split a full name
-        const name = Object.values(row)[0] as string || "";
-        const parts = name.split(" ");
-        data.firstName = parts[0] || "Unknown";
-        data.lastName = parts.slice(1).join(" ") || "";
-      }
-      try {
-        await createLead.mutateAsync({ ...data });
-        success++;
-      } catch { fail++; }
-    }
-    setImporting(false);
-    setStep("done");
-    utils.crm.listMyLeads.invalidate();
-    toast.success(`Imported ${success} contacts${fail > 0 ? `, ${fail} failed` : ""}`);
-    onImported();
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (file) loadFile(file);
   };
 
-  const reset = () => { setStep("upload"); setRows([]); setHeaders([]); setMapping({}); if (fileRef.current) fileRef.current.value = ""; };
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDragOver(false);
+    const file = e.dataTransfer.files?.[0]; if (file) loadFile(file);
+  };
+
+  const hasFirstNameMapped = Object.values(mapping).includes('firstName');
+
+  const handleImport = async () => {
+    setStep('importing');
+    setProgress(10);
+    // Build lead objects from mapping
+    const leadsToImport = rows.map(row => {
+      const lead: Record<string, string> = {};
+      Object.entries(mapping).forEach(([header, field]) => {
+        if (field && row[header]?.trim()) lead[field] = row[header].trim();
+      });
+      // If firstName missing but a full name column exists, try to split
+      if (!lead.firstName) {
+        const firstVal = Object.values(row)[0] || '';
+        const parts = firstVal.split(' ');
+        lead.firstName = parts[0] || '';
+        if (!lead.lastName) lead.lastName = parts.slice(1).join(' ');
+      }
+      return lead;
+    }).filter(l => l.firstName);
+
+    setProgress(30);
+    try {
+      const res = await importLeads.mutateAsync({ leads: leadsToImport as any });
+      setProgress(100);
+      setResult(res);
+      setStep('done');
+      utils.crm.listMyLeads.invalidate();
+      onImported();
+    } catch (err: any) {
+      toast.error(err?.message || 'Import failed');
+      setStep('map');
+    }
+  };
+
+  const reset = () => {
+    setStep('upload'); setRows([]); setHeaders([]); setMapping({});
+    setProgress(0); setResult(null);
+    if (fileRef.current) fileRef.current.value = '';
+  };
 
   return (
     <Dialog open={open} onOpenChange={() => { reset(); onClose(); }}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="w-4 h-4" /> Import Contacts
           </DialogTitle>
         </DialogHeader>
 
-        {step === "upload" && (
+        {/* Step 1: Upload */}
+        {step === 'upload' && (
           <div className="space-y-4">
             <div
-              className="border-2 border-dashed border-border rounded-xl p-10 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors"
+              className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors ${
+                dragOver ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50 hover:bg-primary/5'
+              }`}
               onClick={() => fileRef.current?.click()}
+              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleDrop}
             >
               <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
-              <p className="text-sm font-medium mb-1">Click to upload a CSV file</p>
-              <p className="text-xs text-muted-foreground">Supports: first name, last name, email, phone, company, tags</p>
+              <p className="text-sm font-medium mb-1">Drop a CSV file here or click to browse</p>
+              <p className="text-xs text-muted-foreground">Supports up to 5,000 rows &bull; Duplicates detected by email or phone</p>
             </div>
             <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleFile} />
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={downloadTemplate} className="gap-1.5">
+                <Download className="w-3.5 h-3.5" /> Download Template CSV
+              </Button>
+              <span className="text-xs text-muted-foreground">Start with our template to ensure correct column names</span>
+            </div>
           </div>
         )}
 
-        {step === "preview" && (
+        {/* Step 2: Column Mapping */}
+        {step === 'map' && (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Map your CSV columns to contact fields. Preview shows first 5 rows.</p>
-            <div className="space-y-2">
-              {headers.map(h => (
-                <div key={h} className="flex items-center gap-3">
-                  <span className="text-sm font-mono bg-muted px-2 py-1 rounded text-xs w-40 truncate">{h}</span>
-                  <span className="text-muted-foreground text-xs">→</span>
-                  <Select value={mapping[h] || ""} onValueChange={v => setMapping(m => ({ ...m, [h]: v }))}>
-                    <SelectTrigger className="flex-1 h-8 text-xs"><SelectValue placeholder="Skip" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">Skip</SelectItem>
-                      {FIELDS.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ))}
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">{rows.length.toLocaleString()} rows</span> found &mdash; map your CSV columns to contact fields.
+              </p>
+              {!hasFirstNameMapped && (
+                <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-0.5 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> Map &ldquo;First Name&rdquo; to continue
+                </span>
+              )}
             </div>
-            <div className="border rounded-lg overflow-auto max-h-40">
-              <table className="w-full text-xs">
-                <thead className="bg-muted">
-                  <tr>{headers.map(h => <th key={h} className="px-2 py-1.5 text-left font-medium">{h}</th>)}</tr>
-                </thead>
-                <tbody>
-                  {rows.slice(0, 5).map((row, i) => (
-                    <tr key={i} className="border-t">
-                      {headers.map(h => <td key={h} className="px-2 py-1.5 truncate max-w-24">{row[h]}</td>)}
+
+            {/* Mapping rows */}
+            <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+              {headers.map(h => {
+                const fieldMeta = IMPORT_FIELDS.find(f => f.value === mapping[h]);
+                return (
+                  <div key={h} className="flex items-center gap-2">
+                    <span className="font-mono bg-muted text-xs px-2 py-1 rounded w-36 truncate shrink-0" title={h}>{h}</span>
+                    <span className="text-muted-foreground text-xs shrink-0">→</span>
+                    <Select value={mapping[h] || ''} onValueChange={v => setMapping(m => ({ ...m, [h]: v }))}>
+                      <SelectTrigger className="flex-1 h-8 text-xs">
+                        <SelectValue placeholder="Skip this column" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Skip this column</SelectItem>
+                        {IMPORT_FIELDS.map(f => (
+                          <SelectItem key={f.value} value={f.value}>
+                            {f.label}{f.hint ? ` — ${f.hint}` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {fieldMeta?.required && (
+                      <span className="text-xs text-green-600 shrink-0">✓ Required</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Preview table */}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Preview (first 3 rows)</p>
+              <div className="border rounded-lg overflow-auto max-h-32">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted sticky top-0">
+                    <tr>
+                      {headers.filter(h => mapping[h]).map(h => (
+                        <th key={h} className="px-2 py-1.5 text-left font-medium whitespace-nowrap">
+                          {IMPORT_FIELDS.find(f => f.value === mapping[h])?.label || mapping[h]}
+                        </th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {rows.slice(0, 3).map((row, i) => (
+                      <tr key={i} className="border-t">
+                        {headers.filter(h => mapping[h]).map(h => (
+                          <td key={h} className="px-2 py-1.5 truncate max-w-28">{row[h]}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">{rows.length} rows found (showing first 5 preview)</p>
           </div>
         )}
 
-        {step === "done" && (
-          <div className="text-center py-8">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-              <Check className="w-8 h-8 text-green-600" />
+        {/* Step 3: Importing (progress) */}
+        {step === 'importing' && (
+          <div className="py-10 text-center space-y-4">
+            <Loader2 className="w-10 h-10 mx-auto animate-spin text-primary" />
+            <p className="text-sm font-medium">Importing {rows.length.toLocaleString()} contacts&hellip;</p>
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div
+                className="h-2 bg-primary rounded-full transition-all duration-500"
+                style={{ width: `${progress}%` }}
+              />
             </div>
-            <p className="font-semibold text-lg mb-1">Import Complete</p>
-            <p className="text-sm text-muted-foreground">Your contacts have been added to the CRM.</p>
+            <p className="text-xs text-muted-foreground">Checking for duplicates and inserting in batches&hellip;</p>
           </div>
         )}
 
-        <DialogFooter>
-          {step === "preview" && (
+        {/* Step 4: Done */}
+        {step === 'done' && result && (
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-center">
+                <p className="text-2xl font-bold text-green-700">{result.imported}</p>
+                <p className="text-xs text-green-600 mt-0.5">Imported</p>
+              </div>
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-center">
+                <p className="text-2xl font-bold text-amber-700">{result.skipped}</p>
+                <p className="text-xs text-amber-600 mt-0.5">Skipped</p>
+              </div>
+              <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-center">
+                <p className="text-2xl font-bold text-red-700">{result.failed}</p>
+                <p className="text-xs text-red-600 mt-0.5">Failed</p>
+              </div>
+            </div>
+
+            {result.skippedRows.length > 0 && (
+              <details className="text-xs">
+                <summary className="cursor-pointer font-medium text-amber-700 hover:underline">
+                  {result.skippedRows.length} skipped rows &mdash; click to expand
+                </summary>
+                <div className="mt-2 border rounded-lg overflow-auto max-h-36">
+                  <table className="w-full text-xs">
+                    <thead className="bg-muted"><tr>
+                      <th className="px-2 py-1.5 text-left">Row</th>
+                      <th className="px-2 py-1.5 text-left">Name</th>
+                      <th className="px-2 py-1.5 text-left">Reason</th>
+                    </tr></thead>
+                    <tbody>
+                      {result.skippedRows.map((r, i) => (
+                        <tr key={i} className="border-t">
+                          <td className="px-2 py-1.5">{r.row}</td>
+                          <td className="px-2 py-1.5">{r.name}</td>
+                          <td className="px-2 py-1.5 text-amber-700">{r.reason}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+            )}
+
+            {result.failedRows.length > 0 && (
+              <details className="text-xs">
+                <summary className="cursor-pointer font-medium text-red-700 hover:underline">
+                  {result.failedRows.length} failed rows &mdash; click to expand
+                </summary>
+                <div className="mt-2 border rounded-lg overflow-auto max-h-36">
+                  <table className="w-full text-xs">
+                    <thead className="bg-muted"><tr>
+                      <th className="px-2 py-1.5 text-left">Row</th>
+                      <th className="px-2 py-1.5 text-left">Name</th>
+                      <th className="px-2 py-1.5 text-left">Error</th>
+                    </tr></thead>
+                    <tbody>
+                      {result.failedRows.map((r, i) => (
+                        <tr key={i} className="border-t">
+                          <td className="px-2 py-1.5">{r.row}</td>
+                          <td className="px-2 py-1.5">{r.name}</td>
+                          <td className="px-2 py-1.5 text-red-700">{r.reason}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+            )}
+          </div>
+        )}
+
+        <DialogFooter className="gap-2">
+          {step === 'upload' && (
+            <Button variant="outline" onClick={() => { reset(); onClose(); }}>Cancel</Button>
+          )}
+          {step === 'map' && (
             <>
               <Button variant="outline" onClick={reset}>Back</Button>
-              <Button onClick={handleImport} disabled={importing}>
-                {importing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Import {rows.length} Contacts
+              <Button onClick={handleImport} disabled={!hasFirstNameMapped}>
+                Import {rows.length.toLocaleString()} Contacts
               </Button>
             </>
           )}
-          {step === "done" && <Button onClick={() => { reset(); onClose(); }}>Done</Button>}
+          {step === 'done' && (
+            <>
+              <Button variant="outline" onClick={reset}>Import Another File</Button>
+              <Button onClick={() => { reset(); onClose(); }}>Done</Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

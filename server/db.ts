@@ -556,6 +556,167 @@ export async function bulkCreateLeads(
   return { count: leadsData.length };
 }
 
+// ============= BULK IMPORT WITH DUPLICATE DETECTION =============
+
+export type ImportLeadRow = {
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  source?: string;
+  notes?: string;
+  loanType?: string;
+  contactType?: string;
+  propertyAddress?: string;
+  propertyCity?: string;
+  propertyState?: string;
+  propertyZip?: string;
+  loanAmount?: number;
+  referringAgent?: string;
+  referringBrokerage?: string;
+};
+
+export type ImportLeadResult = {
+  imported: number;
+  skipped: number;
+  failed: number;
+  skippedRows: Array<{ row: number; reason: string; name: string }>;
+  failedRows: Array<{ row: number; reason: string; name: string }>;
+};
+
+/**
+ * Bulk import leads with duplicate detection.
+ * Duplicates are detected by matching email OR phone within the same client.
+ * Rows without firstName are skipped with a validation error.
+ */
+export async function importLeadsWithDuplicateCheck(
+  agencyId: number,
+  clientId: number,
+  rows: ImportLeadRow[]
+): Promise<ImportLeadResult> {
+  if (rows.length === 0) return { imported: 0, skipped: 0, failed: 0, skippedRows: [], failedRows: [] };
+
+  const mysql2 = await import('mysql2/promise');
+  const conn = await mysql2.createConnection(process.env.DATABASE_URL!);
+
+  // Build duplicate index from existing leads for this client
+  const existingEmails = new Set<string>();
+  const existingPhones = new Set<string>();
+  try {
+    const [existing] = await conn.execute(
+      `SELECT email, phone FROM leads WHERE client_id = ? AND (email IS NOT NULL OR phone IS NOT NULL)`,
+      [clientId]
+    ) as any[];
+    for (const r of existing as any[]) {
+      if (r.email) existingEmails.add(r.email.toLowerCase().trim());
+      if (r.phone) existingPhones.add(r.phone.replace(/\D/g, ''));
+    }
+  } catch (e) {
+    console.warn('[importLeads] Could not load existing leads for duplicate check:', e);
+  }
+
+  const result: ImportLeadResult = { imported: 0, skipped: 0, failed: 0, skippedRows: [], failedRows: [] };
+  const toInsert: ImportLeadRow[] = [];
+  const insertIndexes: number[] = [];
+
+  // Validate and deduplicate
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const displayName = `${row.firstName || ''} ${row.lastName || ''}`.trim() || `Row ${i + 2}`;
+
+    if (!row.firstName?.trim()) {
+      result.skipped++;
+      result.skippedRows.push({ row: i + 2, reason: 'Missing first name', name: displayName });
+      continue;
+    }
+
+    const emailKey = row.email?.toLowerCase().trim();
+    const phoneKey = row.phone?.replace(/\D/g, '');
+    const isDuplicate =
+      (emailKey && existingEmails.has(emailKey)) ||
+      (phoneKey && phoneKey.length >= 7 && existingPhones.has(phoneKey));
+
+    if (isDuplicate) {
+      result.skipped++;
+      result.skippedRows.push({ row: i + 2, reason: 'Duplicate (email or phone already exists)', name: displayName });
+      continue;
+    }
+
+    // Add to in-flight index so we don't insert the same email/phone twice within this batch
+    if (emailKey) existingEmails.add(emailKey);
+    if (phoneKey && phoneKey.length >= 7) existingPhones.add(phoneKey);
+
+    toInsert.push(row);
+    insertIndexes.push(i);
+  }
+
+  // Batch insert valid rows in chunks of 100
+  if (toInsert.length > 0) {
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const CHUNK = 100;
+    for (let c = 0; c < toInsert.length; c += CHUNK) {
+      const chunk = toInsert.slice(c, c + CHUNK);
+      const batchRows = chunk.map(lead => [
+        clientId, agencyId,
+        lead.firstName.trim(),
+        (lead.lastName || '').trim(),
+        lead.email?.trim() || null,
+        lead.phone?.trim() || null,
+        lead.source || 'import',
+        lead.notes || null,
+        lead.loanType || null,
+        lead.propertyAddress || null,
+        lead.propertyCity || null,
+        lead.propertyState || null,
+        lead.propertyZip || null,
+        lead.loanAmount ? String(lead.loanAmount) : null,
+        lead.referringAgent || null,
+        lead.company || null,
+        now, now,
+      ]);
+      const placeholders = batchRows.map(() => '(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').join(',');
+      try {
+        await conn.execute(
+          `INSERT INTO leads
+           (client_id, agency_id, first_name, last_name, email, phone, source, notes,
+            loan_type, property_address, property_city, property_state, property_zip,
+            loan_amount, assigned_to, company, createdAt, updatedAt)
+           VALUES ${placeholders}`,
+          batchRows.flat()
+        );
+        result.imported += chunk.length;
+      } catch (e: any) {
+        for (let k = 0; k < chunk.length; k++) {
+          const row = chunk[k];
+          result.failed++;
+          result.failedRows.push({
+            row: insertIndexes[c + k] + 2,
+            reason: e?.message || 'Insert failed',
+            name: `${row.firstName} ${row.lastName}`.trim(),
+          });
+        }
+      }
+    }
+  }
+
+  await conn.end();
+
+  // Update client lead count
+  if (result.imported > 0) {
+    try {
+      const client = await getClientById(clientId);
+      if (client) {
+        await updateClient(clientId, { leadCount: (client.leadCount || 0) + result.imported });
+      }
+    } catch (e) {
+      console.warn('[importLeads] Could not update client lead count:', e);
+    }
+  }
+
+  return result;
+}
+
 // ============= SUBSCRIPTION TIER FUNCTIONS =============
 
 export async function seedSubscriptionTiers(tiers: InsertSubscriptionTier[]) {
