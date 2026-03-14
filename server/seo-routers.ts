@@ -86,32 +86,45 @@ export const seoRouter = router({
         const { eq, isNull } = await import("drizzle-orm");
         const db = await getDb();
         if (!db) return { seoClientId: null, created: false };
-        // Find SEO user by email
-        let seoUser = ctx.user.email
-          ? (await db.select().from(seoUsers).where(eq(seoUsers.email, ctx.user.email)).limit(1))[0]
-          : undefined;
+        // Find SEO user by email using only columns that exist in the actual DB table
+        // (avoid schema mismatch — seoUsers schema has loginMethod/lastSignedIn that may not be migrated)
+        let seoUser: { id: number; name: string; email: string; role: string } | undefined;
+        if (ctx.user.email) {
+          try {
+            const rawClient = (db as any).$client.promise();
+            const [rows] = await rawClient.query(
+              'SELECT id, name, email, role FROM seo_users WHERE email = ? LIMIT 1',
+              [ctx.user.email]
+            );
+            seoUser = Array.isArray(rows) ? rows[0] : undefined;
+          } catch (e) {
+            console.error('[ensureForCurrentUser] seo_users email lookup failed:', e);
+          }
+        }
         if (!seoUser) {
           console.log(`[ensureForCurrentUser] No SEO user found for email ${ctx.user.email}`);
           return { seoClientId: null, created: false };
         }
-        // Check if a self-SEO-client already exists (crmClientId IS NULL, createdBy = seoUser.id)
-        const selfClients = await db.select().from(seoClients)
-          .where(eq(seoClients.createdBy, seoUser.id))
-          .limit(10);
-        const selfClient = selfClients.find(c => !c.crmClientId);
+        // Check if a self-SEO-client already exists (crm_client_id IS NULL, createdBy = seoUser.id)
+        // Use raw SQL to avoid Drizzle schema mismatch with unmigrated columns
+        const dbClient = (db as any).$client.promise();
+        const [existingRows] = await dbClient.query(
+          'SELECT id, crm_client_id FROM seo_clients WHERE `createdBy` = ? AND crm_client_id IS NULL LIMIT 1',
+          [seoUser.id]
+        );
+        const selfClient = Array.isArray(existingRows) ? existingRows[0] : undefined;
         if (selfClient) {
           console.log(`[ensureForCurrentUser] Found self-SEO-client id=${selfClient.id}`);
           return { seoClientId: selfClient.id, created: false };
         }
         // Create a self-SEO-client for this admin user
-        const [result] = await db.insert(seoClients).values({
-          name: ctx.user.name ?? seoUser.name ?? "Agency Owner",
-          businessName: ctx.user.name ?? seoUser.name ?? "Agency Owner",
-          email: ctx.user.email ?? seoUser.email ?? undefined,
-          createdBy: seoUser.id,
-          isActive: 1,
-        });
-        const newId = (result as any).insertId;
+        const ownerName = ctx.user.name ?? seoUser.name ?? 'Agency Owner';
+        const ownerEmail = ctx.user.email ?? seoUser.email ?? null;
+        const [insertResult] = await dbClient.query(
+          'INSERT INTO seo_clients (name, business_name, businessName, email, `createdBy`, isActive) VALUES (?, ?, ?, ?, ?, 1)',
+          [ownerName, ownerName, ownerName, ownerEmail, seoUser.id]
+        );
+        const newId = (insertResult as any).insertId;
         console.log(`[ensureForCurrentUser] Created self-SEO-client id=${newId}`);
         return { seoClientId: newId, created: true };
       }

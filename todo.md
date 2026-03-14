@@ -998,3 +998,7 @@
 - [x] Fix "Your account is not fully set up yet" error — ensureForCurrentUser now handles admin users by creating a self-SEO-client when no CRM client exists
 - [x] Investigate ensureForCurrentUser procedure — root cause: admin user (Thaler) has no CRM client record, only an SEO user record
 - [x] Make Generate button wait for provisioning to complete — now runs ensureForCurrentUser on mount, not on click
+
+## Generate Button Fix (Round 4)
+- [x] Fix persistent "Unable to link your account" — root cause: Drizzle schema mismatch (seo_users has loginMethod/lastSignedIn columns in schema but not in DB), fixed with raw SQL queries using .$client.promise()
+- [x] Investigate server logs to find exact failure point — "Failed query: select loginMethod, lastSignedIn from seo_users" confirmed the schema mismatch
