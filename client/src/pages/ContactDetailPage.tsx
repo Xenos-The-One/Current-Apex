@@ -710,6 +710,33 @@ export default function ContactDetailPage() {
                 </button>
               ))}
             </div>
+
+            {/* DND / missing contact info warnings */}
+            {composerTab === "sms" && dnd.sms && (
+              <div className="flex items-center gap-2 mb-2 px-2.5 py-1.5 rounded-md bg-red-50 border border-red-200 text-red-700 text-xs">
+                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>SMS DND is enabled for this contact. Message will still be sent but may violate their preference.</span>
+              </div>
+            )}
+            {composerTab === "sms" && !lead.phone && (
+              <div className="flex items-center gap-2 mb-2 px-2.5 py-1.5 rounded-md bg-amber-50 border border-amber-200 text-amber-700 text-xs">
+                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>No phone number on file. <button className="underline font-medium" onClick={() => setMobilePanel("info")}>Add one</button> before sending SMS.</span>
+              </div>
+            )}
+            {composerTab === "email" && dnd.email && (
+              <div className="flex items-center gap-2 mb-2 px-2.5 py-1.5 rounded-md bg-red-50 border border-red-200 text-red-700 text-xs">
+                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>Email DND is enabled for this contact. Message will still be sent but may violate their preference.</span>
+              </div>
+            )}
+            {composerTab === "email" && !lead.email && (
+              <div className="flex items-center gap-2 mb-2 px-2.5 py-1.5 rounded-md bg-amber-50 border border-amber-200 text-amber-700 text-xs">
+                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>No email address on file. <button className="underline font-medium" onClick={() => setMobilePanel("info")}>Add one</button> before sending email.</span>
+              </div>
+            )}
+
             {composerTab === "email" && (
               <Input
                 value={emailSubject}
@@ -737,7 +764,12 @@ export default function ContactDetailPage() {
                   size="icon"
                   className="w-9 h-9"
                   onClick={handleSend}
-                  disabled={!composerText.trim() || sendSmsMut.isPending || sendEmailMut.isPending || addNoteMut.isPending}
+                  disabled={
+                    !composerText.trim() ||
+                    sendSmsMut.isPending || sendEmailMut.isPending || addNoteMut.isPending ||
+                    (composerTab === "sms" && !lead.phone) ||
+                    (composerTab === "email" && !lead.email)
+                  }
                   title="Send (Cmd+Enter)"
                 >
                   {(sendSmsMut.isPending || sendEmailMut.isPending || addNoteMut.isPending)
@@ -749,7 +781,24 @@ export default function ContactDetailPage() {
                 </Button>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Cmd+Enter to send</p>
+            {/* Footer: hint + SMS character counter */}
+            <div className="flex items-center justify-between mt-1">
+              <p className="text-xs text-muted-foreground">Cmd+Enter to send</p>
+              {composerTab === "sms" && composerText.length > 0 && (() => {
+                const len = composerText.length;
+                const segmentSize = 160;
+                const segments = Math.ceil(len / segmentSize);
+                const remaining = segments * segmentSize - len;
+                return (
+                  <p className={cn(
+                    "text-xs tabular-nums",
+                    len > 320 ? "text-red-500" : len > 160 ? "text-amber-500" : "text-muted-foreground"
+                  )}>
+                    {remaining} / {segments} {segments === 1 ? "segment" : "segments"}
+                  </p>
+                );
+              })()}
+            </div>
           </div>
         </div>
       </div>

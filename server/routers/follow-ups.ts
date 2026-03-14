@@ -5,6 +5,7 @@ import { invokeLLM } from "../_core/llm";
 import {
   getClientByUserId,
   getClientById,
+  getClientsByAgencyId,
   getLeadsByClientId,
   getLeadsByAgencyId,
   getAgencyByOwnerId,
@@ -24,6 +25,7 @@ const ADMIN_ROLES = ["admin", "super_admin", "agency_owner"];
 async function resolveClientForFollowUps(ctx: { user: { id: number; role: string }; req: any }) {
   const isAdmin = ADMIN_ROLES.includes(ctx.user.role);
   if (isAdmin) {
+    // 1. Explicit impersonation header takes priority
     const impersonateId = ctx.req.headers["x-impersonate-client-id"];
     if (impersonateId) {
       const clientId = parseInt(impersonateId, 10);
@@ -31,6 +33,22 @@ async function resolveClientForFollowUps(ctx: { user: { id: number; role: string
         const client = await getClientById(clientId);
         if (client) return client;
       }
+    }
+    // 2. Admin without impersonation: look up their own agency and return a
+    //    synthetic client-like object so SMS/email + conversation logging works.
+    const agency = await getAgencyByOwnerId(ctx.user.id);
+    if (agency) {
+      // Try to find the first real client under this agency
+      const agencyClients = await getClientsByAgencyId(agency.id);
+      if (agencyClients.length > 0) return agencyClients[0];
+      // No clients yet — return a minimal stub so sends still work
+      return {
+        id: 0,
+        agencyId: agency.id,
+        agency_id: agency.id,
+        name: agency.name,
+        accessMode: "full" as const,
+      } as any;
     }
   }
   return await getClientByUserId(ctx.user.id);

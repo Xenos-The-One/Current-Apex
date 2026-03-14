@@ -1135,3 +1135,11 @@
 
 ## Bug Fix: Contacts Page API Error
 - [x] Fix /contacts page "Unexpected token '<'" error — admin without impersonation now shows all agency leads instead of throwing NOT_FOUND
+
+## Feature: Wire Send SMS/Email on Contact Detail Page
+- [x] Fix resolveClientForFollowUps to support admin users without impersonation (use agency owner lookup)
+- [x] Add SMS character counter (160 char segments) to composer
+- [x] Show DND warning when contact has SMS/email DND enabled
+- [x] Add "no phone/email" guard with inline warning in composer
+- [x] Show send result feedback (sent vs demo mode) in composer
+- [x] Write vitest tests for the admin-without-impersonation send path
