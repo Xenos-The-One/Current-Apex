@@ -550,3 +550,59 @@ export async function pushSystemAlert(params: {
 
 // Alias for backward compatibility — webinars router imports this name
 export const pushWebinarRegistration = pushWebinarMilestone;
+
+/**
+ * Push notification when a lead is assigned to a specific team member.
+ * Sends a targeted push to the assigned user's device(s) only.
+ */
+export async function pushLeadAssigned(params: {
+  leadId: number;
+  firstName: string;
+  lastName: string;
+  assignedToUserId: number;
+  assignedByName: string;
+}) {
+  const { leadId, firstName, lastName, assignedToUserId, assignedByName } = params;
+
+  const title = "📋 Lead Assigned to You";
+  const body = `${firstName} ${lastName} has been assigned to you by ${assignedByName}.\n${nowPT()}`;
+
+  try {
+    // Import here to avoid circular dependency
+    const { sendPushToUser, createAndPushNotification } = await import("./routers/notifications");
+
+    // Send targeted push to the assigned user only
+    await sendPushToUser(assignedToUserId, {
+      title,
+      body,
+      tag: "lead_assigned",
+      data: { url: `/leads?highlight=${leadId}` },
+    });
+
+    // Create in-app notification for the assigned user
+    await createAndPushNotification({
+      userId: assignedToUserId,
+      type: "new_lead",
+      title,
+      body,
+      priority: "high",
+      actionUrl: `/leads?highlight=${leadId}`,
+      metadata: { leadId, assignedByName },
+    });
+
+    await logNotification({
+      type: "push",
+      channel: "push",
+      recipient: `User #${assignedToUserId}`,
+      subject: title,
+      body,
+      status: "sent",
+      metadata: { leadId, assignedToUserId, assignedByName },
+    });
+
+    return { sent: 1, failed: 0 };
+  } catch (error) {
+    console.error("[Push Triggers] Failed to send lead assignment push:", error);
+    return { sent: 0, failed: 1 };
+  }
+}

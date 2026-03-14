@@ -14,7 +14,7 @@ import {
 import { makeVapiCall } from "../vapi";
 import { sendSmartAlert } from "../ai-operations-director";
 import { scheduleLeadFollowUp } from "../lead-automation";
-import { pushNewLead, pushLeadStatusChange } from "../push-triggers";
+import { pushNewLead, pushLeadStatusChange, pushLeadAssigned } from "../push-triggers";
 import { TRPCError } from "@trpc/server";
 import { tagLeadAsRefiProspect, untagLeadAsRefiProspect, getRefiDripStatus } from "../refi-drip";
 import { sendSMS } from "../twilio";
@@ -369,6 +369,26 @@ export const leadsRouter = router({
           });
         } catch (e) {
           console.error("[Lead Update] Push notification failed:", e);
+        }
+      }
+
+      // Push notification when lead is assigned to a team member
+      if (
+        input.assignedToUserId !== undefined &&
+        input.assignedToUserId !== null &&
+        input.assignedToUserId !== currentLead?.assignedToUserId &&
+        currentLead
+      ) {
+        try {
+          await pushLeadAssigned({
+            leadId: input.leadId,
+            firstName: currentLead.firstName || '',
+            lastName: currentLead.lastName || '',
+            assignedToUserId: input.assignedToUserId,
+            assignedByName: ctx.user.name || 'Admin',
+          });
+        } catch (e) {
+          console.error("[Lead Update] Assignment push notification failed:", e);
         }
       }
 

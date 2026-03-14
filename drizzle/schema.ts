@@ -642,10 +642,19 @@ export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;
  */
 export const teamNotifications = mysqlTable("team_notifications", {
   id: int("id").autoincrement().primaryKey(),
+  // The DB uses snake_case for these newer columns
   userId: int("user_id").references(() => users.id), // null = broadcast to all
-  teamMemberId: int("team_member_id"), // References team_members table
-  teamMemberName: varchar("team_member_name", { length: 255 }), // Denormalized for quick display
+  teamMemberId: int("team_member_id"),
+  teamMemberName: varchar("team_member_name", { length: 255 }),
   type: mysqlEnum("type", [
+    "new_lead",
+    "appointment_reminder",
+    "campaign_sent",
+    "call_completed",
+    "task_due",
+    "workflow_triggered",
+    "document_uploaded",
+    "system",
     "daily_standup",
     "weekly_strategy",
     "weekly_report",
@@ -654,25 +663,25 @@ export const teamNotifications = mysqlTable("team_notifications", {
     "no_show_alert",
     "webinar_milestone",
     "ad_spend_alert",
-    "system",
     "custom",
-    "new_lead",
     "appointment_booked",
     "vapi_call",
     "lead_status_change",
     "facebook_lead",
     "content_comment"
-  ]).notNull(),
-  title: varchar("title", { length: 500 }).notNull(),
-  body: text("body").notNull(),
+  ]).notNull().default("system"),
+  title: varchar("title", { length: 255 }).notNull(),
+  // body is nullable in the DB (legacy rows have NULL body)
+  body: text("body"),
   priority: mysqlEnum("priority", ["low", "normal", "high", "urgent"]).default("normal").notNull(),
   isRead: boolean("is_read").default(false).notNull(),
   readAt: timestamp("read_at"),
-  pushSent: boolean("push_sent").default(false).notNull(), // Whether push notification was sent
+  pushSent: boolean("push_sent").default(false).notNull(),
   pushSentAt: timestamp("push_sent_at"),
-  actionUrl: varchar("action_url", { length: 500 }), // Deep link to relevant page
-  metadata: text("metadata"), // JSON with extra data (lead info, stats, etc.)
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  actionUrl: varchar("action_url", { length: 500 }),
+  metadata: text("metadata"),
+  // IMPORTANT: The actual DB column is camelCase "createdAt", not snake_case "created_at"
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
 export type TeamNotification = typeof teamNotifications.$inferSelect;

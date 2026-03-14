@@ -1084,3 +1084,9 @@
 - [x] Fix GROUP BY SQL error in leads query (only_full_group_by mode incompatibility)
 - [x] Wire push notifications for new leads entering the pipeline
 - [x] Add real-time unread notification badge counter to the bell icon in top nav
+
+## Round: Push Test Fix + 3 Next Steps
+- [x] Permanently fix team_notifications insert error (agencyId NOT NULL constraint)
+- [x] Fix bookAppointment test timeout by mocking Twilio/SendGrid/push in test
+- [x] Add Mark All as Read button to Notifications page (already existed)
+- [x] Add lead assignment push notifications when admin assigns lead to team member
