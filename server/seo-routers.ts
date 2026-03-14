@@ -67,13 +67,59 @@ export const seoRouter = router({
     // Auto-provision an SEO client record for the current portal user.
     // Creates one linked to their CRM client if it doesn't exist yet.
     ensureForCurrentUser: protectedProcedure.mutation(async ({ ctx }) => {
-      const { getClientByUserId } = await import("./db");
+      const { getClientByUserId, getClientByEmail } = await import("./db");
       const { ensureLinkedSeoClient, getFirstAdminSeoUser, getSeoClientByCrmId } = await import("./seo-db");
-      const crmClient = await getClientByUserId(ctx.user.id);
-      if (!crmClient) return { seoClientId: null, created: false };
+      console.log(`[ensureForCurrentUser] userId=${ctx.user.id} email=${ctx.user.email} role=${ctx.user.role}`);
+      // Try by userId first, then fall back to email match (portal users may not have userId set on client record)
+      let crmClient = await getClientByUserId(ctx.user.id);
+      console.log(`[ensureForCurrentUser] byUserId result:`, crmClient ? `found id=${crmClient.id}` : 'not found');
+      if (!crmClient && ctx.user.email) {
+        crmClient = await getClientByEmail(ctx.user.email) ?? null;
+        console.log(`[ensureForCurrentUser] byEmail result:`, crmClient ? `found id=${crmClient.id}` : 'not found');
+      }
+      if (!crmClient) {
+        console.log(`[ensureForCurrentUser] No CRM client found for user ${ctx.user.id} — checking if they have an SEO user record`);
+        // For admin/agency users who have an SEO user record but no CRM client,
+        // create a self-SEO-client so they can generate content for themselves
+        const { getDb } = await import("./seo-db");
+        const { seoUsers, seoClients } = await import("../drizzle/seo-schema");
+        const { eq, isNull } = await import("drizzle-orm");
+        const db = await getDb();
+        if (!db) return { seoClientId: null, created: false };
+        // Find SEO user by email
+        let seoUser = ctx.user.email
+          ? (await db.select().from(seoUsers).where(eq(seoUsers.email, ctx.user.email)).limit(1))[0]
+          : undefined;
+        if (!seoUser) {
+          console.log(`[ensureForCurrentUser] No SEO user found for email ${ctx.user.email}`);
+          return { seoClientId: null, created: false };
+        }
+        // Check if a self-SEO-client already exists (crmClientId IS NULL, createdBy = seoUser.id)
+        const selfClients = await db.select().from(seoClients)
+          .where(eq(seoClients.createdBy, seoUser.id))
+          .limit(10);
+        const selfClient = selfClients.find(c => !c.crmClientId);
+        if (selfClient) {
+          console.log(`[ensureForCurrentUser] Found self-SEO-client id=${selfClient.id}`);
+          return { seoClientId: selfClient.id, created: false };
+        }
+        // Create a self-SEO-client for this admin user
+        const [result] = await db.insert(seoClients).values({
+          name: ctx.user.name ?? seoUser.name ?? "Agency Owner",
+          businessName: ctx.user.name ?? seoUser.name ?? "Agency Owner",
+          email: ctx.user.email ?? seoUser.email ?? undefined,
+          createdBy: seoUser.id,
+          isActive: 1,
+        });
+        const newId = (result as any).insertId;
+        console.log(`[ensureForCurrentUser] Created self-SEO-client id=${newId}`);
+        return { seoClientId: newId, created: true };
+      }
       const existing = await getSeoClientByCrmId(crmClient.id);
+      console.log(`[ensureForCurrentUser] existingSeoClient:`, existing ? `found id=${existing.id}` : 'not found');
       if (existing) return { seoClientId: existing.id, created: false };
       const adminSeoUser = await getFirstAdminSeoUser();
+      console.log(`[ensureForCurrentUser] adminSeoUser:`, adminSeoUser ? `found id=${adminSeoUser.id}` : 'not found');
       if (!adminSeoUser) return { seoClientId: null, created: false };
       const seoClientId = await ensureLinkedSeoClient({
         crmClientId: crmClient.id,

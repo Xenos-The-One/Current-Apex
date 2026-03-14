@@ -1,0 +1,28 @@
+{
+  "query": "SELECT id, name, email, user_id FROM clients LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT id, name, email, user_id FROM clients LIMIT 10;",
+  "rows": [
+    {
+      "id": "60001",
+      "name": "Optimal Lending Solutions",
+      "email": "info@optimallendingsolutions.com",
+      "user_id": "540353"
+    },
+    {
+      "id": "60002",
+      "name": "Premier Mortgage Resources",
+      "email": "haskinstim57@gmail.com",
+      "user_id": "510412"
+    },
+    {
+      "id": "90001",
+      "name": "Tariq Test Account",
+      "email": "tariq@optimallendingsolutions.com",
+      "user_id": "540335"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tuser_id\n60001\tOptimal Lending Solutions\tinfo@optimallendingsolutions.com\t540353\n60002\tPremier Mortgage Resources\thaskinstim57@gmail.com\t510412\n90001\tTariq Test Account\ttariq@optimallendingsolutions.com\t540335\n",
+  "stderr": "",
+  "execution_time_ms": 350
+}

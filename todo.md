@@ -993,3 +993,8 @@
 - [x] Ensure seo.content.generate procedure accepts all new content type values
 - [x] Clean up GenerateTab: no client selector, no credit UI, no ad/video types
 - [x] Verify generated content appears in My Content tab after generation
+
+## Generate Button Fix (Round 3)
+- [x] Fix "Your account is not fully set up yet" error — ensureForCurrentUser now handles admin users by creating a self-SEO-client when no CRM client exists
+- [x] Investigate ensureForCurrentUser procedure — root cause: admin user (Thaler) has no CRM client record, only an SEO user record
+- [x] Make Generate button wait for provisioning to complete — now runs ensureForCurrentUser on mount, not on click

@@ -924,34 +924,31 @@ function GenerateContentTab() {
   const utils = trpc.useUtils();
 
   // Resolve seo client ID for this portal user — auto-provision if missing
-  const { data: myInfo } = trpc.crm.getMyInfo.useQuery(undefined, { enabled: !!user });
   const [resolvedSeoClientId, setResolvedSeoClientId] = useState<number | null>(null);
   const [isProvisioning, setIsProvisioning] = useState(false);
-
-  const { data: seoClient, isLoading: seoClientLoading } = trpc.seo.clients.getByCrmId.useQuery(
-    { crmClientId: myInfo?.client?.id ?? 0 },
-    { enabled: !!myInfo?.client?.id }
-  );
+  const [provisionAttempted, setProvisionAttempted] = useState(false);
 
   const ensureMutation = trpc.seo.clients.ensureForCurrentUser.useMutation({
     onSuccess: (data) => {
       if (data.seoClientId) setResolvedSeoClientId(data.seoClientId);
       setIsProvisioning(false);
+      setProvisionAttempted(true);
     },
-    onError: () => setIsProvisioning(false),
+    onError: () => {
+      setIsProvisioning(false);
+      setProvisionAttempted(true);
+    },
   });
 
+  // Run ensureForCurrentUser immediately on mount (once user is loaded)
   useEffect(() => {
-    if (myInfo?.client && !seoClientLoading && !seoClient?.id && !isProvisioning && !resolvedSeoClientId) {
+    if (user && !isProvisioning && !provisionAttempted && !resolvedSeoClientId) {
       setIsProvisioning(true);
       ensureMutation.mutate();
     }
-    if (seoClient?.id && !resolvedSeoClientId) {
-      setResolvedSeoClientId(seoClient.id);
-    }
-  }, [myInfo, seoClient, seoClientLoading]);
+  }, [user]);
 
-  const effectiveSeoClientId = resolvedSeoClientId ?? seoClient?.id ?? null;
+  const effectiveSeoClientId = resolvedSeoClientId;
 
   const generateMutation = trpc.seo.content.generate.useMutation({
     onSuccess: (data) => {
@@ -966,7 +963,11 @@ function GenerateContentTab() {
 
   const handleGenerate = () => {
     if (!effectiveSeoClientId) {
-      toast.error("Your account is not fully set up yet. Please contact your agency.");
+      if (isProvisioning) {
+        toast.error("Still setting up your account, please wait a moment and try again.");
+      } else {
+        toast.error("Unable to link your account. Please refresh the page or contact your agency.");
+      }
       return;
     }
     if (!topic.trim()) {
