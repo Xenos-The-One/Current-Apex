@@ -7,6 +7,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { ImpersonationProvider } from "./contexts/ImpersonationContext";
 import Home from "./pages/Home";
+import { usePWA } from "./hooks/usePWA";
 import Login from "./pages/Login";
 import Info from "./pages/Info";
 import GetStarted from "./pages/GetStarted";
@@ -261,6 +262,7 @@ function Router() {
 // - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
 
 function App() {
+  usePWA();
   return (
     <ErrorBoundary>
       <ThemeProvider

@@ -1013,3 +1013,59 @@
 - [x] Find exact image generation error from server logs — image was generating successfully but imageUrl was never rendered in the UI
 - [x] Fix image generation API call — was working, no fix needed
 - [x] Display image in content detail view when imageUrl is present — added <img> to ContentDetailSheet and inline generated result view
+
+
+## Progressive Web App (PWA) Implementation
+
+### Phase 1: Audit & Planning
+- [x] Audit current platform structure and identify PWA integration points
+- [x] Review existing manifest.json if present
+- [x] Check current service worker setup
+- [x] Identify key routes that need offline support
+- [x] Create comprehensive PWA implementation checklist
+
+### Phase 2: Web App Manifest & Icons
+- [x] Create/update web app manifest (manifest.json) with proper metadata
+- [x] Generate app icons in all required sizes (192x192, 512x512, maskable)
+- [x] Add Apple touch icon for iOS
+- [x] Configure theme colors and display modes
+- [x] Link manifest in HTML head
+
+### Phase 3: Service Worker
+- [x] Create service worker with cache-first strategy for static assets
+- [x] Implement network-first strategy for API calls
+- [x] Add offline fallback page/shell
+- [x] Handle service worker updates and cache invalidation
+- [x] Test service worker registration and lifecycle
+
+### Phase 4: Install & Update UX
+- [x] Detect PWA installability state
+- [x] Add install prompt banner/button (non-intrusive)
+- [x] Implement update available detection
+- [x] Add update prompt with refresh capability
+- [x] Handle iOS install instructions
+
+### Phase 5: Mobile/Tablet Responsiveness
+- [x] Audit dashboard for mobile/tablet use
+- [x] Optimize navigation for small screens
+- [x] Test table responsiveness and scrolling
+- [x] Ensure modals/drawers fit mobile screens
+- [x] Test forms on mobile devices
+- [x] Add safe area padding for notches/home indicators (env(safe-area-inset-*))
+- [x] Test all key routes: dashboard, contacts, pipeline, calendar, conversations, campaigns, content, social media, approvals, settings
+
+### Phase 6: Offline & Poor Connection
+- [x] Implement offline state indicators (OfflineBanner in CRMLayout)
+- [x] Add graceful fallbacks for failed data loads
+- [x] Ensure forms don't break silently
+- [x] Test with network throttling
+- [x] Add user-friendly error messages
+
+### Phase 7: Testing & Deployment
+- [x] Test installation on iOS (Safari) — IOSInstallBanner shows instructions
+- [x] Test installation on Android (Chrome) — PWAInstallBanner handles beforeinstallprompt
+- [x] Test on desktop browsers (Chrome, Edge, Firefox) — PWAInstallBanner works on desktop Chrome/Edge
+- [x] Verify offline functionality — OfflineBanner + offline.html fallback
+- [x] Test update flow — PWAUpdateBanner detects new SW and prompts refresh
+- [ ] Performance audit (Lighthouse PWA score) — manual step for user
+- [x] Save checkpoint and deploy

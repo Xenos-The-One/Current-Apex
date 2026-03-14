@@ -33,6 +33,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { PWAInstallBanner, PushNotificationPrompt, IOSInstallBanner } from "./PWABanner";
+import { PWAUpdateBanner } from "./PWAUpdateBanner";
+import { OfflineBanner } from "./OfflineBanner";
 import { Link, useLocation } from "wouter";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Badge } from "./ui/badge";
@@ -171,7 +173,7 @@ export default function CRMLayout({ children, agencyId }: CRMLayoutProps) {
         bg-sidebar text-sidebar-foreground
         transform transition-transform duration-200 ease-in-out
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-      `}>
+      `} style={{ paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)", paddingLeft: "env(safe-area-inset-left, 0px)" }}>
         {/* Logo */}
         <div className="h-14 flex items-center gap-2.5 px-4 border-b border-white/10 flex-shrink-0">
           <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
@@ -253,13 +255,16 @@ export default function CRMLayout({ children, agencyId }: CRMLayoutProps) {
           </Button>
         </header>
 
-        {/* PWA Banners — install prompt + push notification opt-in */}
+        {/* Offline status indicator */}
+        <OfflineBanner />
+        {/* PWA Banners — update, install prompt, push notification opt-in */}
+        <PWAUpdateBanner />
         <PWAInstallBanner />
         <IOSInstallBanner />
         <PushNotificationPrompt />
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto scroll-smooth-ios" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
           {children}
         </main>
       </div>

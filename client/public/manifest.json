@@ -1,15 +1,17 @@
 {
-  "name": "Agency CRM",
-  "short_name": "CRM",
-  "description": "Manage leads, campaigns, and client pipelines from anywhere.",
+  "name": "Agency CRM Platform",
+  "short_name": "Agency CRM",
+  "description": "Manage leads, campaigns, AI content, and client pipelines — all in one place.",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui", "browser"],
   "background_color": "#0f172a",
   "theme_color": "#6366f1",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "scope": "/",
   "lang": "en",
-  "categories": ["business", "productivity"],
+  "dir": "ltr",
+  "categories": ["business", "productivity", "utilities"],
   "icons": [
     {
       "src": "https://d2xsxph8kpxj0f.cloudfront.net/310519663373808943/Rus3EtBPxB9CmZuwDUFVXj/icon-72_0ddd7e47.png",
@@ -45,7 +47,13 @@
       "src": "https://d2xsxph8kpxj0f.cloudfront.net/310519663373808943/Rus3EtBPxB9CmZuwDUFVXj/icon-192_d8fa7565.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "https://d2xsxph8kpxj0f.cloudfront.net/310519663373808943/Rus3EtBPxB9CmZuwDUFVXj/icon-192_d8fa7565.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "https://d2xsxph8kpxj0f.cloudfront.net/310519663373808943/Rus3EtBPxB9CmZuwDUFVXj/icon-384_b522a902.png",
@@ -57,10 +65,23 @@
       "src": "https://d2xsxph8kpxj0f.cloudfront.net/310519663373808943/Rus3EtBPxB9CmZuwDUFVXj/icon-512_87d67f28.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "https://d2xsxph8kpxj0f.cloudfront.net/310519663373808943/Rus3EtBPxB9CmZuwDUFVXj/icon-512_87d67f28.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your CRM dashboard",
+      "url": "/admin",
+      "icons": [{ "src": "https://d2xsxph8kpxj0f.cloudfront.net/310519663373808943/Rus3EtBPxB9CmZuwDUFVXj/icon-96_e88356e5.png", "sizes": "96x96" }]
+    },
     {
       "name": "New Leads",
       "short_name": "Leads",
@@ -73,6 +94,13 @@
       "short_name": "Follow-Ups",
       "description": "View today's follow-up tasks",
       "url": "/follow-ups",
+      "icons": [{ "src": "https://d2xsxph8kpxj0f.cloudfront.net/310519663373808943/Rus3EtBPxB9CmZuwDUFVXj/icon-96_e88356e5.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Conversations",
+      "short_name": "Chat",
+      "description": "View conversations",
+      "url": "/conversations",
       "icons": [{ "src": "https://d2xsxph8kpxj0f.cloudfront.net/310519663373808943/Rus3EtBPxB9CmZuwDUFVXj/icon-96_e88356e5.png", "sizes": "96x96" }]
     }
   ],

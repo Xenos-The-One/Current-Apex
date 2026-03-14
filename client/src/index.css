@@ -260,3 +260,82 @@
     }
   }
 }
+/* ─── PWA & Mobile Utilities ─────────────────────────────────────────────── */
+
+/* Safe-area insets for notch/home-indicator devices */
+.safe-top    { padding-top:    env(safe-area-inset-top, 0px); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.safe-left   { padding-left:   env(safe-area-inset-left, 0px); }
+.safe-right  { padding-right:  env(safe-area-inset-right, 0px); }
+
+/* Sidebar bottom padding for home-indicator bar */
+.sidebar-safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.5rem);
+}
+
+/* Prevent text selection on interactive elements (app-like feel) */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Minimum touch target size (WCAG 2.5.5 — 44×44px) */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Smooth momentum scrolling on iOS */
+.scroll-smooth-ios {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+}
+
+/* Hide scrollbar but keep scrollability (for horizontal scroll lists) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* Tap highlight suppression for app-like feel */
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Restore focus ring for keyboard nav */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Standalone PWA: hide browser chrome artifacts */
+@media (display-mode: standalone) {
+  body {
+    /* Prevent pull-to-refresh on Chrome Android */
+    overscroll-behavior-y: none;
+  }
+  /* Extra bottom padding for home indicator bar on iOS */
+  #root {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Mobile table: horizontal scroll wrapper */
+.table-scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Card grid responsive helpers */
+.card-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+@media (max-width: 480px) {
+  .card-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}

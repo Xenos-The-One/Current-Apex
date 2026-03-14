@@ -1,0 +1,28 @@
+{
+  "query": "SELECT u.id, u.name, u.email, u.role FROM users u WHERE u.email LIKE '%tariq%' OR u.name LIKE '%Tariq%' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute SELECT u.id, u.name, u.email, u.role FROM users u WHERE u.email LIKE '%tariq%' OR u.name LIKE '%Tariq%' LIMIT 5;",
+  "rows": [
+    {
+      "id": "420001",
+      "name": "Tariq Haskins",
+      "email": "tariqhaskins@indigolabsai.com",
+      "role": "admin"
+    },
+    {
+      "id": "481377",
+      "name": "Tariq Haskins",
+      "email": "tariqhaskins@indigolabsai.com",
+      "role": "admin"
+    },
+    {
+      "id": "540335",
+      "name": "Tariq Haskins",
+      "email": "tariq@optimallendingsolutions.com",
+      "role": "client_user"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\n420001\tTariq Haskins\ttariqhaskins@indigolabsai.com\tadmin\n481377\tTariq Haskins\ttariqhaskins@indigolabsai.com\tadmin\n540335\tTariq Haskins\ttariq@optimallendingsolutions.com\tclient_user\n",
+  "stderr": "",
+  "execution_time_ms": 421
+}
