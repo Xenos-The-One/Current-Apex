@@ -2,7 +2,7 @@ import { z } from "zod";
 import { eq, and } from "drizzle-orm";
 import { protectedProcedure, router } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
-import { getDb, getClientByUserId } from "../db";
+import { getDb, getClientByUserId, getClientById, ensureClientProfile } from "../db";
 import { socialPlatformConnections } from "../../drizzle/schema";
 import { invokeLLM } from "../_core/llm";
 
@@ -20,10 +20,30 @@ const SUPPORTED_PLATFORMS = [
 
 type Platform = (typeof SUPPORTED_PLATFORMS)[number];
 
-async function resolveClient(userId: number) {
-  const client = await getClientByUserId(userId);
+const ADMIN_ROLES = ["admin", "super_admin", "agency_owner"];
+
+async function resolveClient(ctx: { user: { id: number; role: string; name?: string | null; email?: string | null }; req: any }) {
+  const isAdmin = ADMIN_ROLES.includes(ctx.user.role);
+
+  // If admin is impersonating a client, use that client
+  if (isAdmin) {
+    const impersonateId = ctx.req.headers["x-impersonate-client-id"];
+    if (impersonateId) {
+      const clientId = parseInt(impersonateId, 10);
+      if (!isNaN(clientId)) {
+        const client = await getClientById(clientId);
+        if (client) return client;
+      }
+    }
+  }
+
+  // Fall back to the user's own client profile (auto-provision for client_user)
+  let client = await getClientByUserId(ctx.user.id);
   if (!client) {
-    throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found" });
+    client = await ensureClientProfile(ctx.user) ?? undefined;
+  }
+  if (!client) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Client profile not found. Please select a client to impersonate." });
   }
   return client;
 }
@@ -31,7 +51,7 @@ async function resolveClient(userId: number) {
 export const socialConnectionsRouter = router({
   // ── List all platform connection statuses for the current client ──────────
   listConnections: protectedProcedure.query(async ({ ctx }) => {
-    const client = await resolveClient(ctx.user.id);
+    const client = await resolveClient(ctx);
     const db = await getDb();
     if (!db) return [];
 
@@ -64,7 +84,7 @@ export const socialConnectionsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const client = await resolveClient(ctx.user.id);
+      const client = await resolveClient(ctx);
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
 
@@ -107,7 +127,7 @@ export const socialConnectionsRouter = router({
   disconnectPlatform: protectedProcedure
     .input(z.object({ platform: z.enum(SUPPORTED_PLATFORMS) }))
     .mutation(async ({ ctx, input }) => {
-      const client = await resolveClient(ctx.user.id);
+      const client = await resolveClient(ctx);
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
 

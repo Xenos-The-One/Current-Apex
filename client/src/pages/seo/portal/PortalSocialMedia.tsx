@@ -477,7 +477,7 @@ export default function PortalSocialMedia() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold text-foreground">Social Media</h2>
-            <p className="text-sm mt-1" className="text-muted-foreground">
+            <p className="text-sm mt-1 text-muted-foreground">
               Manage your social platforms and generate AI-powered posts
             </p>
           </div>

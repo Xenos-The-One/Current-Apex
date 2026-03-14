@@ -1126,3 +1126,9 @@
 - [x] Swipe-to-action on contact cards (left=Call/Message, right=Edit/Delete)
 - [x] Pull-to-refresh on Contacts card list and Pipeline Kanban
 - [x] Haptic feedback on FAB tap and card action buttons
+
+## Bug Fixes: Contact Detail Page + Social Media
+- [x] Contact detail page: fix cramped/broken mobile layout (Contact Info / Activity tab switcher on mobile)
+- [x] Social Media: fix "Generate Post" error (resolveClient now works for admin+impersonation)
+- [x] Social Media: fix duplicate className JSX parse error that prevented page from loading
+- [x] Social Media: fix "Connect a Platform" button doing nothing (same resolveClient root cause)

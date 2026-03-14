@@ -4,7 +4,8 @@
  * Right pane: activity timeline + message composer.
  * Top bar: call, email, add task, star, more options.
  */
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useIsMobile } from "@/hooks/useMobile";
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -220,6 +221,9 @@ export default function ContactDetailPage() {
   const [callOutcome, setCallOutcome] = useState<"connected" | "no_answer" | "voicemail" | "busy">("connected");
   const [callNotes, setCallNotes] = useState("");
   const [dnd, setDnd] = useState({ email: false, sms: false, call: false, voicemail: false, all: false });
+  const isMobile = useIsMobile();
+  // On mobile, show either the left panel (info) or the right panel (timeline)
+  const [mobilePanel, setMobilePanel] = useState<"info" | "timeline">("info");
 
   // ── Mutations ──
   const utils = trpc.useUtils();
@@ -316,9 +320,41 @@ export default function ContactDetailPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex h-full min-h-0 bg-background">
+      <div className="flex h-full min-h-0 bg-background flex-col md:flex-row">
+        {/* ══ MOBILE TAB BAR ════════════════════════════════════════════════════ */}
+        {isMobile && (
+          <div className="flex border-b bg-card shrink-0">
+            <button
+              className={cn(
+                "flex-1 py-2.5 text-sm font-medium transition-colors",
+                mobilePanel === "info"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-muted-foreground"
+              )}
+              onClick={() => setMobilePanel("info")}
+            >
+              Contact Info
+            </button>
+            <button
+              className={cn(
+                "flex-1 py-2.5 text-sm font-medium transition-colors",
+                mobilePanel === "timeline"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-muted-foreground"
+              )}
+              onClick={() => setMobilePanel("timeline")}
+            >
+              Activity
+            </button>
+          </div>
+        )}
         {/* ══ LEFT SIDEBAR ══════════════════════════════════════════════════════ */}
-        <div className="w-80 flex-shrink-0 border-r bg-card flex flex-col overflow-y-auto">
+        <div className={cn(
+          "flex-shrink-0 border-r bg-card flex flex-col overflow-y-auto",
+          isMobile
+            ? mobilePanel === "info" ? "flex w-full" : "hidden"
+            : "w-80"
+        )}>
           {/* Back nav */}
           <div className="flex items-center gap-2 px-4 py-3 border-b">
             <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={() => navigate("/contacts")}>
@@ -549,10 +585,12 @@ export default function ContactDetailPage() {
               ))}
             </TabsContent>
           </Tabs>
-        </div>
-
-        {/* ══ RIGHT PANE ════════════════════════════════════════════════════════ */}
-        <div className="flex-1 flex flex-col min-w-0 min-h-0">
+        </div>{/* end left sidebar */}
+        {/* ══ RIGHT PANE ═══════════════════════════════════════════════════════════════════ */}
+        <div className={cn(
+          "flex-1 flex flex-col min-w-0 min-h-0",
+          isMobile && mobilePanel === "info" ? "hidden" : "flex"
+        )}>
           {/* Top action bar */}
           <div className="flex items-center gap-2 px-5 py-3 border-b bg-card">
             <Avatar className="w-8 h-8 text-sm font-semibold">
