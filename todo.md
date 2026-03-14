@@ -1116,3 +1116,8 @@
 - [x] AI SEO portal pages: fix content cards, fix sidebar, fix metric widgets
 - [x] Content generation pages: fix card layout, fix text-heavy panels
 - [x] Global: fix all 3-4 column grids → 1-2 col on mobile, fix card padding, fix button stacking
+
+## Mobile UX Round 2: Card List + Bottom Sheet + FAB
+- [x] Contacts: responsive card list on mobile (replaces wide table on small screens)
+- [x] Lead/contact detail: bottom sheet on mobile (slide-up panel instead of full navigation)
+- [x] Floating action button (FAB) on Dashboard + Pipeline with quick-add lead bottom sheet

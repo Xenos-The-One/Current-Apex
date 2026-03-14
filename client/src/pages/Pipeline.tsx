@@ -10,6 +10,7 @@
  * - Seed sample data on first visit
  */
 import { useState, useMemo, useCallback } from "react";
+import { BottomSheet } from "@/components/BottomSheet";
 import {
   DndContext,
   DragEndEvent,
@@ -1860,13 +1861,15 @@ export default function Pipeline() {
         )}
       </div>
 
-      {/* ── Opportunity Detail Sheet ── */}
-      <Sheet open={activeOppId !== null} onOpenChange={open => { if (!open) setActiveOppId(null); }}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-          <SheetHeader className="mb-4">
-            <SheetTitle>Opportunity Details</SheetTitle>
-          </SheetHeader>
-          {activeOppId !== null && (
+      {/* ── Opportunity Detail Sheet (BottomSheet on mobile, side sheet on desktop) ── */}
+      <BottomSheet
+        open={activeOppId !== null}
+        onClose={() => setActiveOppId(null)}
+        title="Opportunity Details"
+        maxHeightPct={92}
+      >
+        {activeOppId !== null && (
+          <div className="px-1">
             <OpportunityDetail
               oppId={activeOppId}
               stages={stages}
@@ -1881,9 +1884,9 @@ export default function Pipeline() {
               }}
               onMarkStatus={(id, status) => setReasonModal({ oppId: id, status })}
             />
-          )}
-        </SheetContent>
-      </Sheet>
+          </div>
+        )}
+      </BottomSheet>
 
       {/* ── Add Opportunity Dialog ── */}
       <Dialog open={addDialogStageId !== null} onOpenChange={open => { if (!open) setAddDialogStageId(null); }}>

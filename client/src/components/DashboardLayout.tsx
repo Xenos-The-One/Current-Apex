@@ -97,6 +97,7 @@ import { PWAInstallBanner, IOSInstallBanner } from "./PWABanner";
 import { PWAUpdateBanner } from "./PWAUpdateBanner";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { AppLaunchScreen } from "./AppLaunchScreen";
+import { QuickAddLeadFAB } from "./QuickAddLeadFAB";
 
 // ─── Client Onboarding Banner ─────────────────────────────────────────────────
 function ClientOnboardingBanner({ setLocation }: { setLocation: (path: string) => void }) {
@@ -1301,6 +1302,8 @@ function DashboardLayoutContent({
       <AIAssistantWidget />
       {/* Mobile bottom nav — only visible in standalone mode on small screens */}
       <MobileBottomNav />
+      {/* Floating action button — quick-add lead on mobile */}
+      <QuickAddLeadFAB hasBottomNav />
       {/* PWA install banners — shown in browser mode */}
       <PWAInstallBanner />
       <IOSInstallBanner />
