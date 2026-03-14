@@ -56,6 +56,7 @@ interface WizardState {
   // Step 2: Audience
   recipientFilter: "all" | "status" | "custom";
   recipientStatus: string;
+  specificClientId: number | null;  // when recipientFilter === "custom" (specific client)
   // Step 3: Schedule
   sendNow: boolean;
   scheduledDate: string;
@@ -107,6 +108,7 @@ function buildInitialState(template: CampaignTemplate): WizardState {
     content,
     recipientFilter: "all",
     recipientStatus: "new",
+    specificClientId: null,
     sendNow: true,
     scheduledDate: "",
     scheduledTime: "09:00",
@@ -252,13 +254,29 @@ function AudienceStep({
   state: WizardState;
   onChange: (updates: Partial<WizardState>) => void;
 }) {
+  const { data: agencyClients = [] } = trpc.campaigns.listAgencyClients.useQuery();
+
+  const audienceTip = () => {
+    if (state.recipientFilter === "all") {
+      return "This will send to all leads for the selected client. Make sure they have opted in to receive communications.";
+    }
+    if (state.recipientFilter === "status") {
+      return `This will send to all leads with status \"${LEAD_STATUS_OPTIONS.find((o) => o.value === state.recipientStatus)?.label ?? state.recipientStatus}\".`;
+    }
+    if (state.recipientFilter === "custom" && state.specificClientId) {
+      const client = agencyClients.find((c: any) => c.id === state.specificClientId);
+      return `This will send to all leads belonging to client \"${client?.name ?? "Selected Client"}\".`;
+    }
+    return "Select a specific client to target their leads.";
+  };
+
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
         <Label className="text-sm">Who should receive this campaign?</Label>
         <Select
           value={state.recipientFilter}
-          onValueChange={(v) => onChange({ recipientFilter: v as WizardState["recipientFilter"] })}
+          onValueChange={(v) => onChange({ recipientFilter: v as WizardState["recipientFilter"], specificClientId: null })}
         >
           <SelectTrigger>
             <SelectValue />
@@ -266,6 +284,7 @@ function AudienceStep({
           <SelectContent>
             <SelectItem value="all">All Leads</SelectItem>
             <SelectItem value="status">Leads by Status</SelectItem>
+            <SelectItem value="custom">Specific Client</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -291,15 +310,36 @@ function AudienceStep({
         </div>
       )}
 
+      {state.recipientFilter === "custom" && (
+        <div className="space-y-1.5">
+          <Label className="text-sm">Select Client</Label>
+          <Select
+            value={state.specificClientId?.toString() ?? ""}
+            onValueChange={(v) => onChange({ specificClientId: v ? parseInt(v, 10) : null })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Choose a client..." />
+            </SelectTrigger>
+            <SelectContent>
+              {agencyClients.length === 0 ? (
+                <div className="px-3 py-2 text-xs text-muted-foreground">No clients found</div>
+              ) : (
+                agencyClients.map((c: any) => (
+                  <SelectItem key={c.id} value={c.id.toString()}>
+                    {c.name}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       <div className={`rounded-lg border border-amber-200 bg-amber-50 p-3 flex gap-2`}>
         <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
         <div className="text-xs text-amber-700 space-y-1">
           <p className="font-medium">Audience tip</p>
-          <p>
-            {state.recipientFilter === "all"
-              ? "This will send to all leads for the selected client. Make sure they have opted in to receive communications."
-              : `This will send to all leads with status "${LEAD_STATUS_OPTIONS.find((o) => o.value === state.recipientStatus)?.label ?? state.recipientStatus}".`}
-          </p>
+          <p>{audienceTip()}</p>
         </div>
       </div>
     </div>
@@ -553,9 +593,15 @@ function ReviewStep({
   const ChannelIcon =
     template.channel === "email" ? Mail : template.channel === "sms" ? MessageSquare : Phone;
 
+  const { data: agencyClients = [] } = trpc.campaigns.listAgencyClients.useQuery();
+  const specificClient = state.specificClientId
+    ? (agencyClients as any[]).find((c) => c.id === state.specificClientId)
+    : null;
   const audienceLabel =
     state.recipientFilter === "all"
       ? "All Leads"
+      : state.recipientFilter === "custom"
+      ? specificClient ? `Client: ${specificClient.name}` : "Specific Client"
       : `Leads with status: ${LEAD_STATUS_OPTIONS.find((o) => o.value === state.recipientStatus)?.label ?? state.recipientStatus}`;
 
   const scheduleLabel = state.sendNow
@@ -722,6 +768,10 @@ export function UseTemplateWizard({
       if (template.channel === "email" && !(state.subject ?? "").trim()) return false;
       if (!(state.content ?? "").trim()) return false;
     }
+    if (currentStep === "audience") {
+      // When "Specific Client" is selected, a client must be chosen
+      if (state.recipientFilter === "custom" && !state.specificClientId) return false;
+    }
     if (currentStep === "schedule") {
       if (!state.sendNow && (!state.scheduledDate || !state.scheduledTime)) return false;
     }
@@ -753,23 +803,28 @@ export function UseTemplateWizard({
       // Track template usage (non-blocking)
       trackUsage.mutate({ templateId: template.id, channel: template.channel, clientId });
 
+      // When a specific client is selected, use that client's ID instead of the prop
+      const targetClientId = state.recipientFilter === "custom" && state.specificClientId
+        ? state.specificClientId
+        : clientId;
+
       if (template.channel === "email") {
         await createEmail.mutateAsync({
-          clientId,
+          clientId: targetClientId,
           name: state.campaignName,
           subject: state.subject,
           content: state.content,
-          recipientFilter: state.recipientFilter,
+          recipientFilter: state.recipientFilter === "custom" ? "all" : state.recipientFilter,
           recipientStatus: state.recipientFilter === "status" ? state.recipientStatus : undefined,
           scheduledDate,
           sendNow: state.sendNow,
         });
       } else if (template.channel === "sms") {
         await createSms.mutateAsync({
-          clientId,
+          clientId: targetClientId,
           name: state.campaignName,
           message: state.content,
-          recipientFilter: state.recipientFilter,
+          recipientFilter: state.recipientFilter === "custom" ? "all" : state.recipientFilter,
           recipientStatus: state.recipientFilter === "status" ? state.recipientStatus : undefined,
           scheduledDate,
           sendNow: state.sendNow,

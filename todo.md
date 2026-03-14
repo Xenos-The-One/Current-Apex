@@ -1217,3 +1217,7 @@
 - [x] Render full styled HTML email (header, body, footer) matching the test email output
 - [x] Show character/word count and a "Mobile / Desktop" width toggle
 - [x] vitest tests: template variable substitution and HTML generation logic
+
+## Bug Fixes: Campaign Wizard
+- [x] Fix: campaigns router not registered — "No procedure found on path campaigns.createEmailCampaign"
+- [x] Fix: Add "Specific Client" recipient option to wizard audience step (pick individual client by name)

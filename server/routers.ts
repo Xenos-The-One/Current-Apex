@@ -70,7 +70,30 @@ export const appRouter = router({
   social: socialRouter,
   socialConnections: socialConnectionsRouter,
   ai: aiRouter,
-  campaigns: campaignsMonitoringRouter,
+  // campaigns key now includes ALL campaign procedures (create, list, monitor, test email, etc.)
+  // The monitoring procedures (list, getMessages, getStats, listTemplates) are merged in via spread
+  campaigns: router({
+    // ── from campaignsRouter (create / list / send / seed / track) ──
+    registerWebinar: campaignsRouter._def.procedures.registerWebinar,
+    getDemoStatus: campaignsRouter._def.procedures.getDemoStatus,
+    createEmailCampaign: campaignsRouter._def.procedures.createEmailCampaign,
+    listEmailCampaigns: campaignsRouter._def.procedures.listEmailCampaigns,
+    createSMSCampaign: campaignsRouter._def.procedures.createSMSCampaign,
+    createSmsCampaign: campaignsRouter._def.procedures.createSMSCampaign,
+    listSMSCampaigns: campaignsRouter._def.procedures.listSMSCampaigns,
+    trackTemplateUsage: campaignsRouter._def.procedures.trackTemplateUsage,
+    getTemplateUsageCounts: campaignsRouter._def.procedures.getTemplateUsageCounts,
+    listAgencyClients: campaignsRouter._def.procedures.listAgencyClients,
+    seedTemplateToClient: campaignsRouter._def.procedures.seedTemplateToClient,
+    sendTestEmail: campaignsRouter._def.procedures.sendTestEmail,
+    saveAsTemplate: campaignsRouter._def.procedures.saveAsTemplate,
+    // ── from campaignsMonitoringRouter (monitoring / analytics) ──
+    list: campaignsMonitoringRouter._def.procedures.list,
+    getMessages: campaignsMonitoringRouter._def.procedures.getMessages,
+    getStats: campaignsMonitoringRouter._def.procedures.getStats,
+    listTemplates: campaignsMonitoringRouter._def.procedures.listTemplates,
+  }),
+  // Keep campaignsOld for any remaining direct references
   campaignsOld: campaignsRouter,
   analytics: analyticsRouter,
   templates: templatesRouter,
