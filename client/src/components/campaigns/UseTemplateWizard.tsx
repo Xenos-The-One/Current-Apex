@@ -33,6 +33,10 @@ import {
   Clock,
   AlertCircle,
   Loader2,
+  Eye,
+  EyeOff,
+  Monitor,
+  Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -378,6 +382,158 @@ function ScheduleStep({
   );
 }
 
+// ─── Preview helpers ─────────────────────────────────────────────────────────
+
+/** Replace common template placeholders with realistic sample values. */
+function substituteSampleValues(text: string): string {
+  return text
+    .replace(/\{name\}/g, "Alex Johnson")
+    .replace(/\{first_name\}/g, "Alex")
+    .replace(/\{last_name\}/g, "Johnson")
+    .replace(/\{agent_name\}/g, "Sarah Miller")
+    .replace(/\{company\}/g, "Sterling Mortgage")
+    .replace(/\{date\}/g, new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }))
+    .replace(/\{time\}/g, "10:00 AM")
+    .replace(/\{phone\}/g, "(555) 867-5309")
+    .replace(/\{address\}/g, "123 Main St, Springfield, IL")
+    .replace(/\{rate\}/g, "6.75%")
+    .replace(/\{loan_amount\}/g, "$380,000");
+}
+
+/** Build the same HTML wrapper used by the sendTestEmail procedure. */
+function buildPreviewHtml(subject: string, content: string): string {
+  const body = substituteSampleValues(content);
+  const paragraphs = body
+    .split(/\n{2,}/)
+    .map((p) => `<p style="margin:0 0 14px;line-height:1.6">${p.replace(/\n/g, "<br/>")}</p>`)
+    .join("");
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>${subject}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; background: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .wrapper { max-width: 600px; margin: 24px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+    .header { background: #1e293b; padding: 20px 24px; }
+    .header-label { display: inline-block; background: #f59e0b; color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; margin-bottom: 8px; }
+    .header h1 { margin: 0; color: #f8fafc; font-size: 18px; font-weight: 600; line-height: 1.3; }
+    .body { padding: 28px 24px; color: #1e293b; font-size: 14px; }
+    .footer { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 24px; text-align: center; font-size: 11px; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <div class="header-label">Preview</div>
+      <h1>${substituteSampleValues(subject)}</h1>
+    </div>
+    <div class="body">${paragraphs}</div>
+    <div class="footer">Sterling Mortgage &bull; 123 Agency Lane, Springfield, IL &bull; <a href="#" style="color:#94a3b8">Unsubscribe</a></div>
+  </div>
+</body>
+</html>`;
+}
+
+type PreviewWidth = "desktop" | "mobile";
+
+function EmailPreviewPane({ subject, content }: { subject: string; content: string }) {
+  const [open, setOpen] = useState(false);
+  const [width, setWidth] = useState<PreviewWidth>("desktop");
+  const html = buildPreviewHtml(subject, content);
+  const wordCount = substituteSampleValues(content).trim().split(/\s+/).filter(Boolean).length;
+  const charCount = substituteSampleValues(content).length;
+
+  return (
+    <div className="rounded-lg border border-border/60 overflow-hidden">
+      {/* Toggle bar */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-2.5 bg-muted/40 hover:bg-muted/70 transition-colors text-left"
+      >
+        <div className="flex items-center gap-2">
+          {open ? (
+            <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+          ) : (
+            <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+          )}
+          <span className="text-xs font-medium">{open ? "Hide preview" : "Preview email"}</span>
+        </div>
+        <span className="text-xs text-muted-foreground">
+          {wordCount} words &bull; {charCount} chars
+        </span>
+      </button>
+
+      {open && (
+        <div className="border-t border-border/60">
+          {/* Width toggle */}
+          <div className="flex items-center gap-1 px-3 py-2 bg-muted/20 border-b border-border/40">
+            <span className="text-xs text-muted-foreground mr-1">View as:</span>
+            <button
+              type="button"
+              onClick={() => setWidth("desktop")}
+              className={`flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors ${
+                width === "desktop"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <Monitor className="h-3 w-3" /> Desktop
+            </button>
+            <button
+              type="button"
+              onClick={() => setWidth("mobile")}
+              className={`flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors ${
+                width === "mobile"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <Smartphone className="h-3 w-3" /> Mobile
+            </button>
+          </div>
+
+          {/* Iframe container */}
+          <div
+            className="overflow-auto bg-gray-100 flex justify-center py-3 px-2"
+            style={{ maxHeight: "420px" }}
+          >
+            <iframe
+              title="Email preview"
+              sandbox="allow-same-origin"
+              srcDoc={html}
+              style={{
+                width: width === "mobile" ? "375px" : "100%",
+                minHeight: "320px",
+                border: "none",
+                borderRadius: "6px",
+                background: "#f3f4f6",
+                display: "block",
+                flexShrink: 0,
+              }}
+              onLoad={(e) => {
+                // Auto-resize iframe height to content
+                const iframe = e.currentTarget;
+                try {
+                  const doc = iframe.contentDocument;
+                  if (doc) {
+                    iframe.style.height = doc.documentElement.scrollHeight + "px";
+                  }
+                } catch {
+                  // cross-origin guard — safe to ignore
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ReviewStep({
   template,
   state,
@@ -439,6 +595,14 @@ function ReviewStep({
           <span className="text-xs font-medium">{template.stepCount} message{template.stepCount !== 1 ? "s" : ""}</span>
         </div>
       </div>
+
+      {/* Email preview pane — only shown for email channel */}
+      {template.channel === "email" && (
+        <EmailPreviewPane
+          subject={state.subject || state.campaignName}
+          content={state.content}
+        />
+      )}
 
       {template.channel === "email" && onSendTest && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2.5">

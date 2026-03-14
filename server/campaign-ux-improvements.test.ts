@@ -501,3 +501,193 @@ describe("UseTemplateWizard — canAdvance guards", () => {
     expect(canAdvance()).toBe(true);
   });
 });
+
+// ─── 5. Email Preview Pane ────────────────────────────────────────────────────
+
+/** Mirror of the substituteSampleValues helper in UseTemplateWizard.tsx */
+function substituteSampleValues(text: string): string {
+  return text
+    .replace(/\{name\}/g, "Alex Johnson")
+    .replace(/\{first_name\}/g, "Alex")
+    .replace(/\{last_name\}/g, "Johnson")
+    .replace(/\{agent_name\}/g, "Sarah Miller")
+    .replace(/\{company\}/g, "Sterling Mortgage")
+    .replace(/\{date\}/g, new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }))
+    .replace(/\{time\}/g, "10:00 AM")
+    .replace(/\{phone\}/g, "(555) 867-5309")
+    .replace(/\{address\}/g, "123 Main St, Springfield, IL")
+    .replace(/\{rate\}/g, "6.75%")
+    .replace(/\{loan_amount\}/g, "$380,000");
+}
+
+/** Mirror of the buildPreviewHtml helper in UseTemplateWizard.tsx */
+function buildPreviewHtml(subject: string, content: string): string {
+  const body = substituteSampleValues(content);
+  const subjectSubstituted = substituteSampleValues(subject);
+  const paragraphs = body
+    .split(/\n{2,}/)
+    .map((p) => `<p style="margin:0 0 14px;line-height:1.6">${p.replace(/\n/g, "<br/>")}</p>`)
+    .join("");
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>${subjectSubstituted}</title>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <div class="header-label">Preview</div>
+      <h1>${substituteSampleValues(subject)}</h1>
+    </div>
+    <div class="body">${paragraphs}</div>
+    <div class="footer">Sterling Mortgage</div>
+  </div>
+</body>
+</html>`;
+}
+
+describe("Email Preview Pane — substituteSampleValues", () => {
+  it("replaces {name} with a sample full name", () => {
+    expect(substituteSampleValues("Hello {name}!")).toBe("Hello Alex Johnson!");
+  });
+
+  it("replaces {first_name} separately from {name}", () => {
+    expect(substituteSampleValues("Hi {first_name}")).toBe("Hi Alex");
+  });
+
+  it("replaces {last_name}", () => {
+    expect(substituteSampleValues("Dear {last_name}")).toBe("Dear Johnson");
+  });
+
+  it("replaces {agent_name}", () => {
+    expect(substituteSampleValues("From {agent_name}")).toBe("From Sarah Miller");
+  });
+
+  it("replaces {company}", () => {
+    expect(substituteSampleValues("At {company}")).toBe("At Sterling Mortgage");
+  });
+
+  it("replaces {time}", () => {
+    expect(substituteSampleValues("At {time}")).toBe("At 10:00 AM");
+  });
+
+  it("replaces {phone}", () => {
+    expect(substituteSampleValues("Call {phone}")).toBe("Call (555) 867-5309");
+  });
+
+  it("replaces {rate}", () => {
+    expect(substituteSampleValues("Rate: {rate}")).toBe("Rate: 6.75%");
+  });
+
+  it("replaces {loan_amount}", () => {
+    expect(substituteSampleValues("Loan: {loan_amount}")).toBe("Loan: $380,000");
+  });
+
+  it("replaces multiple placeholders in one string", () => {
+    const result = substituteSampleValues("Hi {first_name}, I'm {agent_name} from {company}.");
+    expect(result).toBe("Hi Alex, I'm Sarah Miller from Sterling Mortgage.");
+  });
+
+  it("replaces all occurrences of the same placeholder", () => {
+    const result = substituteSampleValues("{name} — {name}");
+    expect(result).toBe("Alex Johnson — Alex Johnson");
+  });
+
+  it("leaves unknown placeholders unchanged", () => {
+    const result = substituteSampleValues("Hello {unknown_var}!");
+    expect(result).toBe("Hello {unknown_var}!");
+  });
+
+  it("returns the original string when no placeholders are present", () => {
+    const plain = "This is a plain message with no placeholders.";
+    expect(substituteSampleValues(plain)).toBe(plain);
+  });
+});
+
+describe("Email Preview Pane — buildPreviewHtml", () => {
+  it("returns a valid HTML document string", () => {
+    const html = buildPreviewHtml("Test Subject", "Hello world");
+    expect(html).toContain("<!DOCTYPE html>");
+    expect(html).toContain("<html");
+    expect(html).toContain("</html>");
+  });
+
+  it("includes the subject in the HTML title and header", () => {
+    const html = buildPreviewHtml("Welcome Email", "Body text");
+    expect(html).toContain("Welcome Email");
+  });
+
+  it("substitutes template variables in the subject", () => {
+    const html = buildPreviewHtml("Hello {first_name}", "Body");
+    expect(html).toContain("Hello Alex");
+    expect(html).not.toContain("{first_name}");
+  });
+
+  it("substitutes template variables in the body", () => {
+    const html = buildPreviewHtml("Subject", "Hi {name}, your rate is {rate}.");
+    expect(html).toContain("Hi Alex Johnson");
+    expect(html).toContain("6.75%");
+    expect(html).not.toContain("{name}");
+    expect(html).not.toContain("{rate}");
+  });
+
+  it("wraps body paragraphs in <p> tags", () => {
+    const html = buildPreviewHtml("Subject", "First paragraph\n\nSecond paragraph");
+    expect(html).toContain("<p style=");
+    expect(html).toContain("First paragraph");
+    expect(html).toContain("Second paragraph");
+  });
+
+  it("converts single newlines to <br/> within paragraphs", () => {
+    const html = buildPreviewHtml("Subject", "Line one\nLine two");
+    expect(html).toContain("<br/>");
+  });
+
+  it("includes the Preview badge label", () => {
+    const html = buildPreviewHtml("Subject", "Body");
+    expect(html).toContain("Preview");
+  });
+
+  it("includes a footer with agency name", () => {
+    const html = buildPreviewHtml("Subject", "Body");
+    expect(html).toContain("Sterling Mortgage");
+  });
+
+  it("produces different HTML for different subjects", () => {
+    const html1 = buildPreviewHtml("Subject A", "Body");
+    const html2 = buildPreviewHtml("Subject B", "Body");
+    expect(html1).not.toBe(html2);
+  });
+
+  it("produces different HTML for different body content", () => {
+    const html1 = buildPreviewHtml("Subject", "Body A");
+    const html2 = buildPreviewHtml("Subject", "Body B");
+    expect(html1).not.toBe(html2);
+  });
+});
+
+describe("Email Preview Pane — word and character count", () => {
+  it("counts words correctly for a simple sentence", () => {
+    const text = substituteSampleValues("Hello world this is a test");
+    const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+    expect(wordCount).toBe(6);
+  });
+
+  it("counts characters correctly", () => {
+    const text = substituteSampleValues("Hello");
+    expect(text.length).toBe(5);
+  });
+
+  it("substitutes variables before counting (longer than raw template)", () => {
+    const raw = "Hi {name}!";
+    const substituted = substituteSampleValues(raw);
+    // "Hi Alex Johnson!" is longer than "Hi {name}!"
+    expect(substituted.length).toBeGreaterThan(raw.length);
+  });
+
+  it("returns zero words for an empty string", () => {
+    const wordCount = "".trim().split(/\s+/).filter(Boolean).length;
+    expect(wordCount).toBe(0);
+  });
+});

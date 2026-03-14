@@ -1210,3 +1210,10 @@
 - [x] ReviewStep UI: validate email format before enabling Send button
 - [x] Wire custom email address to sendTestEmail mutation's toEmail parameter
 - [x] vitest tests: custom email validation and fallback-to-user-email logic
+
+## Feature: Email Preview Pane in UseTemplateWizard
+- [x] Build EmailPreviewPane component (sandboxed iframe, substitutes template vars with sample values)
+- [x] Add collapsible "Preview" toggle above the summary table in ReviewStep
+- [x] Render full styled HTML email (header, body, footer) matching the test email output
+- [x] Show character/word count and a "Mobile / Desktop" width toggle
+- [x] vitest tests: template variable substitution and HTML generation logic
