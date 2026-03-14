@@ -86,6 +86,7 @@ import ContactsHub from "./pages/ContactsHub";
 import ContactsPage from "./pages/ContactsPage";
 import ContactDetailPage from "./pages/ContactDetailPage";
 import SettingsPage from "./pages/Settings";
+import NotificationPreferences from "./pages/NotificationPreferences";
 import ForceChangePassword from "./pages/ForceChangePassword";
 import ActivityHub from "./pages/ActivityHub";
 import MarketingHub from "./pages/MarketingHub";
@@ -228,6 +229,7 @@ function Router() {
       <Route path="/website" component={ClientWebsite} />
       <Route path="/payments" component={PaymentsPage} />
       <Route path="/settings" component={SettingsPage} />
+      <Route path="/notification-preferences" component={NotificationPreferences} />
       <Route path="/client-dashboard" component={ClientDashboard} />
       <Route path="/pipeline" component={lazy(() => import('./pages/Pipeline'))} />
       <Route path="/ai-coach" component={lazy(() => import('./pages/AISuccessCoach'))} />

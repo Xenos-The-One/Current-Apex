@@ -92,6 +92,11 @@ import { useIsEmbedded } from "@/contexts/EmbeddedContext";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import { GlobalSearch, useGlobalSearch } from "./GlobalSearch";
 import { AlertCircle } from "lucide-react";
+import { OfflineBanner } from "./OfflineBanner";
+import { PWAInstallBanner, IOSInstallBanner } from "./PWABanner";
+import { PWAUpdateBanner } from "./PWAUpdateBanner";
+import { MobileBottomNav } from "./MobileBottomNav";
+import { AppLaunchScreen } from "./AppLaunchScreen";
 
 // ─── Client Onboarding Banner ─────────────────────────────────────────────────
 function ClientOnboardingBanner({ setLocation }: { setLocation: (path: string) => void }) {
@@ -1288,9 +1293,19 @@ function DashboardLayoutContent({
             </div>
           );
         })()}
+        {/* Offline + PWA update banners — shown above main content */}
+        <OfflineBanner />
+        <PWAUpdateBanner />
         <main className="flex-1 p-3 overflow-hidden flex flex-col min-h-0">{children}</main>
       </SidebarInset>
       <AIAssistantWidget />
+      {/* Mobile bottom nav — only visible in standalone mode on small screens */}
+      <MobileBottomNav />
+      {/* PWA install banners — shown in browser mode */}
+      <PWAInstallBanner />
+      <IOSInstallBanner />
+      {/* App launch screen — branded splash for cold starts in standalone mode */}
+      <AppLaunchScreen />
     </>
   );
 }

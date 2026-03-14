@@ -1,4 +1,5 @@
 import CRMLayout from "@/components/CRMLayout";
+import { useLocation } from "wouter";
 import { useAgency } from "@/contexts/AgencyContext";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -699,7 +700,103 @@ function FacebookPageConfigCard() {
   );
 }
 
-// ─── PWA Settings Tab ──────────────────────────────────────────────────────
+//// ─── Notification Preferences Card ──────────────────────────────────
+type NotifPrefs = {
+  newLead: boolean;
+  appointment: boolean;
+  statusChange: boolean;
+  assignment: boolean;
+  marketing: boolean;
+  quietHoursEnabled: boolean;
+  quietStart: string;
+  quietEnd: string;
+};
+const DEFAULT_NOTIF_PREFS: NotifPrefs = {
+  newLead: true,
+  appointment: true,
+  statusChange: true,
+  assignment: true,
+  marketing: false,
+  quietHoursEnabled: false,
+  quietStart: "22:00",
+  quietEnd: "08:00",
+};
+const NOTIF_TYPES = [
+  { key: "newLead" as const, label: "New Leads", description: "When a new lead enters the pipeline from any source" },
+  { key: "appointment" as const, label: "Appointments", description: "Reminders 24h and 1h before scheduled appointments" },
+  { key: "statusChange" as const, label: "Status Changes", description: "When a lead moves to a new pipeline stage" },
+  { key: "assignment" as const, label: "Lead Assignments", description: "When a lead is assigned to you or reassigned" },
+  { key: "marketing" as const, label: "Campaign Reports", description: "Summary when an email or SMS campaign finishes" },
+];
+function NotificationPreferencesCard() {
+  const [, setLocation] = useLocation();
+  const { data: savedPrefs, isLoading } = trpc.notifications.getPrefs.useQuery();
+  const updatePrefs = trpc.notifications.updatePrefs.useMutation({
+    onSuccess: () => toast.success("Notification preferences saved"),
+    onError: (e) => toast.error(e.message || "Failed to save preferences"),
+  });
+  const [prefs, setPrefs] = useState<NotifPrefs>(DEFAULT_NOTIF_PREFS);
+  const [isDirty, setIsDirty] = useState(false);
+  useEffect(() => {
+    if (savedPrefs) setPrefs({ ...DEFAULT_NOTIF_PREFS, ...savedPrefs });
+  }, [savedPrefs]);
+  const handleToggle = (key: keyof NotifPrefs, value: boolean) => {
+    setPrefs((p) => ({ ...p, [key]: value }));
+    setIsDirty(true);
+  };
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <Bell className="w-4 h-4 text-primary" />
+          Notification Preferences
+        </CardTitle>
+        <CardDescription>Choose which events trigger push notifications and in-app alerts.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+            <div className="h-4 w-4 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+            Loading preferences…
+          </div>
+        ) : (
+          <>
+            {NOTIF_TYPES.map((item) => (
+              <div key={item.key} className="flex items-center justify-between py-2 border-b last:border-0">
+                <div>
+                  <p className="text-sm font-medium">{item.label}</p>
+                  <p className="text-xs text-muted-foreground">{item.description}</p>
+                </div>
+                <Switch
+                  checked={prefs[item.key]}
+                  onCheckedChange={(v) => handleToggle(item.key, v)}
+                />
+              </div>
+            ))}
+            <div className="flex items-center justify-between pt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                onClick={() => setLocation("/notification-preferences")}
+              >
+                Advanced Settings →
+              </Button>
+              <Button
+                size="sm"
+                disabled={!isDirty || updatePrefs.isPending}
+                onClick={() => { updatePrefs.mutate(prefs); setIsDirty(false); }}
+              >
+                {updatePrefs.isPending ? "Saving…" : "Save"}
+              </Button>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+// ─── PWA Settings Tab ──────────────────────────────────────────────
 function PWASettingsTab() {
   const { data: vapidData } = trpc.notifications.getVapidPublicKey.useQuery();
   const testPush = trpc.notifications.testPush.useMutation({
@@ -927,13 +1024,7 @@ export default function Settings() {
   });
 
   const [profile, setProfile] = useState({ name: "", email: "", phone: "", website: "" });
-  const [notifPrefs, setNotifPrefs] = useState({
-    newLead: true,
-    appointmentReminder: true,
-    campaignReport: true,
-    callCompleted: false,
-    weeklyDigest: true,
-  });
+  // notifPrefs state removed — now managed by NotificationPreferencesCard component
   const [senderDomain, setSenderDomain] = useState("lockinloans.com");
   const [senderName, setSenderName] = useState("Premier Mortgage Resources");
   const [senderEmail, setSenderEmail] = useState("noreply");
@@ -1359,37 +1450,7 @@ export default function Settings() {
 
           {/* ── Notifications ── */}
           <TabsContent value="notifications" className="mt-5">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Notification Preferences</CardTitle>
-                <CardDescription>Choose which events trigger notifications for your account.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {[
-                  { key: "newLead", label: "New Lead", description: "Notify when a new lead is added to the pipeline" },
-                  { key: "appointmentReminder", label: "Appointment Reminders", description: "Notify 24 hours before a scheduled appointment" },
-                  { key: "campaignReport", label: "Campaign Reports", description: "Receive a summary when a campaign finishes sending" },
-                  { key: "callCompleted", label: "Call Completed", description: "Notify when an AI call ends with a transcript available" },
-                  { key: "weeklyDigest", label: "Weekly Digest", description: "Receive a weekly summary of pipeline activity every Monday" },
-                ].map(item => (
-                  <div key={item.key} className="flex items-center justify-between py-2">
-                    <div>
-                      <p className="text-sm font-medium">{item.label}</p>
-                      <p className="text-xs text-muted-foreground">{item.description}</p>
-                    </div>
-                    <Switch
-                      checked={notifPrefs[item.key as keyof typeof notifPrefs]}
-                      onCheckedChange={v => setNotifPrefs(p => ({ ...p, [item.key]: v }))}
-                    />
-                  </div>
-                ))}
-                <div className="flex justify-end pt-2">
-                  <Button onClick={() => toast.success("Notification preferences saved")}>
-                    Save Preferences
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <NotificationPreferencesCard />
           </TabsContent>
 
           {/* ── Mobile App (PWA) ── */}

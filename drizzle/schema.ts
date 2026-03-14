@@ -25,6 +25,8 @@ export const users = mysqlTable("users", {
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
   avatarUrl: text("avatar_url"),
   phone: varchar("phone", { length: 20 }),
+  /** JSON blob storing per-user notification preferences and quiet hours */
+  notifPrefs: text("notif_prefs"), // JSON: { newLead, appointment, statusChange, assignment, marketing, quietHoursEnabled, quietStart, quietEnd }
 });
 
 export type User = typeof users.$inferSelect;

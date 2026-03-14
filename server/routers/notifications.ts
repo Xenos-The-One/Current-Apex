@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
-import { pushSubscriptions, teamNotifications } from "../../drizzle/schema";
+import { pushSubscriptions, teamNotifications, users } from "../../drizzle/schema";
 import { eq, and, or, desc, sql } from "drizzle-orm";
 import webpush from "web-push";
 
@@ -566,5 +566,69 @@ export const notificationsRouter = router({
         publicKey: VAPID_PUBLIC_KEY || null,
         enabled: !!(VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY),
       };
+    }),
+
+  /**
+   * Get notification preferences for the current user
+   */
+  getPrefs: protectedProcedure
+    .query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return null;
+      const userId = ctx.user!.id;
+      const rows = await db
+        .select({ notifPrefs: users.notifPrefs })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+      if (!rows[0]?.notifPrefs) {
+        return {
+          newLead: true,
+          appointment: true,
+          statusChange: true,
+          assignment: true,
+          marketing: false,
+          quietHoursEnabled: false,
+          quietStart: "22:00",
+          quietEnd: "08:00",
+        };
+      }
+      try {
+        return JSON.parse(rows[0].notifPrefs);
+      } catch {
+        return null;
+      }
+    }),
+
+  /**
+   * Update notification preferences for the current user
+   */
+  updatePrefs: protectedProcedure
+    .input(z.object({
+      newLead: z.boolean().optional(),
+      appointment: z.boolean().optional(),
+      statusChange: z.boolean().optional(),
+      assignment: z.boolean().optional(),
+      marketing: z.boolean().optional(),
+      quietHoursEnabled: z.boolean().optional(),
+      quietStart: z.string().optional(),
+      quietEnd: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const userId = ctx.user!.id;
+      const rows = await db
+        .select({ notifPrefs: users.notifPrefs })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+      const existing = rows[0]?.notifPrefs ? JSON.parse(rows[0].notifPrefs) : {};
+      const merged = { ...existing, ...input };
+      await db
+        .update(users)
+        .set({ notifPrefs: JSON.stringify(merged) })
+        .where(eq(users.id, userId));
+      return { success: true, prefs: merged };
     }),
 });

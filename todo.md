@@ -1090,3 +1090,15 @@
 - [x] Fix bookAppointment test timeout by mocking Twilio/SendGrid/push in test
 - [x] Add Mark All as Read button to Notifications page (already existed)
 - [x] Add lead assignment push notifications when admin assigns lead to team member
+
+## PWA Native Feel Refinement + Notification Preferences
+- [x] Safe-area insets for notch/home-bar on iOS standalone mode
+- [x] Mobile bottom nav bar for standalone mode (thumb-friendly navigation)
+- [x] App-like page transitions (slide/fade animations)
+- [x] Splash/launch screen feel (skeleton loaders, branded loading state)
+- [x] Smart install banner (dismissible, shows once, platform-aware)
+- [x] iOS install instructions modal (step-by-step with screenshots)
+- [x] Service worker update prompt (new version available banner)
+- [x] Offline state UI (offline banner + graceful fallback pages)
+- [x] Mobile responsiveness audit: Dashboard, Pipeline, Contacts, Conversations
+- [x] Notification preferences page (per-type toggles + quiet hours)
