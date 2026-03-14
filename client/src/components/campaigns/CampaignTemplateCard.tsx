@@ -1,4 +1,4 @@
-import { Mail, MessageSquare, Phone, Clock, Users, ChevronRight, Star } from "lucide-react";
+import { Mail, MessageSquare, Phone, Clock, Users, ChevronRight, Star, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,14 +15,24 @@ interface CampaignTemplateCardProps {
   template: CampaignTemplate;
   onPreview: (template: CampaignTemplate) => void;
   onUse: (template: CampaignTemplate) => void;
+  usageCount?: number;
+  isMostPopular?: boolean;
 }
 
-export function CampaignTemplateCard({ template, onPreview, onUse }: CampaignTemplateCardProps) {
+export function CampaignTemplateCard({ template, onPreview, onUse, usageCount = 0, isMostPopular = false }: CampaignTemplateCardProps) {
   const colors = CHANNEL_COLORS[template.channel];
   const ChannelIcon = CHANNEL_ICONS[template.channel];
 
   return (
     <Card className="group relative flex flex-col overflow-hidden border border-border/60 hover:border-primary/40 hover:shadow-md transition-all duration-200 cursor-pointer bg-card">
+      {/* Most Popular ribbon */}
+      {isMostPopular && (
+        <div className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+          <TrendingUp className="h-2.5 w-2.5" />
+          Most Popular
+        </div>
+      )}
+
       {/* Top accent bar */}
       <div
         className={`h-1 w-full ${

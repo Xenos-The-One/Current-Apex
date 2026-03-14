@@ -469,6 +469,8 @@ export function UseTemplateWizard({
 
   const createEmail = trpc.campaigns.createEmailCampaign.useMutation();
   const createSms = trpc.campaigns.createSmsCampaign.useMutation();
+  const seedToClient = trpc.campaigns.seedTemplateToClient.useMutation();
+  const trackUsage = trpc.campaigns.trackTemplateUsage.useMutation();
 
   if (!template) return null;
 
@@ -512,6 +514,9 @@ export function UseTemplateWizard({
       if (!state.sendNow && state.scheduledDate && state.scheduledTime) {
         scheduledDate = new Date(`${state.scheduledDate}T${state.scheduledTime}`);
       }
+
+      // Track template usage (non-blocking)
+      trackUsage.mutate({ templateId: template.id, channel: template.channel, clientId });
 
       if (template.channel === "email") {
         await createEmail.mutateAsync({

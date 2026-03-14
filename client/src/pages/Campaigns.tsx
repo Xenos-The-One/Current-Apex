@@ -740,7 +740,7 @@ function CreateSMSCampaignDialog({ clientId, onSuccess }: { clientId: number; on
 
 // ─── Campaign Row (table-style) ───────────────────────────────────────────────
 
-function CampaignRow({ campaign, type, onViewStats, onDuplicate }: { campaign: any; type: "email" | "sms"; onViewStats: () => void; onDuplicate?: () => void }) {
+function CampaignRow({ campaign, type, onViewStats, onDuplicate, onSaveAsTemplate }: { campaign: any; type: "email" | "sms"; onViewStats: () => void; onDuplicate?: () => void; onSaveAsTemplate?: () => void }) {
   const sent = campaign.sentCount ?? 0;
   const openRate = type === "email" && sent > 0 ? Math.round((campaign.openCount / sent) * 100) : null;
   const deliveryRate = type === "sms" && sent > 0 ? Math.round(((campaign.deliveredCount ?? 0) / sent) * 100) : null;
@@ -809,6 +809,9 @@ function CampaignRow({ campaign, type, onViewStats, onDuplicate }: { campaign: a
           <DropdownMenuContent align="end" className="w-40">
             <DropdownMenuItem onClick={() => toast.info("Edit coming soon")}><FileText className="w-3.5 h-3.5 mr-2" /> Edit</DropdownMenuItem>
             <DropdownMenuItem onClick={() => onDuplicate ? onDuplicate() : toast.info("Duplicate coming soon")}><Copy className="w-3.5 h-3.5 mr-2" /> Duplicate</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onSaveAsTemplate ? onSaveAsTemplate() : toast.info("Save as template coming soon")}>
+              <Star className="w-3.5 h-3.5 mr-2" /> Save as Template
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => toast.info("Pause coming soon")} className="text-amber-600">
               <Pause className="w-3.5 h-3.5 mr-2" /> Pause
@@ -1047,6 +1050,16 @@ export default function Campaigns() {
     };
   }, [templateChannel]);
 
+  // Template usage analytics
+  const { data: usageCounts = {} } = trpc.campaigns.getTemplateUsageCounts.useQuery();
+  const mostPopularIds = useMemo(() => {
+    const entries = Object.entries(usageCounts as Record<string, number>);
+    if (entries.length === 0) return new Set<string>();
+    const maxCount = Math.max(...entries.map(([, c]) => c));
+    if (maxCount === 0) return new Set<string>();
+    return new Set(entries.filter(([, c]) => c >= maxCount * 0.7).slice(0, 3).map(([id]) => id));
+  }, [usageCounts]);
+
   const { data: myInfo } = trpc.crm.getMyInfo.useQuery();
   const clientId = myInfo?.client?.id ?? 1;
 
@@ -1063,6 +1076,25 @@ export default function Campaigns() {
     onSuccess: () => { toast.success("Campaign duplicated"); refetchSMS(); },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const saveAsTemplate = trpc.campaigns.saveAsTemplate.useMutation({
+    onSuccess: (result) => {
+      toast.success("Saved as template!", {
+        description: `"${result.name}" is now available in your Template Library.`,
+        action: { label: "View Library", onClick: () => setMainTab("templates") },
+      });
+    },
+    onError: (e: any) => toast.error("Failed to save template", { description: e.message }),
+  });
+  const handleSaveAsTemplate = (campaign: any, type: "email" | "sms") => {
+    saveAsTemplate.mutate({
+      name: campaign.name,
+      channel: type,
+      subject: type === "email" ? (campaign.subject ?? "") : undefined,
+      content: campaign.content ?? campaign.message ?? "",
+      clientId,
+    });
+  };
 
   const handleDuplicate = (campaign: any, type: "email" | "sms") => {
     const copyName = `${campaign.name} (Copy)`;
@@ -1520,7 +1552,7 @@ export default function Campaigns() {
                   ) : (emailCampaigns?.length ?? 0) > 0 ? (
                     <div>
                       {emailCampaigns!.map((c: any) => (
-                        <CampaignRow key={c.id} campaign={c} type="email" onViewStats={() => setSelectedCampaign({ campaign: c, type: "email" })} onDuplicate={() => handleDuplicate(c, "email")} />
+                        <CampaignRow key={c.id} campaign={c} type="email" onViewStats={() => setSelectedCampaign({ campaign: c, type: "email" })} onDuplicate={() => handleDuplicate(c, "email")} onSaveAsTemplate={() => handleSaveAsTemplate(c, "email")} />
                       ))}
                     </div>
                   ) : (
@@ -1606,7 +1638,7 @@ export default function Campaigns() {
                   ) : (smsCampaigns?.length ?? 0) > 0 ? (
                     <div>
                       {smsCampaigns!.map((c: any) => (
-                        <CampaignRow key={c.id} campaign={c} type="sms" onViewStats={() => setSelectedCampaign({ campaign: c, type: "sms" })} onDuplicate={() => handleDuplicate(c, "sms")} />
+                        <CampaignRow key={c.id} campaign={c} type="sms" onViewStats={() => setSelectedCampaign({ campaign: c, type: "sms" })} onDuplicate={() => handleDuplicate(c, "sms")} onSaveAsTemplate={() => handleSaveAsTemplate(c, "sms")} />
                       ))}
                     </div>
                   ) : (
@@ -1701,6 +1733,8 @@ export default function Campaigns() {
                       template={template}
                       onPreview={setPreviewTemplate}
                       onUse={handleUseTemplate}
+                      usageCount={(usageCounts as Record<string, number>)[template.id] ?? 0}
+                      isMostPopular={mostPopularIds.has(template.id)}
                     />
                   ))}
                 </div>

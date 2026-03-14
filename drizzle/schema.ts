@@ -1538,3 +1538,17 @@ export const socialPlatformConnections = mysqlTable("social_platform_connections
 });
 export type SocialPlatformConnection = typeof socialPlatformConnections.$inferSelect;
 export type InsertSocialPlatformConnection = typeof socialPlatformConnections.$inferInsert;
+
+// ─── Template Usage Events ────────────────────────────────────────────────────
+// Tracks which prebuilt campaign templates are used, to power "Most Popular" badges
+export const templateUsageEvents = mysqlTable("template_usage_events", {
+  id: int("id").primaryKey().autoincrement(),
+  templateId: varchar("template_id", { length: 100 }).notNull(), // matches CampaignTemplate.id in frontend data
+  channel: varchar("channel", { length: 20 }).notNull(), // email | sms | ai-calling
+  agencyId: int("agency_id").references(() => agencies.id, { onDelete: "cascade" }),
+  userId: int("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  clientId: int("client_id").references(() => clients.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type TemplateUsageEvent = typeof templateUsageEvents.$inferSelect;
+export type InsertTemplateUsageEvent = typeof templateUsageEvents.$inferInsert;

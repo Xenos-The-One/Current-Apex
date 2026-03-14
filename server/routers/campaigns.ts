@@ -2,9 +2,10 @@ import { z } from "zod";
 import { router, protectedProcedure } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "../db";
-import { emailCampaigns, smsCampaigns, leads, clients, webinarRegistrations } from "../../drizzle/schema";
+import { emailCampaigns, smsCampaigns, leads, clients, webinarRegistrations, templateUsageEvents } from "../../drizzle/schema";
+import { getAgencyByOwnerId, getClientsByAgencyId } from "../db";
 import { sendEmail } from "../sendgrid";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, sql, desc } from "drizzle-orm";
 import { sendBulkEmail, isDemoMode as isEmailDemoMode } from "../sendgrid";
 import { sendBulkSMS, isDemoMode as isSMSDemoMode } from "../twilio";
 
@@ -324,5 +325,151 @@ export const campaignsRouter = router({
         console.warn("[listSMSCampaigns] DB error (returning empty):", (err as Error).message);
         return [];
       }
+    }),
+
+  // ─── Template Usage Analytics ─────────────────────────────────────────────
+  trackTemplateUsage: protectedProcedure
+    .input(z.object({
+      templateId: z.string(),
+      channel: z.enum(["email", "sms", "ai-calling"]),
+      clientId: z.number().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) return { ok: true };
+      try {
+        const agency = await getAgencyByOwnerId(ctx.user.id);
+        await db.insert(templateUsageEvents).values({
+          templateId: input.templateId,
+          channel: input.channel,
+          agencyId: agency?.id ?? null,
+          userId: ctx.user.id,
+          clientId: input.clientId ?? null,
+        });
+        return { ok: true };
+      } catch (err) {
+        console.warn("[trackTemplateUsage] DB error:", (err as Error).message);
+        return { ok: false };
+      }
+    }),
+
+  getTemplateUsageCounts: protectedProcedure
+    .query(async () => {
+      const db = await getDb();
+      if (!db) return {} as Record<string, number>;
+      try {
+        const rows = await db
+          .select({
+            templateId: templateUsageEvents.templateId,
+            count: sql<number>`COUNT(*)`.as("count"),
+          })
+          .from(templateUsageEvents)
+          .groupBy(templateUsageEvents.templateId)
+          .orderBy(desc(sql`COUNT(*)`));
+        return Object.fromEntries(rows.map((r) => [r.templateId, Number(r.count)])) as Record<string, number>;
+      } catch (err) {
+        console.warn("[getTemplateUsageCounts] DB error:", (err as Error).message);
+        return {} as Record<string, number>;
+      }
+    }),
+
+  // ─── List Agency Clients (for admin client selector) ─────────────────────
+  listAgencyClients: protectedProcedure
+    .query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return [];
+      try {
+        const agency = await getAgencyByOwnerId(ctx.user.id);
+        if (!agency) return [];
+        return await getClientsByAgencyId(agency.id);
+      } catch (err) {
+        console.warn("[listAgencyClients] DB error:", (err as Error).message);
+        return [];
+      }
+    }),
+
+  // ─── Seed Template to Client ──────────────────────────────────────────────
+  seedTemplateToClient: protectedProcedure
+    .input(z.object({
+      clientId: z.number(),
+      templateId: z.string(),
+      channel: z.enum(["email", "sms", "ai-calling"]),
+      name: z.string(),
+      subject: z.string().optional(),
+      content: z.string(),
+      scheduledDate: z.date().optional(),
+      sendNow: z.boolean().default(false),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      const [client] = await db.select().from(clients).where(eq(clients.id, input.clientId)).limit(1);
+      if (!client) throw new TRPCError({ code: "NOT_FOUND", message: "Client not found" });
+
+      // Track usage (non-fatal)
+      try {
+        const agency = await getAgencyByOwnerId(ctx.user.id);
+        await db.insert(templateUsageEvents).values({
+          templateId: input.templateId,
+          channel: input.channel,
+          agencyId: agency?.id ?? client.agencyId,
+          userId: ctx.user.id,
+          clientId: input.clientId,
+        });
+      } catch (_) { /* non-fatal */ }
+
+      if (input.channel === "email") {
+        const [campaign] = await db.insert(emailCampaigns).values({
+          agencyId: client.agencyId,
+          clientId: input.clientId,
+          name: input.name,
+          subject: input.subject ?? input.name,
+          content: input.content,
+          recipientFilter: "all",
+          status: input.sendNow ? "sending" : (input.scheduledDate ? "scheduled" : "draft"),
+          scheduledDate: input.scheduledDate ?? null,
+          createdBy: ctx.user.id,
+        });
+        return { id: (campaign as any).insertId, channel: "email" as const };
+      } else {
+        const [campaign] = await db.insert(smsCampaigns).values({
+          agencyId: client.agencyId,
+          clientId: input.clientId,
+          name: input.name,
+          message: input.content,
+          recipientFilter: "all",
+          status: input.sendNow ? "sending" : (input.scheduledDate ? "scheduled" : "draft"),
+          scheduledDate: input.scheduledDate ?? null,
+          createdBy: ctx.user.id,
+        });
+        return { id: (campaign as any).insertId, channel: "sms" as const };
+      }
+    }),
+
+  // ─── Save as Template ─────────────────────────────────────────────────────
+  saveAsTemplate: protectedProcedure
+    .input(z.object({
+      name: z.string().min(1).max(255),
+      type: z.enum(["email", "sms"]),
+      category: z.string().optional(),
+      subject: z.string().optional(),
+      content: z.string().min(1),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      const agency = await getAgencyByOwnerId(ctx.user.id);
+      // Save as a draft email campaign with a [Template] prefix so it's distinguishable
+      const [result] = await db.insert(emailCampaigns).values({
+        agencyId: agency?.id ?? 0,
+        clientId: null,
+        name: `[Template] ${input.name}`,
+        subject: input.subject ?? input.name,
+        content: input.content,
+        recipientFilter: "all",
+        status: "draft",
+        createdBy: ctx.user.id,
+      });
+      return { id: (result as any).insertId, name: input.name };
     }),
 });

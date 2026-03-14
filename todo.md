@@ -1179,3 +1179,19 @@
 - [x] Template Library sub-tab inside Email/SMS/AI Calling tabs
 - [x] Improved empty states with quick-start template buttons
 - [x] vitest tests for template data and wizard logic
+
+## Feature: Campaign Template Enhancements (3 features)
+- [ ] DB: template_usage_events table for tracking which templates are used
+- [ ] Backend: trackTemplateUsage procedure (records use event)
+- [ ] Backend: getTemplateUsageCounts procedure (returns counts per templateId)
+- [ ] Backend: seedTemplateToClient procedure (creates campaign under selected client)
+- [ ] Backend: saveAsTemplate procedure (saves existing campaign as reusable template)
+- [ ] Backend: listAgencyClients procedure for admin client selector
+- [ ] UseTemplateWizard: add client selector step for admin users
+- [ ] UseTemplateWizard: call trackTemplateUsage on launch
+- [ ] CampaignTemplateCard: show Most Popular badge based on usage counts
+- [ ] Campaigns page: fetch usage counts and pass to template cards
+- [ ] Email campaign list: Save as Template button on each row
+- [ ] SMS campaign list: Save as Template button on each row
+- [ ] SaveAsTemplateDialog component
+- [ ] vitest tests for new procedures
