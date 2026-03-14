@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { protectedProcedure, router } from "../_core/trpc";
+import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
 import { pushSubscriptions, teamNotifications } from "../../drizzle/schema";
 import { eq, and, or, desc, sql } from "drizzle-orm";
@@ -554,5 +554,17 @@ export const notificationsRouter = router({
       }
 
       return { cleaned: 0, kept: allSubs.length };
+    }),
+
+  /**
+   * Get VAPID public key for push subscription registration
+   * This allows the frontend to subscribe without needing VITE_VAPID_PUBLIC_KEY in env
+   */
+  getVapidPublicKey: publicProcedure
+    .query(() => {
+      return {
+        publicKey: VAPID_PUBLIC_KEY || null,
+        enabled: !!(VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY),
+      };
     }),
 });

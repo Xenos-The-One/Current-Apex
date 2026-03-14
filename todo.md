@@ -586,7 +586,7 @@
 - [x] PWA: Generated app icons (72px–512px) and badge icon, uploaded to CDN
 - [x] PWA: Added manifest + Apple/PWA meta tags to index.html
 - [x] PWA: PWAInstallBanner, IOSInstallBanner, PushNotificationPrompt components wired into CRMLayout
-- [ ] PWA: VAPID keys need to be set by Thailer (VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VITE_VAPID_PUBLIC_KEY)
+- [x] PWA: VAPID keys need to be set by Thailer (VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VITE_VAPID_PUBLIC_KEY)
 - [x] Facebook webhook: Fixed broken handler — now uses page configs, fetches real lead data, triggers automation
 - [x] Facebook webhook: Added per-page automation controls (VAPI on/off, SMS on/off, template, tag)
 - [x] Build full GHL-inspired Contacts page (ContactsPage.tsx) with smart lists, advanced filters, bulk actions, add/edit drawer, CSV import, manage fields, sort, search, pagination, tags
@@ -1069,3 +1069,10 @@
 - [x] Test update flow — PWAUpdateBanner detects new SW and prompts refresh
 - [ ] Performance audit (Lighthouse PWA score) — manual step for user
 - [x] Save checkpoint and deploy
+
+## PWA Next Steps (Round 2)
+- [x] Add VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY secrets for push notifications
+- [x] Wire VAPID keys into push subscription backend (subscribe/unsubscribe procedures)
+- [x] Send real push notifications via web-push library for new leads and appointments
+- [x] Expand manifest shortcuts (Pipeline, Conversations, Calendar, Contacts)
+- [x] Add Lighthouse PWA audit guide page in admin Settings → PWA

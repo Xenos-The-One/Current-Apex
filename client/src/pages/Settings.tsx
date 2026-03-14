@@ -8,6 +8,8 @@ import {
   Check,
   CheckCircle2,
   Clock,
+  Download,
+  ExternalLink,
   Eye,
   EyeOff,
   History,
@@ -15,15 +17,20 @@ import {
   KeyRound,
   Lock,
   Mail,
+  Monitor,
   Phone,
   RefreshCw,
   Save,
   Settings2,
   ShieldAlert,
   ShieldCheck,
+  Smartphone,
   User,
   Webhook,
+  Wifi,
+  WifiOff,
   XCircle,
+  Zap,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -692,6 +699,218 @@ function FacebookPageConfigCard() {
   );
 }
 
+// ─── PWA Settings Tab ──────────────────────────────────────────────────────
+function PWASettingsTab() {
+  const { data: vapidData } = trpc.notifications.getVapidPublicKey.useQuery();
+  const testPush = trpc.notifications.testPush.useMutation({
+    onSuccess: () => toast.success("Test push notification sent!"),
+    onError: (e) => toast.error(e.message || "Failed to send test notification"),
+  });
+  const { data: subStatus } = trpc.notifications.subscriptionStatus.useQuery();
+
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+
+  useEffect(() => {
+    setIsInstalled(window.matchMedia("(display-mode: standalone)").matches);
+    const ua = navigator.userAgent;
+    setIsIOS(/iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream);
+  }, []);
+
+  const lighthouseSteps = [
+    { step: "1", title: "Publish your app", desc: "Click the Publish button in the top-right of the Management UI to deploy your app to a public URL." },
+    { step: "2", title: "Open Chrome DevTools", desc: "Visit your published URL in Chrome, press F12 (or Cmd+Option+I on Mac) to open DevTools." },
+    { step: "3", title: "Run Lighthouse", desc: "Click the Lighthouse tab → select \"Progressive Web App\" category → click Analyze page load." },
+    { step: "4", title: "Review results", desc: "Lighthouse will show a PWA checklist. A score of 100 means all criteria pass. Common issues: HTTPS, manifest, service worker." },
+    { step: "5", title: "Fix any gaps", desc: "Share the Lighthouse report with your developer to address any failing criteria. Most issues are already handled by this platform." },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Install Status */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Smartphone className="w-4 h-4 text-primary" />
+            <CardTitle className="text-sm">App Installation Status</CardTitle>
+          </div>
+          <CardDescription className="text-xs">Install this platform as a native app on your device for the best experience.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+            {isInstalled ? (
+              <>
+                <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium">App is installed</p>
+                  <p className="text-xs text-muted-foreground">You're running in standalone app mode.</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <Download className="w-5 h-5 text-muted-foreground shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Not installed as app</p>
+                  <p className="text-xs text-muted-foreground">You're running in the browser. Install for a better experience.</p>
+                </div>
+              </>
+            )}
+          </div>
+          {!isInstalled && (
+            <div className="space-y-2">
+              <div className="flex items-start gap-2 p-3 rounded-lg border text-xs">
+                <Monitor className="w-4 h-4 shrink-0 mt-0.5 text-blue-500" />
+                <div>
+                  <p className="font-medium">Desktop (Chrome / Edge)</p>
+                  <p className="text-muted-foreground">Look for the install icon (⊕) in the browser address bar, or open the browser menu and select \"Install app\".</p>
+                </div>
+              </div>
+              {isIOS ? (
+                <div className="flex items-start gap-2 p-3 rounded-lg border text-xs bg-blue-50 dark:bg-blue-950/20">
+                  <Smartphone className="w-4 h-4 shrink-0 mt-0.5 text-blue-500" />
+                  <div>
+                    <p className="font-medium">iOS (Safari)</p>
+                    <p className="text-muted-foreground">Tap the <strong>Share</strong> button (box with arrow) → scroll down → tap <strong>Add to Home Screen</strong> → tap <strong>Add</strong>.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2 p-3 rounded-lg border text-xs">
+                  <Smartphone className="w-4 h-4 shrink-0 mt-0.5 text-green-500" />
+                  <div>
+                    <p className="font-medium">Android (Chrome)</p>
+                    <p className="text-muted-foreground">Tap the three-dot menu → tap <strong>Add to Home screen</strong> → tap <strong>Add</strong>.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Push Notifications */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Bell className="w-4 h-4 text-primary" />
+            <CardTitle className="text-sm">Push Notifications</CardTitle>
+          </div>
+          <CardDescription className="text-xs">Receive real-time alerts for new leads, appointments, and AI call completions — even when the app is in the background.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+            {vapidData?.enabled ? (
+              <>
+                <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Push notifications enabled</p>
+                  <p className="text-xs text-muted-foreground">
+                    {subStatus?.subscribed
+                      ? `Subscribed on ${subStatus.devices.length} device(s)`
+                      : "VAPID keys configured — enable notifications from the bell icon in the top nav."}
+                  </p>
+                </div>
+                {subStatus?.subscribed && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => testPush.mutate()}
+                    disabled={testPush.isPending}
+                  >
+                    <Zap className="w-3.5 h-3.5 mr-1.5" />
+                    {testPush.isPending ? "Sending..." : "Send Test"}
+                  </Button>
+                )}
+              </>
+            ) : (
+              <>
+                <WifiOff className="w-5 h-5 text-muted-foreground shrink-0" />
+                <div>
+                  <p className="text-sm font-medium">Push notifications not configured</p>
+                  <p className="text-xs text-muted-foreground">VAPID keys are missing. Contact your administrator.</p>
+                </div>
+              </>
+            )}
+          </div>
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p className="font-medium">Notifications are sent for:</p>
+            <ul className="list-disc list-inside space-y-0.5 pl-1">
+              <li>New leads entering the pipeline</li>
+              <li>Appointment bookings and reminders</li>
+              <li>AI call completions with transcripts</li>
+              <li>Webinar registrations</li>
+              <li>System alerts and updates</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Lighthouse Audit Guide */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-primary" />
+            <CardTitle className="text-sm">Lighthouse PWA Audit</CardTitle>
+          </div>
+          <CardDescription className="text-xs">Run a Lighthouse audit to verify your app meets all Progressive Web App criteria and get a PWA score.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-2">
+            {lighthouseSteps.map(({ step, title, desc }) => (
+              <div key={step} className="flex gap-3 p-3 rounded-lg border text-xs">
+                <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">{step}</div>
+                <div>
+                  <p className="font-medium">{title}</p>
+                  <p className="text-muted-foreground mt-0.5">{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full gap-2"
+            onClick={() => window.open("https://web.dev/measure/", "_blank")}
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            Run audit on web.dev/measure
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* App Shortcuts */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Wifi className="w-4 h-4 text-primary" />
+            <CardTitle className="text-sm">App Shortcuts</CardTitle>
+          </div>
+          <CardDescription className="text-xs">Long-press the app icon on your home screen to access these quick shortcuts.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { name: "Dashboard", url: "/admin", desc: "Key metrics overview" },
+              { name: "Pipeline", url: "/pipeline", desc: "Lead pipeline view" },
+              { name: "Calendar", url: "/calendar", desc: "Appointments & schedule" },
+              { name: "Conversations", url: "/conversations", desc: "Lead messaging" },
+              { name: "New Leads", url: "/leads?filter=new", desc: "Uncontacted leads" },
+              { name: "Follow-Ups", url: "/follow-ups", desc: "Today's tasks" },
+            ].map(({ name, url, desc }) => (
+              <div key={name} className="flex items-center gap-2 p-2.5 rounded-lg border text-xs">
+                <div className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                <div>
+                  <p className="font-medium">{name}</p>
+                  <p className="text-muted-foreground">{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // ─── Main page ───────────────────────────────────────────────────────────────
 export default function Settings() {
   const { agencyId } = useAgency();
@@ -749,6 +968,9 @@ export default function Settings() {
             </TabsTrigger>
             <TabsTrigger value="account" className="gap-1.5 text-xs">
               <User className="w-3.5 h-3.5" /> My Account
+            </TabsTrigger>
+            <TabsTrigger value="pwa" className="gap-1.5 text-xs">
+              <Smartphone className="w-3.5 h-3.5" /> Mobile App
             </TabsTrigger>
           </TabsList>
 
@@ -1168,6 +1390,11 @@ export default function Settings() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* ── Mobile App (PWA) ── */}
+          <TabsContent value="pwa" className="mt-5 space-y-4">
+            <PWASettingsTab />
           </TabsContent>
 
           {/* ── My Account ── */}

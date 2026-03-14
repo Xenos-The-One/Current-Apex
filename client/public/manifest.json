@@ -78,14 +78,35 @@
     {
       "name": "Dashboard",
       "short_name": "Dashboard",
-      "description": "View your CRM dashboard",
+      "description": "View your CRM dashboard and key metrics",
       "url": "/admin",
+      "icons": [{ "src": "https://d2xsxph8kpxj0f.cloudfront.net/310519663373808943/Rus3EtBPxB9CmZuwDUFVXj/icon-96_e88356e5.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Pipeline",
+      "short_name": "Pipeline",
+      "description": "View and manage your lead pipeline",
+      "url": "/pipeline",
+      "icons": [{ "src": "https://d2xsxph8kpxj0f.cloudfront.net/310519663373808943/Rus3EtBPxB9CmZuwDUFVXj/icon-96_e88356e5.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Calendar",
+      "short_name": "Calendar",
+      "description": "View upcoming appointments and schedule",
+      "url": "/calendar",
+      "icons": [{ "src": "https://d2xsxph8kpxj0f.cloudfront.net/310519663373808943/Rus3EtBPxB9CmZuwDUFVXj/icon-96_e88356e5.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Conversations",
+      "short_name": "Chat",
+      "description": "View and reply to lead conversations",
+      "url": "/conversations",
       "icons": [{ "src": "https://d2xsxph8kpxj0f.cloudfront.net/310519663373808943/Rus3EtBPxB9CmZuwDUFVXj/icon-96_e88356e5.png", "sizes": "96x96" }]
     },
     {
       "name": "New Leads",
       "short_name": "Leads",
-      "description": "View new leads",
+      "description": "View new leads awaiting follow-up",
       "url": "/leads?filter=new",
       "icons": [{ "src": "https://d2xsxph8kpxj0f.cloudfront.net/310519663373808943/Rus3EtBPxB9CmZuwDUFVXj/icon-96_e88356e5.png", "sizes": "96x96" }]
     },
@@ -94,13 +115,6 @@
       "short_name": "Follow-Ups",
       "description": "View today's follow-up tasks",
       "url": "/follow-ups",
-      "icons": [{ "src": "https://d2xsxph8kpxj0f.cloudfront.net/310519663373808943/Rus3EtBPxB9CmZuwDUFVXj/icon-96_e88356e5.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Conversations",
-      "short_name": "Chat",
-      "description": "View conversations",
-      "url": "/conversations",
       "icons": [{ "src": "https://d2xsxph8kpxj0f.cloudfront.net/310519663373808943/Rus3EtBPxB9CmZuwDUFVXj/icon-96_e88356e5.png", "sizes": "96x96" }]
     }
   ],
