@@ -66,6 +66,8 @@ export type InvokeParams = {
   output_schema?: OutputSchema;
   responseFormat?: ResponseFormat;
   response_format?: ResponseFormat;
+  /** Optional model override, e.g. "gpt-4o", "claude-3-5-sonnet-20241022", "gemini-1.5-pro" */
+  model?: string;
 };
 
 export type ToolCall = {
@@ -277,11 +279,16 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     output_schema,
     responseFormat,
     response_format,
+    model,
   } = params;
 
   const payload: Record<string, unknown> = {
     messages: messages.map(normalizeMessage),
   };
+
+  if (model) {
+    payload.model = model;
+  }
 
   if (tools && tools.length > 0) {
     payload.tools = tools;

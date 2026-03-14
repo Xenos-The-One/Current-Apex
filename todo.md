@@ -1002,3 +1002,9 @@
 ## Generate Button Fix (Round 4)
 - [x] Fix persistent "Unable to link your account" — root cause: Drizzle schema mismatch (seo_users has loginMethod/lastSignedIn columns in schema but not in DB), fixed with raw SQL queries using .$client.promise()
 - [x] Investigate server logs to find exact failure point — "Failed query: select loginMethod, lastSignedIn from seo_users" confirmed the schema mismatch
+
+## AI Model Selector + Image Generation Fix
+- [x] Add AI model selector to Generate tab (GPT-4o, GPT-4o Mini, Claude 3.5 Sonnet, Claude 3 Haiku, Gemini 1.5 Pro, Gemini 2.0 Flash, Gemini 2.5 Flash)
+- [x] Pass selected model to seo.content.generate backend procedure via invokeLLM model param
+- [x] Fix featured image generation — added detailed logging; image error now surfaced in response
+- [x] Show image generation error in UI via toast.warning when image fails, content still saved

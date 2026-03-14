@@ -1211,12 +1211,15 @@ Return JSON: { "headline1": "max 40 chars", "primaryText": "max 125 chars", "des
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
           ],
+          ...(aiModel ? { model: aiModel } : {}),
         });
 
         const messageContent = llmResponse.choices[0]?.message?.content;
         const generatedContent = typeof messageContent === 'string' ? messageContent : "";
         inputTokens = llmResponse.usage?.prompt_tokens || 0;
         outputTokens = llmResponse.usage?.completion_tokens || 0;
+        // Capture the actual model used from the response (may differ from requested)
+        const actualModel = llmResponse.model || aiModel || "gemini-2.5-flash";
 
         // Extract title from content (first line or generate one)
         const lines = generatedContent.split("\n").filter(l => l.trim());
@@ -1225,13 +1228,17 @@ Return JSON: { "headline1": "max 40 chars", "primaryText": "max 125 chars", "des
         // Generate featured image if requested
         let imageUrl = "";
         let imagePrompt = "";
+        let imageError = "";
         if (shouldGenerateImage) {
           try {
-            imagePrompt = `Professional blog header image for: ${topic}`;
+            imagePrompt = `Professional featured image for a ${contentType} about: ${topic}. Clean, modern, high-quality.`;
+            console.log("[ContentGen] Generating image with prompt:", imagePrompt);
             const imageResult = await generateImage({ prompt: imagePrompt });
             imageUrl = imageResult.url || "";
+            console.log("[ContentGen] Image generated:", imageUrl ? "success" : "empty url");
           } catch (error) {
-            console.error("Image generation failed:", error);
+            imageError = error instanceof Error ? error.message : String(error);
+            console.error("[ContentGen] Image generation failed:", imageError);
           }
         }
 
@@ -1251,7 +1258,7 @@ Return JSON: { "headline1": "max 40 chars", "primaryText": "max 125 chars", "des
           imagePrompt,
           status: "draft",
           progress: 75,
-          aiModel: aiModel || "gemini-2.5-flash",
+          aiModel: actualModel,
           customPrompt: customPrompt || null,
           contentType: contentType as any,
           contentSubtype: contentSubtype || null,
@@ -1273,7 +1280,7 @@ Return JSON: { "headline1": "max 40 chars", "primaryText": "max 125 chars", "des
           console.error("Budget check failed:", error);
         }
 
-        return { id: contentId, title, content: generatedContent, imageUrl };
+        return { id: contentId, title, content: generatedContent, imageUrl, imageError: imageError || null, aiModel: actualModel };
       }),
     update: protectedProcedure
       .input(z.object({

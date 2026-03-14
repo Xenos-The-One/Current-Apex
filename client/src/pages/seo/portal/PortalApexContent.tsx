@@ -163,12 +163,20 @@ function ContentDetailSheet({
                         <p className="text-sm font-medium">{content.wordCount} words</p>
                       </div>
                     )}
-                    {content.aiModel && (
-                      <div className="rounded-lg border p-3">
-                        <p className="text-xs text-muted-foreground mb-1">AI Model</p>
-                        <p className="text-sm font-medium">{content.aiModel}</p>
-                      </div>
-                    )}
+                     {content.aiModel && (
+                       <div className="rounded-lg border p-3">
+                         <p className="text-xs text-muted-foreground mb-1">AI Model</p>
+                         <p className="text-sm font-medium">{{
+                           "gpt-4o": "GPT-4o (OpenAI)",
+                           "gpt-4o-mini": "GPT-4o Mini",
+                           "claude-3-5-sonnet-20241022": "Claude 3.5 Sonnet",
+                           "claude-3-haiku-20240307": "Claude 3 Haiku",
+                           "gemini-1.5-pro": "Gemini 1.5 Pro",
+                           "gemini-2.0-flash": "Gemini 2.0 Flash",
+                           "gemini-2.5-flash": "Gemini 2.5 Flash",
+                         }[content.aiModel] ?? content.aiModel}</p>
+                       </div>
+                     )}
                   </div>
 
                   {/* Approval actions */}
@@ -920,7 +928,8 @@ function GenerateContentTab() {
   const [customInstructions, setCustomInstructions] = useState("");
   const [enableWebResearch, setEnableWebResearch] = useState(true);
   const [shouldGenerateImage, setShouldGenerateImage] = useState(false);
-  const [generatedResult, setGeneratedResult] = useState<{ id: number; title: string; content: string } | null>(null);
+  const [aiModel, setAiModel] = useState("gpt-4o");
+  const [generatedResult, setGeneratedResult] = useState<{ id: number; title: string; content: string; imageError?: string | null } | null>(null);
   const utils = trpc.useUtils();
 
   // Resolve seo client ID for this portal user — auto-provision if missing
@@ -953,7 +962,10 @@ function GenerateContentTab() {
   const generateMutation = trpc.seo.content.generate.useMutation({
     onSuccess: (data) => {
       toast.success("Content generated successfully!");
-      setGeneratedResult({ id: data.id, title: data.title, content: data.content });
+      if (data.imageError) {
+        toast.warning("Content saved, but featured image could not be generated. You can add one later.");
+      }
+      setGeneratedResult({ id: data.id, title: data.title, content: data.content, imageError: data.imageError });
       utils.seo.content.listForPortal.invalidate();
     },
     onError: (e: any) => toast.error(e.message || "Generation failed. Please try again."),
@@ -988,6 +1000,7 @@ function GenerateContentTab() {
       customPrompt: customPromptParts.length > 0 ? customPromptParts.join("\n") : undefined,
       enableWebResearch,
       shouldGenerateImage,
+      aiModel,
     });
   };
 
@@ -1114,22 +1127,41 @@ function GenerateContentTab() {
         />
       </div>
 
-      {/* Tone */}
-      <div className="space-y-1.5">
-        <Label>Tone</Label>
-        <Select value={tone} onValueChange={setTone}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="professional">Professional</SelectItem>
-            <SelectItem value="friendly">Friendly &amp; Approachable</SelectItem>
-            <SelectItem value="casual">Casual</SelectItem>
-            <SelectItem value="authoritative">Authoritative</SelectItem>
-            <SelectItem value="inspirational">Inspirational</SelectItem>
-            <SelectItem value="conversational">Conversational</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Tone + AI Model (side by side) */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label>Tone</Label>
+          <Select value={tone} onValueChange={setTone}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="professional">Professional</SelectItem>
+              <SelectItem value="friendly">Friendly &amp; Approachable</SelectItem>
+              <SelectItem value="casual">Casual</SelectItem>
+              <SelectItem value="authoritative">Authoritative</SelectItem>
+              <SelectItem value="inspirational">Inspirational</SelectItem>
+              <SelectItem value="conversational">Conversational</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label>AI Model</Label>
+          <Select value={aiModel} onValueChange={setAiModel}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="gpt-4o">GPT-4o (OpenAI)</SelectItem>
+              <SelectItem value="gpt-4o-mini">GPT-4o Mini (Fast)</SelectItem>
+              <SelectItem value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</SelectItem>
+              <SelectItem value="claude-3-haiku-20240307">Claude 3 Haiku (Fast)</SelectItem>
+              <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
+              <SelectItem value="gemini-2.0-flash">Gemini 2.0 Flash</SelectItem>
+              <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Custom instructions */}
