@@ -87,17 +87,17 @@ function buildInitialState(template: CampaignTemplate): WizardState {
   let content = "";
   let subject = "";
 
-  if (template.channel === "email" && template.emailSteps?.[0]) {
-    subject = template.emailSteps[0].subject;
-    content = template.emailSteps[0].body;
-  } else if (template.channel === "sms" && template.smsSteps?.[0]) {
-    content = template.smsSteps[0].message;
-  } else if (template.channel === "ai-calling" && template.aiCallSteps?.[0]) {
-    content = template.aiCallSteps[0].intro;
+  if (template?.channel === "email" && template.emailSteps?.[0]) {
+    subject = template.emailSteps[0].subject ?? "";
+    content = template.emailSteps[0].body ?? "";
+  } else if (template?.channel === "sms" && template.smsSteps?.[0]) {
+    content = template.smsSteps[0].message ?? "";
+  } else if (template?.channel === "ai-calling" && template.aiCallSteps?.[0]) {
+    content = template.aiCallSteps[0].intro ?? "";
   }
 
   return {
-    campaignName: template.name,
+    campaignName: template?.name ?? "",
     subject,
     content,
     recipientFilter: "all",
@@ -483,9 +483,9 @@ export function UseTemplateWizard({
 
   const canAdvance = (): boolean => {
     if (currentStep === "customize") {
-      if (!state.campaignName.trim()) return false;
-      if (template.channel === "email" && !state.subject.trim()) return false;
-      if (!state.content.trim()) return false;
+      if (!(state.campaignName ?? "").trim()) return false;
+      if (template.channel === "email" && !(state.subject ?? "").trim()) return false;
+      if (!(state.content ?? "").trim()) return false;
     }
     if (currentStep === "schedule") {
       if (!state.sendNow && (!state.scheduledDate || !state.scheduledTime)) return false;

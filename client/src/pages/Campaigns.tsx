@@ -555,10 +555,8 @@ function CreateEmailCampaignDialog({ clientId, onSuccess, initialTemplate }: { c
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Leads</SelectItem>
-                <SelectItem value="new">New Leads</SelectItem>
-                <SelectItem value="contacted">Contacted</SelectItem>
-                <SelectItem value="qualified">Qualified</SelectItem>
-                <SelectItem value="status">By Status</SelectItem>
+                <SelectItem value="status">By Status (New / Contacted / Qualified...)</SelectItem>
+                <SelectItem value="custom">Custom Selection</SelectItem>
               </SelectContent>
             </Select>
           </div>
