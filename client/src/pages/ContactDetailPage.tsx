@@ -48,7 +48,7 @@ type Lead = {
   source?: string | null;
   status: string;
   notes?: string | null;
-  tags?: string | null;
+  tags?: string | string[] | null;
   score?: number | null;
   contactType?: string | null;
   createdAt: Date | string;
@@ -105,9 +105,17 @@ function formatDateTime(d: Date | string | null | undefined) {
   });
 }
 
-function parseTags(raw: string | null | undefined): string[] {
+function parseTags(raw: string | string[] | null | undefined): string[] {
   if (!raw) return [];
-  try { return JSON.parse(raw); } catch { return raw.split(",").map(t => t.trim()).filter(Boolean); }
+  // Backend may return tags already parsed as an array (Drizzle returns raw DB value)
+  if (Array.isArray(raw)) return raw.filter((t): t is string => typeof t === "string");
+  if (typeof raw !== "string") return [];
+  try { 
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((t): t is string => typeof t === "string") : [];
+  } catch { 
+    return raw.split(",").map(t => t.trim()).filter(Boolean); 
+  }
 }
 
 // ─── Activity Icon ─────────────────────────────────────────────────────────────

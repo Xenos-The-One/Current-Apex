@@ -1157,3 +1157,61 @@ describe("phone number validation for Send Test SMS", () => {
     expect(isValidPhone("+44 20 7946 0958")).toBe(true);
   });
 });
+
+// ─── Bug Fix: parseTags TypeError (raw.split is not a function) ───────────────
+
+describe("parseTags — safe handling of all input types", () => {
+  function parseTags(raw: string | string[] | null | undefined): string[] {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw.filter((t): t is string => typeof t === "string");
+    if (typeof raw !== "string") return [];
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter((t): t is string => typeof t === "string") : [];
+    } catch {
+      return raw.split(",").map(t => t.trim()).filter(Boolean);
+    }
+  }
+
+  it("returns empty array for null", () => {
+    expect(parseTags(null)).toEqual([]);
+  });
+
+  it("returns empty array for undefined", () => {
+    expect(parseTags(undefined)).toEqual([]);
+  });
+
+  it("returns empty array for empty string", () => {
+    expect(parseTags("")).toEqual([]);
+  });
+
+  it("handles JSON array string (normal DB format)", () => {
+    expect(parseTags('["tag1","tag2","tag3"]')).toEqual(["tag1", "tag2", "tag3"]);
+  });
+
+  it("handles already-parsed array (Drizzle returns raw array)", () => {
+    expect(parseTags(["tag1", "tag2"])).toEqual(["tag1", "tag2"]);
+  });
+
+  it("handles comma-separated string fallback", () => {
+    expect(parseTags("tag1, tag2, tag3")).toEqual(["tag1", "tag2", "tag3"]);
+  });
+
+  it("filters out non-string values from array", () => {
+    // @ts-expect-error testing runtime safety
+    expect(parseTags([1, "tag1", null, "tag2"])).toEqual(["tag1", "tag2"]);
+  });
+
+  it("falls back to comma-split for invalid JSON strings", () => {
+    // "{invalid}" is not valid JSON, so it falls back to comma-split → one element
+    expect(parseTags("{invalid}")).toEqual(["{invalid}"]);
+  });
+
+  it("handles single-element JSON array", () => {
+    expect(parseTags('["only-tag"]')).toEqual(["only-tag"]);
+  });
+
+  it("handles empty JSON array", () => {
+    expect(parseTags("[]")).toEqual([]);
+  });
+});
