@@ -1,0 +1,9 @@
+{
+  "query": "\n-- contentComments currently has: id, contentId, userId, portalUserId, comment, isInternal, createdAt\n-- Query expects: isResolved column\n-- Also the join query uses seo_clients.name but seo_clients has both name and business_name\n\nALTER TABLE contentComments\n  ADD COLUMN IF NOT EXISTS isResolved INT NOT NULL DEFAULT 0;\n\n-- Also check if content table has a title column (it does from our earlier check)\n-- And seo_clients has a 'name' column (confirmed from earlier DESCRIBE)\n-- So the join query should work once isResolved exists\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4RVGytATKPpruq2.940764ddfa98 --database Rus3EtBPxB9CmZuwDUFVXj --execute \n-- contentComments currently has: id, contentId, userId, portalUserId, comment, isInternal, createdAt\n-- Query expects: isResolved column\n-- Also the join query uses seo_clients.name but seo_clients has both name and business_name\n\nALTER TABLE contentComments\n  ADD COLUMN IF NOT EXISTS isResolved INT NOT NULL DEFAULT 0;\n\n-- Also check if content table has a title column (it does from our earlier check)\n-- And seo_clients has a 'name' column (confirmed from earlier DESCRIBE)\n-- So the join query should work once isResolved exists\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 289
+}

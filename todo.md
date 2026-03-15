@@ -1236,3 +1236,8 @@
 - [x] Backend: add sendTestSms procedure to campaigns router (Twilio)
 - [x] ReviewStep: add phone number input + Send Test SMS button for SMS templates
 - [x] vitest tests for all three features
+
+## Bug Fix: SEO Client Portal DB Errors (Fixed)
+- [x] Fix: recurringPlans table schema mismatch — added planName, postsPerCycle, topicTemplate, customPrompt, aiModel, enableWebResearch, enableImageGeneration, lastRunDate, nextRunDate, createdBy
+- [x] Fix: pipelineCards table schema mismatch — added businessName, industry, budgetRange, matchScore, notes, snoozedUntil, createdBy
+- [x] Fix: contentComments table missing isResolved column — added via ALTER TABLE
